@@ -282,6 +282,17 @@ jobs:
           asset_path: ${{ env.DEB_ASSET_PATH }}
           asset_name: ${{ env.DEB_ASSET_NAME }}
           asset_content_type: application/octet-stream
+          
+      - name: Upload Release Asset - YAML (Auto Updates)
+        id: upload-release-asset-yaml
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./output/app-update.yml
+          asset_name: app-update.yml
+          asset_content_type: text/plain
 
       - name: Upload Release Asset - RPM
         uses: actions/upload-release-asset@v1
