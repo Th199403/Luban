@@ -212,7 +212,7 @@ function ModelItem({
                                 'padding-left-36',
                                 'sm-flex',
                                 styles.objectListItem,
-                                isSelected ? styles.selected : null,
+                                modelItem.isSelected ? styles.selected : null,
                             )}
                         >
                             <Anchor

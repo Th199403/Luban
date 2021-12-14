@@ -545,19 +545,34 @@ class ModelGroup extends EventEmitter {
     // TODO: model or modelID, need rename this method and add docs
     // use for widget
     selectModelById(modelID, isMultiSelect = false) {
-        const selectModel = this.models.find(d => d.modelID === modelID);
+        let selectModel = null;
+        this.traverseModels(this.models, (model) => {
+            if (model.modelID === modelID) {
+                selectModel = model;
+            }
+        });
 
         if (isMultiSelect) {
             if (selectModel) {
                 const objectIndex = this.selectedGroup.children.indexOf(selectModel.meshObject);
                 if (objectIndex === -1) {
+                    let isModelAcrossGroup = false;
+                    for (const selectedModel of this.selectedModelArray) {
+                        if (selectedModel.parent !== selectModel.parent) {
+                            isModelAcrossGroup = true;
+                            break;
+                        }
+                    }
+                    if (isModelAcrossGroup) {
+                        this.unselectAllModels(true);
+                    }
                     this.addModelToSelectedGroup(selectModel);
                 } else {
                     this.removeModelFromSelectedGroup(selectModel);
                 }
             }
         } else {
-            this.unselectAllModels();
+            this.unselectAllModels(true);
             if (selectModel) {
                 this.addModelToSelectedGroup(selectModel);
             }
@@ -625,7 +640,6 @@ class ModelGroup extends EventEmitter {
                     }
                     if (isModelAcrossGroup) {
                         this.unselectAllModels(true);
-                        // break;
                     }
                     // cannot select model and support
                     // cannot select multi support
