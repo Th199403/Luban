@@ -567,25 +567,47 @@ class ModelGroup extends EventEmitter {
         return this.getState(false);
     }
 
-    findModelByMesh(meshObject) {
-        return this.models.find(d => {
-            if (d instanceof ThreeGroup) {
-                return d.isMeshInGroup(meshObject);
+    traverseModels(models, callback) {
+        models.forEach(model => {
+            if (model instanceof ThreeGroup) {
+                this.traverseModels(model.children, callback);
             }
-            return d.meshObject === meshObject;
+            (typeof callback === 'function') && callback(model);
         });
+    }
+
+    findModelByMesh(meshObject) {
+        for (const model of this.models) {
+            if (model instanceof ThreeModel) {
+                if (model.meshObject === meshObject) {
+                    return model;
+                }
+            } else if (model instanceof ThreeGroup) {
+                const res = model.findModelInGroupByMesh(meshObject);
+                if (res) {
+                    return res;
+                }
+            }
+        }
+        return null;
     }
 
     // use for canvas
     selectMultiModel(intersect, selectEvent) {
+        console.log('1', selectEvent);
         let model;
         switch (selectEvent) {
             case SELECTEVENT.UNSELECT:
-                this.unselectAllModels();
+                this.unselectAllModels(true);
                 break;
             case SELECTEVENT.UNSELECT_ADDSELECT:
-                this.unselectAllModels();
                 model = this.findModelByMesh(intersect.object);
+                if (model.parent) {
+                    this.unselectAllModelsInGroup(model.parent);
+                    this.unselectAllModels();
+                } else {
+                    this.unselectAllModels(true);
+                }
                 if (model) {
                     this.addModelToSelectedGroup(model);
                 }
@@ -593,6 +615,18 @@ class ModelGroup extends EventEmitter {
             case SELECTEVENT.ADDSELECT:
                 model = this.findModelByMesh(intersect.object);
                 if (model) {
+                    // prevent selected models outside group
+                    let isModelAcrossGroup = false;
+                    for (const selectedModel of this.selectedModelArray) {
+                        if (selectedModel.parent !== model.parent) {
+                            isModelAcrossGroup = true;
+                            break;
+                        }
+                    }
+                    if (isModelAcrossGroup) {
+                        this.unselectAllModels(true);
+                        // break;
+                    }
                     // cannot select model and support
                     // cannot select multi support
                     if (this.selectedModelArray.length && (this.selectedModelArray[0].supportTag !== model.supportTag || model.supportTag)) {
@@ -603,7 +637,9 @@ class ModelGroup extends EventEmitter {
                 break;
             case SELECTEVENT.REMOVESELECT:
                 model = this.findModelByMesh(intersect.object);
-                if (model) {
+                if (model.parent?.isSelected) {
+                    this.removeModelFromSelectedGroup(model.parent);
+                } else if (model.isSelected) {
                     this.removeModelFromSelectedGroup(model);
                 }
                 break;
@@ -636,10 +672,18 @@ class ModelGroup extends EventEmitter {
         if (model.supportTag) { // support parent should be the target model
             parent = model.target.meshObject;
         }
+        if (model.parent) {
+            parent = model.parent.meshObject;
+        }
         ThreeUtils.setObjectParent(model.meshObject, parent);
         this.selectedModelArray = [];
         this.selectedGroup.children.forEach((meshObject) => {
-            const selectedModel = this.models.find(d => d.meshObject === meshObject);
+            let selectedModel = null;
+            this.traverseModels(this.models, (subModel) => {
+                if (subModel.meshObject === meshObject) {
+                    selectedModel = subModel;
+                }
+            });
             this.selectedModelArray.push(selectedModel);
         });
 
@@ -686,12 +730,22 @@ class ModelGroup extends EventEmitter {
         };
     }
 
-    unselectAllModels() {
+    unselectAllModelsInGroup(group) {
         this.selectedModelArray = [];
-        // this.selectedModelIDArray = [];
-        // this.selectedGroup.children.splice(0);
+        group.children.forEach((model) => {
+            this.removeModelFromSelectedGroup(model);
+        });
+    }
+
+    unselectAllModels(recursive = false) {
+        this.selectedModelArray = [];
         if (this.headType === 'printing') {
             this.models.forEach((model) => {
+                if (recursive && model instanceof ThreeGroup) {
+                    model.children.forEach((subModel) => {
+                        this.removeModelFromSelectedGroup(subModel);
+                    });
+                }
                 this.removeModelFromSelectedGroup(model);
             });
         }

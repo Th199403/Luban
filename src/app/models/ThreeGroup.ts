@@ -13,6 +13,7 @@ type ExtruderConfig = {
     infill: string,
     shell: string,
 };
+type traverseCallback = (mesh: ThreeModel) => void;
 
 export default class ThreeGroup extends BaseModel {
     estimatedTime: number = 0;
@@ -74,7 +75,7 @@ export default class ThreeGroup extends BaseModel {
 
     mode: string;
 
-    parent: ThreeGroup;
+    parent: ThreeGroup = null;
 
     constructor(modelInfo: ModelInfo, modelGroup: ModelGroup) {
         super(modelInfo, modelGroup);
@@ -193,13 +194,39 @@ export default class ThreeGroup extends BaseModel {
         return geometry;
     }
 
-    isMeshInGroup(mesh: THREE.Mesh) {
-        return this.children.some(model => {
+    traverse(callback: traverseCallback) {
+        this.children.forEach(model => {
             if (model instanceof ThreeGroup) {
-                return model.isMeshInGroup(mesh);
+                model.traverse(callback);
+            } else {
+                (typeof callback === 'function') && callback(model);
             }
-            return model.meshObject === mesh;
         });
+    }
+
+    findModelInGroupByMesh(mesh: THREE.Mesh) {
+        let modelFound = null, hasSelectedModel = false;
+        this.traverse((model) => {
+            if (model.meshObject === mesh) {
+                modelFound = model;
+            }
+        });
+        this.traverse((model) => {
+            if (model.isSelected) {
+                hasSelectedModel = true;
+            }
+        });
+
+        if (modelFound) {
+            if (hasSelectedModel) {
+                return modelFound;
+            } else if (modelFound.isSelected) {
+                return modelFound;
+            } else if (!this.isSelected) {
+                return this;
+            }
+        }
+        return modelFound;
     }
 
     get visible() {
