@@ -198,25 +198,36 @@ class ModelGroup extends EventEmitter {
         return this.models.filter(m => !m.supportTag).some((model) => model.visible);
     }
 
-    hideSelectedModel() {
+    toggleSelectedModelVisible(visible) {
         const models = this.getSelectedModelArray();
         models.forEach((model) => {
-            model.visible = false;
-            model.meshObject.visible = false;
+            model.visible = visible;
+            model.meshObject.visible = visible;
+            if (model instanceof ThreeGroup) {
+                model.traverse((subModel) => {
+                    subModel.visible = visible;
+                    subModel.meshObject.visible = visible;
+                });
+            } else if (model.parent) {
+                let parentVisible = false;
+                model.parent.traverse((subModel) => {
+                    parentVisible = subModel.visible || parentVisible;
+                });
+                model.parent.visible = parentVisible;
+                model.parent.meshObject.visible = parentVisible;
+            }
         });
         // Make the reference of 'models' change to re-render
         this.models = [...this.models];
         return this.getState();
     }
 
+    hideSelectedModel() {
+        return this.toggleSelectedModelVisible(false);
+    }
+
     showSelectedModel() {
-        const models = this.getSelectedModelArray();
-        models.forEach((model) => {
-            model.visible = true;
-            model.meshObject.visible = true;
-        });
-        this.models = [...this.models];
-        return this.getState();
+        return this.toggleSelectedModelVisible(true);
     }
 
     _removeSelectedModels() {

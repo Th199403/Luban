@@ -321,7 +321,8 @@ export default class ThreeGroup extends BaseModel {
         this.children.forEach(model => {
             model.overstepped = overstepped;
         });
-        this.setSelected(isSelected);
+        // this.setSelected(isSelected);
+        this.isSelected = isSelected;
     }
 
     setSelected(isSelected?: boolean) {
