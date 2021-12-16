@@ -4,8 +4,8 @@ import { machineStore } from '../store/local-storage';
 let authenticated = false;
 
 export default {
-    signin: ({ token }) => new Promise((resolve) => {
-        api.signin({ token })
+    signin: ({ token, serverData }) => new Promise((resolve) => {
+        api.signin({ token, serverData })
             .then((res) => {
                 const { enabled = false, token: newToken = '', name = '' } = { ...res.body };
                 machineStore.set('session.enabled', enabled);

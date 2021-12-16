@@ -1,5 +1,6 @@
 import superagent from 'superagent';
 import superagentUse from 'superagent-use';
+import superagentPrefix from 'superagent-prefix';
 import ensureArray from '../lib/ensure-array';
 import { machineStore } from '../store/local-storage';
 
@@ -44,8 +45,13 @@ const defaultAPIFactory = (genRequest) => {
 // Authentication
 //
 const signin = defaultAPIFactory((options) => {
-    const { token, name, password } = { ...options };
+    const { token, name, password, serverData } = { ...options };
 
+    // todo add address
+    if (serverData) {
+        const { address, port } = serverData;
+        request.use(superagentPrefix(`http://${address}:${port}`));
+    }
     return request
         .post('/api/signin')
         .send({ token, name, password });
