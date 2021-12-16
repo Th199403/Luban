@@ -198,8 +198,7 @@ class ModelGroup extends EventEmitter {
         return this.models.filter(m => !m.supportTag).some((model) => model.visible);
     }
 
-    toggleSelectedModelVisible(visible) {
-        const models = this.getSelectedModelArray();
+    toggleModelsVisible(visible, models) {
         models.forEach((model) => {
             model.visible = visible;
             model.meshObject.visible = visible;
@@ -223,11 +222,11 @@ class ModelGroup extends EventEmitter {
     }
 
     hideSelectedModel() {
-        return this.toggleSelectedModelVisible(false);
+        return this.toggleModelsVisible(false, this.getSelectedModelArray());
     }
 
     showSelectedModel() {
-        return this.toggleSelectedModelVisible(true);
+        return this.toggleModelsVisible(true, this.getSelectedModelArray());
     }
 
     _removeSelectedModels() {

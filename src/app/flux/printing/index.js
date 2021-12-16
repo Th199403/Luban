@@ -36,7 +36,7 @@ import RotateOperation3D from '../operation-history/RotateOperation3D';
 import ScaleOperation3D from '../operation-history/ScaleOperation3D';
 import DeleteOperation3D from '../operation-history/DeleteOperation3D';
 import AddOperation3D from '../operation-history/AddOperation3D';
-import VisibleOperation3D from '../operation-history/VisibleOperation3D';
+import VisibleOperation3D from '../operation-history/VisibleOperation3D.ts';
 import OperationHistory from '../operation-history/OperationHistory';
 import GroupOperation3D from '../operation-history/GroupOperation3D.ts';
 import ThreeGroup from '../../models/ThreeGroup.ts';

@@ -1,7 +1,15 @@
+// @ts-ignore
+import ThreeGroup from '../../models/ThreeGroup.ts';
+import ThreeModel from '../../models/ThreeModel';
 import Operation from './Operation';
 
+type VisibleState = {
+    target: ThreeModel | ThreeGroup,
+    visible: boolean
+};
+
 export default class VisibleOperation3D extends Operation {
-    state = {};
+    state: VisibleState;
 
     constructor(state) {
         super();
@@ -16,9 +24,7 @@ export default class VisibleOperation3D extends Operation {
         const model = this.state.target;
         const modelGroup = model.modelGroup;
 
-        model.visible = this.state.visible;
-        model.meshObject.visible = this.state.visible;
-        modelGroup.models = [...modelGroup.models]; // trigger <ModelItem> component to show the unselected model
+        modelGroup.toggleModelsVisible(this.state.visible, [model]);
         modelGroup.modelChanged();
     }
 
@@ -26,9 +32,7 @@ export default class VisibleOperation3D extends Operation {
         const model = this.state.target;
         const modelGroup = model.modelGroup;
 
-        model.visible = !this.state.visible;
-        model.meshObject.visible = !this.state.visible;
-        modelGroup.models = [...modelGroup.models]; // trigger <ModelItem> component to show the unselected model
+        modelGroup.toggleModelsVisible(!this.state.visible, [model]);
         modelGroup.modelChanged();
     }
 }
