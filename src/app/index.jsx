@@ -85,8 +85,7 @@ series([
             .then(({ authenticated }) => {
                 if (authenticated) {
                     log.debug('Create and establish a WebSocket connection');
-                    console.log('dddd', serverData);
-                    controller.connect(serverData, () => {
+                    controller.connect(() => {
                         next();
                     });
                     screenController.connect(() => {
