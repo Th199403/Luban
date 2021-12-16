@@ -46,11 +46,11 @@ const defaultAPIFactory = (genRequest) => {
 //
 const signin = defaultAPIFactory((options) => {
     const { token, name, password, serverData } = { ...options };
-
     // todo add address
     if (serverData) {
         const { address, port } = serverData;
-        request.use(superagentPrefix(`http://${address}:${port}`));
+        console.log('address, port ', address, port, superagentPrefix);
+        // request.use(superagentPrefix(`http://${address}:${port}`));
     }
     return request
         .post('/api/signin')

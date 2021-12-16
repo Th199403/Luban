@@ -128,6 +128,13 @@ const createApplication = () => {
         next();
     });
 
+    // app.use((req, res, next) => {
+    //     res.append('Access-Control-Allow-Origin', ['*']);
+    //     res.append('Access-Control-Allow-Methods', 'GET,PUT,POST,OPTIONS,DELETE');
+    //     res.append('Access-Control-Allow-Headers', 'Content-Type');
+    //     next();
+    // });
+
     // Removes the 'X-Powered-By' header in earlier versions of Express
     app.use((req, res, next) => {
         res.removeHeader('X-Powered-By');
@@ -255,18 +262,46 @@ const createApplication = () => {
     registerApis(app);
     // Also see "src/app/app.js"
     // page
-    app.get(urljoin(settings.route, '/'), renderPage('index.hbs', (req) => {
-        const webroot = settings.assets.app.routes[0] || ''; // with trailing slash
-        const lng = req.language;
-        const t = req.t;
+    if (process.env.NODE_ENV === 'development') {
+        app.get(urljoin(settings.route, '/'), renderPage('index.hbs', (req) => {
+            const webroot = settings.assets.app.routes[0] || ''; // with trailing slash
+            const lng = req.language;
+            const t = req.t;
 
-        return {
-            webroot: webroot,
-            lang: lng,
-            title: `Snapmaker Luban ${settings.version}`,
-            loading: t('loading')
-        };
-    }));
+            return {
+                webroot: webroot,
+                lang: lng,
+                title: `Snapmaker Luban ${settings.version}`,
+                loading: t('loading')
+            };
+        }));
+    } else {
+        app.get(urljoin(settings.route, '/'), renderPage('index.html', (req) => {
+            const webroot = settings.assets.app.routes[0] || ''; // with trailing slash
+            console.log('webroot', webroot);
+            const lng = req.language;
+            const t = req.t;
+
+            return {
+                webroot: webroot,
+                lang: lng,
+                title: `Snapmaker Luban ${settings.version}`,
+                loading: t('loading')
+            };
+        }));
+    }
+    // app.get(urljoin(settings.route, '/'), renderPage('index.hbs', (req) => {
+    //     const webroot = settings.assets.app.routes[0] || ''; // with trailing slash
+    //     const lng = req.language;
+    //     const t = req.t;
+    //
+    //     return {
+    //         webroot: webroot,
+    //         lang: lng,
+    //         title: `Snapmaker Luban ${settings.version}`,
+    //         loading: t('loading')
+    //     };
+    // }));
 
     // Error handling
     app.use(errlog());
