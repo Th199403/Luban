@@ -260,15 +260,15 @@ class ModelGroup extends EventEmitter {
     // remove all support if no model selected
     removeAllManualSupport() {
         if (this.selectedModelArray.length) {
-            this.selectedModelArray.forEach(target => {
-                this.models.forEach(m => {
+            this.traverseModels(this.selectedModelArray, target => {
+                this.traverseModels(this.models, m => {
                     if (m.supportTag === true && m.target === target) {
                         this.removeModel(m);
                     }
                 });
             });
         } else {
-            this.models.forEach(m => {
+            this.traverseModels(this.models, m => {
                 if (m.supportTag === true) {
                     this.removeModel(m);
                 }
@@ -1537,8 +1537,24 @@ class ModelGroup extends EventEmitter {
         if (model.isInitSupport) {
             this.removeModel(model);
         } else {
+            if (model.target instanceof ThreeGroup) {
+                const targetInGroup = model.target.intersectSupportTargetMeshInGroup(model);
+                if (targetInGroup) {
+                    model.target = targetInGroup;
+                }
+            }
             ThreeUtils.setObjectParent(model.meshObject, model.target.meshObject);
         }
+    }
+
+    getSupports() {
+        const supports = [];
+        this.traverseModels(this.models, (model) => {
+            if (model.supportTag) {
+                supports.push(model);
+            }
+        });
+        return supports;
     }
 
     modelChanged() {

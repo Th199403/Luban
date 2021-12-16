@@ -1669,7 +1669,7 @@ export const actions = {
     },
     clearAllManualSupport: (combinedOperations) => (dispatch, getState) => {
         const { modelGroup } = getState().printing;
-        const supports = modelGroup.models.filter(item => item.supportTag === true);
+        const supports = modelGroup.getSupports();
         if (supports && supports.length > 0) {
             let operations = new Operations();
             if (combinedOperations) {

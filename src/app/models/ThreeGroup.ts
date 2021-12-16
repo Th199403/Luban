@@ -229,6 +229,26 @@ export default class ThreeGroup extends BaseModel {
         return modelFound;
     }
 
+    intersectSupportTargetMeshInGroup(support: ThreeModel): ThreeModel | null {
+        const center = new THREE.Vector3();
+        support.meshObject.getWorldPosition(center);
+        center.setZ(0);
+
+        const rayDirection = new THREE.Vector3(0, 0, 1);
+        const raycaster = new THREE.Raycaster(center, rayDirection);
+        const intersects = raycaster.intersectObject(this.meshObject, true);
+
+        let target = null;
+        if (intersects && intersects[0]) {
+            this.traverse((model) => {
+                if (model.meshObject === intersects[0].object) {
+                    target = model;
+                }
+            });
+        }
+        return target;
+    }
+
     get visible() {
         return this.meshObject.visible;
     }
@@ -546,61 +566,16 @@ export default class ThreeGroup extends BaseModel {
      */
     generateSupportGeometry() {}
 
-    /**
-     * Experimental
-     * @returns void
-     */
     setVertexColors() {
-        this.meshObject.updateMatrixWorld();
-        const bufferGeometry = this.mergeGeometriesInGroup();
-        const clone = bufferGeometry.clone();
-        clone.applyMatrix4(this.meshObject.matrixWorld.clone());
-
-        const positions = clone.getAttribute('position').array;
-
-        const colors = [];
-        const normals = clone.getAttribute('normal').array;
-        let start = 0;
-        const worker = () => {
-            let i = start;
-            do {
-                const normal = new THREE.Vector3(normals[i], normals[i + 1], normals[i + 2]);
-                const angle = normal.angleTo(new THREE.Vector3(0, 0, 1)) / Math.PI * 180;
-                const avgZ = (positions[i + 2] + positions[i + 5] + positions[i + 8]) / 3;
-
-                if (angle > 120 && avgZ > 1) {
-                    colors.push(1, 0.2, 0.2);
-                    colors.push(1, 0.2, 0.2);
-                    colors.push(1, 0.2, 0.2);
-                } else {
-                    colors.push(0.9, 0.9, 0.9);
-                    colors.push(0.9, 0.9, 0.9);
-                    colors.push(0.9, 0.9, 0.9);
-                }
-                i += 9;
-            } while (i - start < 10000 && i < normals.length);
-            if (i < normals.length) {
-                start = i;
-                setTimeout(worker, 1);
-            } else {
-                bufferGeometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-                this.setSelected(true);
-                this.modelGroup.modelChanged();
-            }
-        };
-
-        setTimeout(worker, 10);
+        this.traverse((model) => {
+            model.setVertexColors();
+        });
     }
 
-    /**
-     * Experimental
-     * @returns void
-     */
     removeVertexColors() {
-        const bufferGeometry = this.mergeGeometriesInGroup();
-        bufferGeometry.deleteAttribute('color');
-        this.setSelected();
-        this.modelGroup && this.modelGroup.modelChanged();
+        this.traverse((model) => {
+            model.removeVertexColors();
+        });
     }
 
     cloneMeshWithoutSupports(): THREE.Object3D {
