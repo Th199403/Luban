@@ -1954,7 +1954,15 @@ export const actions = {
         const groups = modelGroup.getSelectedModelArray().filter(model => model instanceof ThreeGroup);
         const groupChildrenMap = new Map();
         groups.forEach(group => {
-            groupChildrenMap.set(group, group.children.slice(0));
+            groupChildrenMap.set(group, {
+                groupTransformation: { ...group.transformation },
+                subModels: group.children.map(model => {
+                    return {
+                        target: model,
+                        transformation: { ...model.transformation }
+                    };
+                })
+            });
         });
         const operations = new Operations();
 
@@ -1964,7 +1972,8 @@ export const actions = {
         groups.forEach(group => {
             const operation = new UngroupOperation3D({
                 target: group,
-                subModels: groupChildrenMap.get(group),
+                groupTransformation: groupChildrenMap.get(group).groupTransformation,
+                subModels: groupChildrenMap.get(group).subModels,
                 modelGroup,
             });
             operations.push(operation);

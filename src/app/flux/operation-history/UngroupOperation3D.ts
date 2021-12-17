@@ -1,12 +1,18 @@
 import type ModelGroup from '../../models/ModelGroup';
 import type ThreeGroup from '../../models/ThreeGroup';
 import type ThreeModel from '../../models/ThreeModel';
+import type { ModelTransformation } from '../../models/ThreeBaseModel';
 import Operation from './Operation';
 
+type ModelState = {
+    target: ThreeModel,
+    transformation: ModelTransformation
+};
 
 type UngroupState = {
-    target: ThreeGroup
-    subModels: ThreeModel[]
+    target: ThreeGroup,
+    groupTransformation: ModelTransformation,
+    subModels: ModelState[]
     modelGroup: ModelGroup
 };
 export default class UngroupOperation3D extends Operation {
