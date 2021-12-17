@@ -110,6 +110,19 @@ const createApplication = () => {
         .use(i18nextLanguageDetector)
         .init(settings.i18next);
 
+    app.use((req, res) => {
+        if (req.method === 'OPTIONS') {
+            // res.status(200).send();
+            res.sendStatus(200);
+            res.end();
+        }
+    });
+    app.Router().use((req, res, next) => {
+        console.log('req.method', req, res);
+        res.locals.url = `${req.url}`;
+        next();
+    });
+
     // Check if client's IP address is in the whitelist
     app.use((req, res, next) => {
         const ipaddr = req.ip || req.connection.remoteAddress;
@@ -128,12 +141,6 @@ const createApplication = () => {
         next();
     });
 
-    // app.use((req, res, next) => {
-    //     res.append('Access-Control-Allow-Origin', ['*']);
-    //     res.append('Access-Control-Allow-Methods', 'GET,PUT,POST,OPTIONS,DELETE');
-    //     res.append('Access-Control-Allow-Headers', 'Content-Type');
-    //     next();
-    // });
 
     // Removes the 'X-Powered-By' header in earlier versions of Express
     app.use((req, res, next) => {

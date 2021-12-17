@@ -249,6 +249,8 @@ const showMainWindow = async () => {
         session.defaultSession.webRequest.onHeadersReceived(filter2, (details, callback) => {
             details.responseHeaders['Access-Control-Allow-Origin'] = ['*'];
             details.responseHeaders['Access-Control-Allow-Methods'] = ['GET,PUT,POST,OPTIONS,DELETE'];
+            details.responseHeaders['Access-Control-Allow-Headers'] = ['*'];
+            details.responseHeaders['Access-Control-Max-Age'] = [86400];
             console.log('onHeadersReceived', details);
             callback({
                 responseHeaders: details.responseHeaders
