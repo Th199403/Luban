@@ -184,9 +184,9 @@ export default class ThreeGroup extends BaseModel {
                 if (model.meshObject instanceof THREE.Group) {
                     return (model as ThreeGroup).mergeGeometriesInGroup();
                 } else {
-                    model.meshObject.updateMatrixWorld();
+                    model.meshObject.updateMatrix();
                     const clonedGeometry = (model.meshObject as THREE.Mesh).geometry.clone() as THREE.BufferGeometry;
-                    clonedGeometry.applyMatrix4(model.meshObject.matrixWorld);
+                    clonedGeometry.applyMatrix4(model.meshObject.matrix);
                     return clonedGeometry;
                 }
             }));
@@ -549,21 +549,8 @@ export default class ThreeGroup extends BaseModel {
         return result;
     }
 
-    /**
-     * Experimental
-     * @returns void
-     */
-    setSupportPosition(position: THREE.Vector3) {
-        const object = this.meshObject;
-        object.position.copy(position);
-        object.updateMatrix();
-        this.generateSupportGeometry();
-    }
+    setSupportPosition() {}
 
-    /**
-     * Experimental
-     * @returns void
-     */
     generateSupportGeometry() {}
 
     setVertexColors() {

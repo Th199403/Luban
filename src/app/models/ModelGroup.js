@@ -1735,6 +1735,9 @@ class ModelGroup extends EventEmitter {
                         index: rowInfo.faceId
                     };
                     mesh.renderOrder = 9999999999;
+                    group.userData = {
+                        isRotationFace: true
+                    };
                     group.add(mesh);
                     model.meshObject.add(group);
                 });
@@ -1760,7 +1763,9 @@ class ModelGroup extends EventEmitter {
         if (this.selectedModelArray.length === 1) {
             const model = this.selectedModelArray[0];
             for (let i = model.meshObject.children.length - 1; i >= 0; i--) {
-                model.meshObject.remove(model.meshObject.children[i]);
+                if (model.meshObject.children[i].userData.isRotationFace) {
+                    model.meshObject.remove(model.meshObject.children[i]);
+                }
             }
             for (let i = this.selectedModelConvexMeshGroup.children.length - 1; i >= 0; i--) {
                 this.selectedModelConvexMeshGroup.remove(this.selectedModelConvexMeshGroup.children[i]);
