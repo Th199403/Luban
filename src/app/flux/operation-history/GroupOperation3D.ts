@@ -5,8 +5,8 @@ import ThreeGroup from '../../models/ThreeGroup.ts';
 import type ModelGroup from '../../models/ModelGroup';
 
 type GroupState = {
-    modelsbeforeGroup: Model[],
-    modelsafterGroup: Model[],
+    modelsBeforeGroup: Model[],
+    modelsAfterGroup: Model[],
     selectedModels: ThreeModel[] | ThreeGroup[],
     groupChildrenMap: Map<ThreeGroup, ThreeModel[]>
     target: ThreeGroup,
@@ -19,8 +19,8 @@ export default class GroupOperation3D extends Operation {
     constructor(state) {
         super();
         this.state = {
-            modelsbeforeGroup: [],
-            modelsafterGroup: [],
+            modelsBeforeGroup: [],
+            modelsAfterGroup: [],
             selectedModels: [],
             groupChildrenMap: new Map(),
             target: null,
@@ -37,7 +37,7 @@ export default class GroupOperation3D extends Operation {
         const modelsToGroup = [];
         this.state.selectedModels.forEach(model => {
             if (model instanceof ThreeGroup) {
-                const children = model.destroy();
+                const children = (model as ThreeGroup).destroy();
                 modelsToGroup.push(...children);
             } else {
                 modelsToGroup.push(model);
@@ -45,7 +45,7 @@ export default class GroupOperation3D extends Operation {
         });
         target.add(modelsToGroup);
         modelGroup.object.add(target.meshObject);
-        modelGroup.models = [...this.state.modelsafterGroup];
+        modelGroup.models = [...this.state.modelsAfterGroup];
     }
 
     undo() {
@@ -61,6 +61,6 @@ export default class GroupOperation3D extends Operation {
             group.add(subModels);
             modelGroup.object.add(group.meshObject);
         });
-        modelGroup.models = [...this.state.modelsbeforeGroup];
+        modelGroup.models = [...this.state.modelsBeforeGroup];
     }
 }

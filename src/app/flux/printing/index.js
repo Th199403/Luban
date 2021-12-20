@@ -1914,7 +1914,7 @@ export const actions = {
         const { modelGroup } = getState().printing;
 
         const groups = modelGroup.getSelectedModelArray().filter(model => model instanceof ThreeGroup);
-        const modelsbeforeGroup = modelGroup.getModels().slice(0);
+        const modelsBeforeGroup = modelGroup.getModels().slice(0);
         const selectedModels = modelGroup.getSelectedModelArray().slice(0);
         const groupChildrenMap = new Map();
         groups.forEach(group => {
@@ -1925,12 +1925,12 @@ export const actions = {
         dispatch(actions.clearAllManualSupport(operations));
         const modelState = modelGroup.group();
 
-        const modelsafterGroup = modelGroup.getModels().slice(0);
+        const modelsAfterGroup = modelGroup.getModels().slice(0);
 
         const operation = new GroupOperation3D({
             groupChildrenMap,
-            modelsbeforeGroup,
-            modelsafterGroup,
+            modelsBeforeGroup,
+            modelsAfterGroup,
             selectedModels,
             target: modelGroup.getSelectedModelArray()[0],
             modelGroup
@@ -1952,11 +1952,12 @@ export const actions = {
         const { modelGroup } = getState().printing;
 
         const groups = modelGroup.getSelectedModelArray().filter(model => model instanceof ThreeGroup);
+        const modelsBeforeUngroup = modelGroup.getModels().slice(0);
         const groupChildrenMap = new Map();
         groups.forEach(group => {
             groupChildrenMap.set(group, {
                 groupTransformation: { ...group.transformation },
-                subModels: group.children.map(model => {
+                subModelStates: group.children.map(model => {
                     return {
                         target: model,
                         transformation: { ...model.transformation }
@@ -1969,11 +1970,14 @@ export const actions = {
         dispatch(actions.clearAllManualSupport(operations));
         const modelState = modelGroup.ungroup();
 
+        // const modelsAfterUngroup = modelGroup.getModels().slice(0);
+        // const selectedModels = modelGroup.getSelectedModelArray().slice(0);
         groups.forEach(group => {
             const operation = new UngroupOperation3D({
+                modelsBeforeUngroup,
                 target: group,
                 groupTransformation: groupChildrenMap.get(group).groupTransformation,
-                subModels: groupChildrenMap.get(group).subModels,
+                subModelStates: groupChildrenMap.get(group).subModelStates,
                 modelGroup,
             });
             operations.push(operation);

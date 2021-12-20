@@ -10,9 +10,10 @@ type ModelState = {
 };
 
 type UngroupState = {
+    modelsBeforeUngroup: Array<ThreeModel | ThreeGroup>,
     target: ThreeGroup,
     groupTransformation: ModelTransformation,
-    subModels: ModelState[]
+    subModelStates: ModelState[]
     modelGroup: ModelGroup
 };
 export default class UngroupOperation3D extends Operation {
@@ -21,8 +22,10 @@ export default class UngroupOperation3D extends Operation {
     constructor(state) {
         super();
         this.state = {
+            modelsBeforeUngroup: [],
             target: null,
-            subModels: [],
+            groupTransformation: null,
+            subModelStates: [],
             modelGroup: null,
             ...state
         };
@@ -41,21 +44,17 @@ export default class UngroupOperation3D extends Operation {
     undo() {
         const target = this.state.target;
         const modelGroup = this.state.modelGroup;
-        const subModels = this.state.subModels;
+        const subModelStates = this.state.subModelStates;
 
         modelGroup.unselectAllModels();
-        const children = [], others = [];
-        modelGroup.getModels().forEach(model => {
-            if (subModels.indexOf(model) > -1) {
-                children.push(model);
-            } else {
-                others.push(model);
-            }
+        const subModels = [];
+        subModelStates.forEach(item => {
+            item.target.updateTransformation(item.transformation);
+            subModels.push(item.target);
         });
-        if (children) {
-            target.add(children);
-            modelGroup.object.add(target.meshObject);
-            modelGroup.models = [...others, target];
-        }
+        target.updateTransformation(this.state.groupTransformation);
+        target.add(subModels);
+        modelGroup.object.add(target.meshObject);
+        modelGroup.models = [...this.state.modelsBeforeUngroup];
     }
 }

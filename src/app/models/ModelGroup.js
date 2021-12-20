@@ -1804,7 +1804,7 @@ class ModelGroup extends EventEmitter {
             const group = new ThreeGroup({}, this);
             group.modelName = this._createNewModelName(group);
             group.add(modelsToGroup);
-            const insertIndex = Math.min(indexesOfSelectedModels);
+            const insertIndex = Math.min(...indexesOfSelectedModels);
             this.models.splice(insertIndex, 0, group);
             this.models = this.models.filter(model => selectedModelArray.indexOf(model) === -1);
 
