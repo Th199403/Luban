@@ -1970,8 +1970,6 @@ export const actions = {
         dispatch(actions.clearAllManualSupport(operations));
         const modelState = modelGroup.ungroup();
 
-        // const modelsAfterUngroup = modelGroup.getModels().slice(0);
-        // const selectedModels = modelGroup.getSelectedModelArray().slice(0);
         groups.forEach(group => {
             const operation = new UngroupOperation3D({
                 modelsBeforeUngroup,
