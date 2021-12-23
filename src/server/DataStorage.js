@@ -12,9 +12,7 @@ import { initFonts } from '../shared/lib/FontManager';
 import settings from './config/settings';
 import config from './services/configstore';
 
-
 const log = logger('server:DataStorage');
-
 
 export const rmDir = (dirPath, removeSelf) => {
     log.info(`Clearing folder ${dirPath}`);
@@ -44,7 +42,6 @@ export const rmDir = (dirPath, removeSelf) => {
         fs.rmdirSync(dirPath);
     }
 };
-
 
 class DataStorage {
      userDataDir;
@@ -254,7 +251,10 @@ class DataStorage {
      }
 
      async initSlicer(overwriteProfiles = false) {
-         overwriteProfiles && rmDir(this.configDir);
+         if (overwriteProfiles) {
+             const oldConfig = `${this.userDataDir}/OldConfig`;
+             fs.cpSync(this.configDir, oldConfig);
+         }
          mkdirp.sync(this.configDir);
          mkdirp.sync(this.defaultConfigDir);
          mkdirp.sync(`${this.configDir}/${CNC_CONFIG_SUBCATEGORY}`);
@@ -266,7 +266,6 @@ class DataStorage {
          await this.copyDirForInitSlicer(CURA_ENGINE_CONFIG_LOCAL, this.configDir, true, overwriteProfiles);
          await this.copyDirForInitSlicer(CURA_ENGINE_CONFIG_LOCAL, this.defaultConfigDir, true, true);
      }
-
 
      async initFonts() {
          mkdirp.sync(this.fontDir);
