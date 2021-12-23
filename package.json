@@ -114,15 +114,17 @@
     },
     "win": {
       "target": [
-        "nsis"
+        "nsis",
+	"msi"
       ],
+      "msi": true,
       "artifactName": "${productName} ${version}.${ext}",
       "verifyUpdateCodeSignature": false,
       "icon": "build/electron/snapmaker-luban.ico"
     },
     "nsis": {
       "oneClick": false,
-      "perMachine": true,
+      "perMachine": false,
       "allowElevation": true,
       "allowToChangeInstallationDirectory": true
     },
