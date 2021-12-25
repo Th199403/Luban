@@ -17,6 +17,7 @@ import {
     LEFT_EXTRUDER,
     RIGHT_EXTRUDER,
     LEFT_EXTRUDER_MAP_NUMBER,
+    DUAL_EXTRUDER_TOOLHEAD_FOR_SM2
 } from '../../constants';
 import { timestamp } from '../../../shared/lib/random-utils';
 import { machineStore } from '../../store/local-storage';
@@ -193,7 +194,10 @@ const INITIAL_STATE = {
     isOpenSelectModals: false,
     isOpenHelpers: false,
     modelExtruderInfoShow: true,
-    helpersExtruderInfoShow: true
+    helpersExtruderInfoShow: true,
+    // Prime Tower
+    enabledPrimeTower: true,
+    primeTowerHeight: 0.1
 };
 
 
@@ -295,13 +299,15 @@ export const actions = {
         // state
         const printingState = getState().printing;
         const { modelGroup, gcodeLineGroup } = printingState;
+        const { toolHead } = getState().machine;
         modelGroup.setDataChangedCallback(() => {
             dispatch(actions.render());
+        }, (height) => {
+            dispatch(actions.updateState({ primeTowerHeight: height }));
         });
 
         let { series } = getState().machine;
         series = getRealSeries(series);
-        const { toolHead } = getState().machine;
         // await dispatch(machineActions.updateMachineToolHead(toolHead, series, CONFIG_HEADTYPE));
         const currentMachine = getMachineSeriesWithToolhead(series, toolHead);
         await definitionManager.init(CONFIG_HEADTYPE, currentMachine.configPathname[CONFIG_HEADTYPE]);
@@ -384,9 +390,9 @@ export const actions = {
 
         const printingState = getState().printing;
         const { modelGroup, gcodeLineGroup, initEventFlag } = printingState;
-
+        const printingToolhead = machineStore.get('machine.toolHead.printingToolhead');
         modelGroup.removeAllModels();
-
+        printingToolhead === DUAL_EXTRUDER_TOOLHEAD_FOR_SM2 && modelGroup.initPrimeTower();
         if (!initEventFlag) {
             dispatch(actions.updateState({
                 initEventFlag: true
@@ -1738,7 +1744,6 @@ export const actions = {
                 const data = e.data;
 
                 const { type } = data;
-
                 switch (type) {
                     case 'LOAD_MODEL_POSITIONS': {
                         const { positions } = data;
