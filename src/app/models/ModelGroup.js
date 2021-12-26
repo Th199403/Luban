@@ -265,8 +265,7 @@ class ModelGroup extends EventEmitter {
             this.models = this.traverseModels(this.models, (item) => {
                 if (model === item) {
                     if (item.parent.children.length === 1) {
-                        this.selectModelById(item.parent.modelID);
-                        this.ungroup();
+                        this.object.remove(item.parent.meshObject);
                     }
                     return false;
                 }
@@ -615,18 +614,27 @@ class ModelGroup extends EventEmitter {
         return this.getState(false);
     }
 
+    /**
+     * traverse models, If the return value of callback is false, it will filter
+     * @param {*} models
+     * @param {*} callback Callback function has a parameter, which is an item of the loop
+     * @returns new models
+     */
     traverseModels(models, callback) {
-        return models.filter((model, index) => {
+        return models.filter((model) => {
             if (model instanceof ThreeGroup) {
-                return {
-                    ...model,
-                    children: this.traverseModels(model.children, callback)
-                };
+                return callback(model) !== false && this.traverseModels(model.children, callback).length > 0;
             }
             if (typeof callback === 'function') {
-                return callback(model, index);
+                return callback(model);
             }
             return true;
+        }).map((model) => {
+            if (model instanceof ThreeGroup) {
+                model.children = this.traverseModels(model.children, callback);
+                return model;
+            }
+            return model;
         });
     }
 
@@ -743,7 +751,6 @@ class ModelGroup extends EventEmitter {
     }
 
     // refresh selected group matrix
-    // 这里完全看不懂了呀
     prepareSelectedGroup() {
         if (this.selectedModelArray.length === 1) {
             ThreeUtils.applyObjectMatrix(this.selectedGroup, new Matrix4().copy(this.selectedGroup.matrix).invert());
@@ -1035,21 +1042,26 @@ class ModelGroup extends EventEmitter {
     }
 
     onModelTransform() {
-        // this.selectedModelIDArray.splice(0);
-        this.selectedModelArray.forEach((item) => {
+        try {
+            // this.selectedModelIDArray.splice(0);
+            this.selectedModelArray.forEach((item) => {
             // this.selectedModelIDArray.push(item.modelID);
-            item.onTransform();
-        });
-        const { sourceType, mode, transformation, boundingBox, originalName } = this.selectedModelArray[0];
-        return {
-            sourceType: sourceType,
-            originalName: originalName,
-            mode: mode,
-            selectedModelIDArray: this.selectedModelIDArray,
-            transformation: { ...transformation },
-            boundingBox, // only used in 3dp
-            hasModel: this.hasModel()
-        };
+                item.onTransform();
+            });
+            const { sourceType, mode, transformation, boundingBox, originalName } = this.selectedModelArray[0];
+            return {
+                sourceType: sourceType,
+                originalName: originalName,
+                mode: mode,
+                selectedModelIDArray: this.selectedModelIDArray,
+                transformation: { ...transformation },
+                boundingBox, // only used in 3dp
+                hasModel: this.hasModel()
+            };
+        } catch (error) {
+            console.error('onModelTransform error', error);
+            return {};
+        }
     }
 
     shouldApplyScaleToObjects(scaleX, scaleY, scaleZ) {
@@ -1207,6 +1219,9 @@ class ModelGroup extends EventEmitter {
                 this.removeModelFromSelectedGroup(selected);
                 this.stickToPlateAndCheckOverstepped(selected.target);
                 this.addModelToSelectedGroup(selected);
+            } else {
+                this.stickToPlateAndCheckOverstepped(selected);
+                selected.parent && this.stickToPlateAndCheckOverstepped(selected.parent);
             }
         });
         recovery();

@@ -342,9 +342,6 @@ class Visualizer extends PureComponent {
             this.canvas.current.updateBoundingBox();
             this.canvas.current.attach(modelGroup.selectedGroup);
 
-            if (transformMode !== 'rotate-placement') {
-                this.supportActions.stopSupportMode();
-            }
             if (selectedModelArray.length === 1 && selectedModelArray[0].supportTag && !['translate', 'scale'].includes(transformMode)) {
                 this.actions.setTransformMode('translate');
             }

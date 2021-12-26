@@ -259,6 +259,7 @@ function VisualizerLeftBar({ defaultSupportSize, setTransformMode, isSupporting,
             actions.onModelAfterTransform();
         },
         rotateWithAnalysis: () => {
+            supportActions.stopSupportMode();
             actions.rotateOnlyForUniformScale(() => {
                 dispatch(printingActions.startAnalyzeRotationProgress());
                 setTimeout(() => {

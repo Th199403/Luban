@@ -9,7 +9,8 @@ export default class DeleteOperation3D extends Operation {
         super();
         this.state = {
             target: null,
-            ...state
+            ...state,
+            transformation: {}
         };
         // an object to be deleted will be selected at first, unwrapped from parent group
         const model = this.state.target;
@@ -23,10 +24,14 @@ export default class DeleteOperation3D extends Operation {
                     ThreeUtils.setObjectParent(model.meshObject, modelGroup.object);
                 }
             } else {
-                ThreeUtils.setObjectParent(model.meshObject, model.meshObject);
+                ThreeUtils.setObjectParent(model.meshObject, model.target.meshObject);
             }
         }
-        model.onTransform();
+        this.state.transformation = {
+            position: model.meshObject.position.clone(),
+            scale: model.meshObject.scale.clone(),
+            rotation: model.meshObject.rotation.clone()
+        };
     }
 
     redo() {
@@ -45,7 +50,6 @@ export default class DeleteOperation3D extends Operation {
                 ThreeUtils.setObjectParent(model.meshObject, model.target.meshObject);
             }
         }
-        model.onTransform();
         modelGroup.removeModel(model);
         if (model.isSelected) {
             model.setSelected(false);
@@ -59,16 +63,26 @@ export default class DeleteOperation3D extends Operation {
         const model = this.state.target;
         const modelGroup = model.modelGroup as ModelGroup;
 
-        modelGroup.models = modelGroup.models.concat(model);
         if (model.supportTag) {
-            // if (!model.target) return;
-            model.meshObject.add(model.meshObject); // restore the parent-child relationship
+            if (!model.target) return;
+            modelGroup.models = modelGroup.models.concat(model);
+            model.target.meshObject.add(model.meshObject); // restore the parent-child relationship
         } else if (!model.parent) {
-            // 需不需要手动设置models
+            modelGroup.models = modelGroup.models.concat(model);
             modelGroup.object.add(model.meshObject);
         } else if (model.parent && model.parent instanceof ThreeGroup) {
-            modelGroup.unselectAllModels({ recursive: true });
-            modelGroup.recoveryGroup(model.parent, model);
+            if (modelGroup.models.find(m => m.modelID === model.parent.modelID)) {
+                modelGroup.recoveryGroup(model.parent, model);
+            } else {
+                modelGroup.models = modelGroup.models.concat(model.parent);
+                ThreeUtils.setObjectParent(model.meshObject, model.parent.meshObject);
+                ThreeUtils.setObjectParent(model.parent.meshObject, modelGroup.object);
+
+                model.meshObject.position.copy(this.state.transformation.position);
+                model.meshObject.scale.copy(this.state.transformation.scale);
+                model.meshObject.rotation.copy(this.state.transformation.rotation);
+            }
+            model.stickToPlate();
         }
         if (model.isSelected) {
             model.setSelected(false);
