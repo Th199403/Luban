@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import BaseModel, { ModelTransformation, ModelInfo } from './ThreeBaseModel.ts';
+import BaseModel, { ModelTransformation, ModelInfo } from './ThreeBaseModel';
 import type ModelGroup from './ModelGroup';
-import ThreeModel from './ThreeModel';
+import type ThreeModel from './ThreeModel';
 import ThreeUtils from '../three-extensions/ThreeUtils';
 import { HEAD_PRINTING, BOTH_EXTRUDER_MAP_NUMBER } from '../constants';
 import ConvexGeometry from '../three-extensions/ConvexGeometry';
@@ -77,9 +77,14 @@ export default class ThreeGroup extends BaseModel {
 
     parent: ThreeGroup = null;
 
+    modelID: string;
+
     constructor(modelInfo: ModelInfo, modelGroup: ModelGroup) {
         super(modelInfo, modelGroup);
         this.meshObject = new THREE.Group();
+        this.meshObject.userData = {
+            name: 'ThreeGroup'
+        };
         this.children = [];
         this.transformation = {
             positionX: 0,
@@ -108,16 +113,16 @@ export default class ThreeGroup extends BaseModel {
             // update group extruder config
             this.extruderConfig = models[0].extruderConfig as ExtruderConfig;
         } else if (models.length > 1) {
-            let p;
-            const boundingBoxTemp = ThreeUtils.computeBoundingBox(this.meshObject);
+            let center;
             if (this.meshObject.children.length >= 1) {
-                p = new THREE.Vector3(
+                const boundingBoxTemp = ThreeUtils.computeBoundingBox(this.meshObject);
+                center = new THREE.Vector3(
                     (boundingBoxTemp.max.x + boundingBoxTemp.min.x) / 2,
                     (boundingBoxTemp.max.y + boundingBoxTemp.min.y) / 2,
                     boundingBoxTemp.max.z / 2
                 );
             } else {
-                p = new THREE.Vector3(
+                center = new THREE.Vector3(
                     0,
                     0,
                     0
@@ -129,7 +134,7 @@ export default class ThreeGroup extends BaseModel {
             // only make the diff translation
             const oldPosition = new THREE.Vector3();
             this.meshObject.getWorldPosition(oldPosition);
-            const matrix = new THREE.Matrix4().makeTranslation(p.x - oldPosition.x, p.y - oldPosition.y, p.z - oldPosition.z);
+            const matrix = new THREE.Matrix4().makeTranslation(center.x - oldPosition.x, center.y - oldPosition.y, center.z - oldPosition.z);
             ThreeUtils.applyObjectMatrix(this.meshObject, matrix);
             children.map(obj => ThreeUtils.setObjectParent(obj, this.meshObject));
             (this.meshObject as any).uniformScalingState = true;
@@ -150,9 +155,10 @@ export default class ThreeGroup extends BaseModel {
             }
             this.extruderConfig = tempExtruderConfig;
         }
+        this.children.forEach((model: ThreeModel) => model.onTransform());
     }
 
-    destroy(): ThreeModel[] {
+    disassemble(): ThreeModel[] {
         ThreeUtils.applyObjectMatrix(this.meshObject, new THREE.Matrix4().copy(this.meshObject.matrix).invert());
         // apply group transformation to children
         const models = [];
@@ -161,7 +167,7 @@ export default class ThreeGroup extends BaseModel {
             model.parent = null;
             // model.meshObject.applyMatrix4(this.meshObject.matrixWorld);
             if (model instanceof ThreeGroup) {
-                const children = model.destroy();
+                const children = model.disassemble();
                 models.push(...children);
             } else {
                 ThreeUtils.setObjectParent(model.meshObject, this.meshObject.parent);
@@ -299,8 +305,9 @@ export default class ThreeGroup extends BaseModel {
     }
 
     updateTransformation(transformation: ModelTransformation): ModelTransformation {
-        super.updateTransformation(transformation);
-        return this.transformation;
+        this.children.forEach(model => model.updateTransformation(transformation));
+
+        return super.updateTransformation(transformation);
     }
 
     computeBoundingBox() {
@@ -325,7 +332,7 @@ export default class ThreeGroup extends BaseModel {
 
         this.computeBoundingBox();
         this.meshObject.position.z -= this.boundingBox.min.z;
-        this.computeBoundingBox(); // update boundingbox after position changed
+        this.computeBoundingBox();
         this.onTransform();
         revert();
     }

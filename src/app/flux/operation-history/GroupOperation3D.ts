@@ -1,7 +1,7 @@
 import Operation from './Operation';
 import type Model from '../../models/ThreeBaseModel';
 import type ThreeModel from '../../models/ThreeModel';
-import ThreeGroup from '../../models/ThreeGroup.ts';
+import ThreeGroup from '../../models/ThreeGroup';
 import type ModelGroup from '../../models/ModelGroup';
 
 type GroupState = {
@@ -12,7 +12,6 @@ type GroupState = {
     target: ThreeGroup,
     modelGroup: ModelGroup
 };
-
 export default class GroupOperation3D extends Operation {
     state: GroupState;
 
@@ -37,7 +36,7 @@ export default class GroupOperation3D extends Operation {
         const modelsToGroup = [];
         this.state.selectedModels.forEach(model => {
             if (model instanceof ThreeGroup) {
-                const children = (model as ThreeGroup).destroy();
+                const children = (model as ThreeGroup).disassemble();
                 modelsToGroup.push(...children);
             } else {
                 modelsToGroup.push(model);

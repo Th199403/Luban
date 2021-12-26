@@ -1,4 +1,4 @@
-const EvaluateSupportArea = require('../../workers/EvaluateSupportArea.worker.ts');
+const EvaluateSupportArea = require('../../workers/EvaluateSupportArea.worker');
 
 type Callback = (event: MessageEvent<any>) => any;
 class WorkerManager {

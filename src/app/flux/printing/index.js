@@ -36,11 +36,11 @@ import RotateOperation3D from '../operation-history/RotateOperation3D';
 import ScaleOperation3D from '../operation-history/ScaleOperation3D';
 import DeleteOperation3D from '../operation-history/DeleteOperation3D';
 import AddOperation3D from '../operation-history/AddOperation3D';
-import VisibleOperation3D from '../operation-history/VisibleOperation3D.ts';
+import VisibleOperation3D from '../operation-history/VisibleOperation3D';
 import OperationHistory from '../operation-history/OperationHistory';
-import GroupOperation3D from '../operation-history/GroupOperation3D.ts';
-import ThreeGroup from '../../models/ThreeGroup.ts';
-import UngroupOperation3D from '../operation-history/UngroupOperation3D.ts';
+import GroupOperation3D from '../operation-history/GroupOperation3D';
+import ThreeGroup from '../../models/ThreeGroup';
+import UngroupOperation3D from '../operation-history/UngroupOperation3D';
 
 const operationHistory = new OperationHistory();
 
@@ -1431,9 +1431,9 @@ export const actions = {
         const operations = new Operations();
         let operation;
 
-        function stateEqual(stateFrom, stateTo) {
+        function stateEqual(model, stateFrom, stateTo) {
             for (const key of Object.keys(stateFrom)) {
-                if (key !== 'positionZ' && Math.abs(stateFrom[key] - stateTo[key]) > EPSILON) {
+                if ((model.parent instanceof ThreeGroup || key !== 'positionZ') && Math.abs(stateFrom[key] - stateTo[key]) > EPSILON) {
                     return false;
                 }
             }
@@ -1446,7 +1446,7 @@ export const actions = {
             dispatch(operationHistoryActions.updateTargetTmpState(INITIAL_STATE.name, model.modelID, {
                 to: { ...model.transformation }
             }));
-            if (stateEqual(targetTmpState[model.modelID].from, targetTmpState[model.modelID].to)) {
+            if (stateEqual(model, targetTmpState[model.modelID].from, targetTmpState[model.modelID].to)) {
                 continue;
             }
             switch (transformMode) {

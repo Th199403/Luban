@@ -1,5 +1,4 @@
-// @ts-ignore
-import ThreeGroup from '../../models/ThreeGroup.ts';
+import ThreeGroup from '../../models/ThreeGroup';
 import ThreeModel from '../../models/ThreeModel';
 import Operation from './Operation';
 

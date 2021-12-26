@@ -6,8 +6,9 @@ import {
 
 import ThreeUtils from '../three-extensions/ThreeUtils';
 
-import BaseModel from './ThreeBaseModel.ts';
-import WorkerManager from '../lib/manager/WorkerManager.ts';
+import BaseModel from './ThreeBaseModel';
+import WorkerManager from '../lib/manager/WorkerManager';
+import ThreeGroup from './ThreeGroup';
 
 const materialOverstepped = new THREE.MeshPhongMaterial({
     color: 0xff0000,
@@ -39,6 +40,10 @@ class ThreeModel extends BaseModel {
         // adhesion: '0',
         // support: '0'
     };
+
+    isSelected = false;
+
+    target = null
 
     constructor(modelInfo, modelGroup) {
         super(modelInfo, modelGroup);
@@ -117,9 +122,17 @@ class ThreeModel extends BaseModel {
 
         let position, scale, rotation;
         if (this.parent) {
-            position = this.meshObject.position.clone();
-            scale = this.meshObject.scale.clone();
-            rotation = this.meshObject.rotation.clone();
+            if (this.modelGroup.isModelSelected(this)) {
+                const { recovery } = this.modelGroup.unselectAllModels({ recursive: true });
+                position = this.meshObject.position.clone();
+                scale = this.meshObject.scale.clone();
+                rotation = this.meshObject.rotation.clone();
+                recovery();
+            } else {
+                position = this.meshObject.position.clone();
+                scale = this.meshObject.scale.clone();
+                rotation = this.meshObject.rotation.clone();
+            }
         } else {
             position = new THREE.Vector3();
             this.meshObject.getWorldPosition(position);
@@ -171,11 +184,18 @@ class ThreeModel extends BaseModel {
         }
     }
 
+    isModelInGroup() {
+        return this.parent && this.parent instanceof ThreeGroup;
+    }
+
     stickToPlate() {
         if (this.sourceType !== '3d') {
             return;
         }
-
+        if (this.isModelInGroup()) {
+            this.parent.stickToPlate();
+            return;
+        }
         const revert = ThreeUtils.removeObjectParent(this.meshObject);
 
         this.computeBoundingBox();
