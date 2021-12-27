@@ -1325,6 +1325,9 @@ export const actions = {
         const { modelGroup } = getState().printing;
         const operations = new Operations();
         for (const model of modelGroup.selectedModelArray) {
+            if (model.primeTowerTag) {
+                continue;
+            }
             const operation = new DeleteOperation3D({
                 target: model
             });
@@ -1363,6 +1366,7 @@ export const actions = {
         const { modelGroup } = getState().printing;
         const operations = new Operations();
         for (const model of modelGroup.models) {
+            if (model.primeTowerTag) continue;
             const operation = new DeleteOperation3D({
                 target: model,
                 parent: null
