@@ -278,9 +278,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ${{ env.DEB_ASSET_PATH }}
-          asset_name: ${{ env.DEB_ASSET_NAME }}
+          files: ${{ github.event.release.upload_url }}
+          body_path: ${{ env.DEB_ASSET_PATH }}
+          name: ${{ env.DEB_ASSET_NAME }}
           asset_content_type: application/octet-stream
 
       - name: Upload Release Asset - RPM
@@ -288,9 +288,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ${{ env.RPM_ASSET_PATH }}
-          asset_name: ${{ env.RPM_ASSET_NAME }}
+          files: ${{ github.event.release.upload_url }}
+          body_path: ${{ env.RPM_ASSET_PATH }}
+          name: ${{ env.RPM_ASSET_NAME }}
           asset_content_type: application/octet-stream
 
       - name: Upload Release Asset - TAR
@@ -298,7 +298,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ${{ env.TAR_ASSET_PATH }}
-          asset_name: ${{ env.TAR_ASSET_NAME }}
+          files: ${{ github.event.release.upload_url }}
+          body_path: ${{ env.TAR_ASSET_PATH }}
+          name: ${{ env.TAR_ASSET_NAME }}
           asset_content_type: application/octet-stream
