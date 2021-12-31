@@ -78,6 +78,8 @@ export default class ThreeGroup extends BaseModel {
 
     parent: ThreeGroup;
 
+    type: string;
+
     constructor(modelInfo: ModelInfo, modelGroup: ModelGroup) {
         super(modelInfo, modelGroup);
         this.meshObject = new THREE.Group();
@@ -95,6 +97,7 @@ export default class ThreeGroup extends BaseModel {
             rotationZ: 0,
             uniformScalingState: true
         };
+        this.type = modelInfo.type || 'group';
     }
 
     add(models: Array<ThreeModel | ThreeGroup>) {
