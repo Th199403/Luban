@@ -18,7 +18,8 @@ import {
     RIGHT_EXTRUDER,
     LEFT_EXTRUDER_MAP_NUMBER,
     RIGHT_EXTRUDER_MAP_NUMBER,
-    DUAL_EXTRUDER_TOOLHEAD_FOR_SM2
+    DUAL_EXTRUDER_TOOLHEAD_FOR_SM2,
+    ALIGN_OPERATION
 } from '../../constants';
 import { timestamp } from '../../../shared/lib/random-utils';
 import { machineStore } from '../../store/local-storage';
@@ -599,7 +600,11 @@ export const actions = {
     // Update definition settings and save.
     updateDefinitionSettings: (definition, settings) => (dispatch, getState) => {
         const { modelGroup, extruderLDefinition, extruderRDefinition, helpersExtruderConfig } = getState().printing;
-        const { settings: newSettings, extruderLDefinitionSettings, extruderRDefinitionSettings } = definitionManager.calculateDependencies(definition, settings, modelGroup && modelGroup.hasSupportModel(), extruderLDefinition.settings, extruderRDefinition.settings, helpersExtruderConfig);
+        const {
+            settings: newSettings,
+            extruderLDefinitionSettings,
+            extruderRDefinitionSettings
+        } = definitionManager.calculateDependencies(definition, settings, modelGroup && modelGroup.hasSupportModel(), extruderLDefinition.settings, extruderRDefinition.settings, helpersExtruderConfig);
         settings = newSettings;
         definitionManager.updateDefinition({
             definitionId: 'snapmaker_extruder_0',
@@ -674,7 +679,11 @@ export const actions = {
             dispatch(actions.updateDefinitionSettings(activeDefinition, activeDefinition.settings));
         } else {
             // TODO: Optimize performance
-            const { modelGroup, extruderLDefinition, extruderRDefinition, helpersExtruderConfig } = getState().printing;
+            const { modelGroup,
+                extruderLDefinition,
+                extruderRDefinition,
+                helpersExtruderConfig
+            } = getState().printing;
             definitionManager.calculateDependencies(activeDefinition, activeDefinition.settings, modelGroup && modelGroup.hasSupportModel(), extruderLDefinition.settings, extruderRDefinition.settings, helpersExtruderConfig);
         }
 
@@ -1557,10 +1566,24 @@ export const actions = {
                 }
             });
             if (modelItem) {
-                modelItem.extruderConfig = extruderConfig;
+                modelItem.extruderConfig = {
+                    ...extruderConfig
+                };
                 modelItem.children && modelItem.children.length && modelItem.children.forEach(item => {
-                    item.extruderConfig = extruderConfig;
+                    if (extruderConfig.infill !== '2') {
+                        item.extruderConfig = {
+                            ...item.extruderConfig,
+                            infill: extruderConfig.infill
+                        };
+                    }
+                    if (extruderConfig.shell !== '2') {
+                        item.extruderConfig = {
+                            ...item.extruderConfig,
+                            shell: extruderConfig.shell
+                        };
+                    }
                 });
+                dispatch(actions.updateGroupExtruder(modelItem.parent));
             }
         }
         dispatch(actions.destroyGcodeLine());
@@ -1570,6 +1593,32 @@ export const actions = {
         // dispatch(actions.updateState({
         //     modelGroup
         // }));
+    },
+
+    updateGroupExtruder: (group) => () => {
+        if (group && group instanceof ThreeGroup) {
+            group.extruderConfig.shell = null;
+            for (const subModel of group.children) {
+                /**
+                 * extruderConfig.shell and extruderConfig.infill corresponding nozzle number
+                 * 0 which means the left nozzle is used
+                 * 1 which means the right nozzle is used
+                 * 2 which means that both the left nozzle and the right nozzle are used
+                 */
+
+                // First cycle assignment
+                if (!group.extruderConfig.shell) {
+                    group.extruderConfig.shell = subModel.extruderConfig.shell;
+                    group.extruderConfig.infill = subModel.extruderConfig.infill;
+                }
+                if (group.extruderConfig.shell !== subModel.extruderConfig.shell) {
+                    group.extruderConfig.shell = '2';
+                }
+                if (group.extruderConfig.infill !== subModel.extruderConfig.infill) {
+                    group.extruderConfig.infill = '2';
+                }
+            }
+        }
     },
 
     updateHelpersExtruder: (extruderConfig) => (dispatch) => {
@@ -2264,17 +2313,6 @@ export const actions = {
         modelGroup.traverseModels(models, (model) => {
             if (model.extruderConfig.shell === (direction === LEFT_EXTRUDER ? '0' : '1')) {
                 model.updateMaterialColor(color);
-            }
-            if (model?.parent && model.parent instanceof ThreeGroup) {
-                const groupShell = model.parent.children.reduce((pre, subModel) => {
-                    pre.add(subModel.extruderConfig.shell);
-                    return pre;
-                }, new Set());
-                if (groupShell.size === 1) {
-                    model.parent.extruderConfig.shell = Array.from(groupShell.values())[0];
-                } else {
-                    model.parent.extruderConfig.shell = '2';
-                }
             }
         });
         modelGroup.models = models.concat();
