@@ -1,4 +1,4 @@
-import uuid from 'uuid';
+import { v4 as uuid } from 'uuid';
 import _ from 'lodash';
 import { baseActions } from './actions-base';
 import { controller } from '../../lib/controller';
@@ -338,7 +338,7 @@ export const processActions = {
             progress: progressStatesManager.updateProgress(STEP_STAGE.CNC_LASER_GENERATING_GCODE, 0.1)
         }));
         controller.commitGcodeTask({
-            taskId: uuid.v4(),
+            taskId: uuid(),
             headType: headType,
             data: toolPaths
         });
@@ -415,7 +415,7 @@ export const processActions = {
         }
 
         controller.commitViewPathTask({
-            taskId: uuid.v4(),
+            taskId: uuid(),
             headType: headType,
             data: viewPathInfos
         });
