@@ -72,8 +72,11 @@ const Update = {
         if (isElectron()) {
             const { remote, ipcRenderer } = window.require('electron');
             const { dialog } = remote;
-            const { releaseName } = downloadInfo;
-
+            const { releaseName, releaseNotes } = downloadInfo;
+            const span = document.createElement('SPAN');
+            span.innerHTML = releaseNotes;
+            span.style.textAlign = 'left';
+            console.log('span.innerText', span.innerText);
             const dialogOpts = {
                 type: 'info',
                 buttons: [i18n._('key-App/Update-Later'), i18n._('key-App/Update-Update Now')],
@@ -81,11 +84,12 @@ const Update = {
                 checkboxLabel: i18n._('key-App/Update-Automatically check for updates'),
                 checkboxChecked: shouldCheckForUpdate,
                 title: i18n._('key-App/Update-Update Snapmaker Luban'),
-                message: `Snapmaker Luban ${releaseName} ${i18n._('key-App/Update-Update')}`,
-                detail: `${i18n._('key-App/Update-Current version')} : ${oldVersion}`
-                // detail: 'A new version has been detected. Should i download it now?'
+                message: `Snapmaker Luban ${releaseName} ${i18n._('key-App/Update-Update')}. ${i18n._('key-App/Update-Current version')} : ${oldVersion}`,
+                textWidth: 600,
+                // detail: i18n._(`key-App/${span.innerText}`)
+                detail: span.innerText
             };
-            dialog.showMessageBox(remote.getCurrentWindow(), dialogOpts).then((returnValue) => {
+            dialog.showMessageBoxSync(remote.getCurrentWindow(), dialogOpts).then((returnValue) => {
                 if (returnValue.response === 1) {
                     ipcRenderer.send('startingDownloadUpdate');
                 }
