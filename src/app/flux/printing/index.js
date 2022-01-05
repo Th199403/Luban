@@ -1657,12 +1657,15 @@ export const actions = {
     recordModelBeforeTransform: (modelGroup) => (dispatch) => {
         dispatch(operationHistoryActions.clearTargetTmpState(INITIAL_STATE.name));
         for (const model of modelGroup.selectedModelArray) {
+            const { recovery } = modelGroup.unselectAllModels({ recursive: true });
+            modelGroup.addModelToSelectedGroup(model);
             if (model.supportTag) {
                 dispatch(actions.onModelTransform());
             }
             dispatch(operationHistoryActions.updateTargetTmpState(INITIAL_STATE.name, model.modelID, {
-                from: { ...model.transformation }
+                from: { ...modelGroup.getSelectedModelTransformationForPrinting() }
             }));
+            recovery();
         }
     },
 
@@ -1683,8 +1686,10 @@ export const actions = {
             dispatch(actions.clearAllManualSupport(operations));
         }
         for (const model of modelGroup.selectedModelArray) {
+            const { recovery } = modelGroup.unselectAllModels({ recursive: true });
+            modelGroup.addModelToSelectedGroup(model);
             dispatch(operationHistoryActions.updateTargetTmpState(INITIAL_STATE.name, model.modelID, {
-                to: { ...model.transformation }
+                to: { ...modelGroup.getSelectedModelTransformationForPrinting() }
             }));
             if (stateEqual(model, targetTmpState[model.modelID].from, targetTmpState[model.modelID].to)) {
                 continue;
@@ -1711,6 +1716,7 @@ export const actions = {
                 default: break;
             }
             operations.push(operation);
+            recovery();
         }
         operations.registCallbackAfterAll(() => {
             dispatch(actions.updateState(modelGroup.getState()));
