@@ -4,6 +4,7 @@ import FileSaver from 'file-saver';
 import { isNil } from 'lodash';
 import events from 'events';
 import path from 'path';
+import { htmlToText } from 'html-to-text';
 import i18n from './i18n';
 import pkg from '../../../package.json';
 
@@ -74,9 +75,12 @@ const Update = {
             const { dialog } = remote;
             const { releaseName, releaseNotes } = downloadInfo;
             const span = document.createElement('SPAN');
-            span.innerHTML = releaseNotes;
+            span.innerHTML = `${releaseNotes}`;
+            // span.innerHTML = `${releaseNotes}\nLearn more about release notes please checkout [https://github.com/Snapmaker/Luban/releases]`;
             span.style.textAlign = 'left';
-            console.log('span.innerText', releaseNotes, span.innerText);
+            const text = htmlToText(releaseNotes, {
+            });
+            console.log('span.innerText', releaseNotes, span.innerText, text);
             const dialogOpts = {
                 type: 'info',
                 buttons: [i18n._('key-App/Update-Later'), i18n._('key-App/Update-Update Now')],
@@ -87,7 +91,7 @@ const Update = {
                 message: `Snapmaker Luban ${releaseName} ${i18n._('key-App/Update-Update')}. ${i18n._('key-App/Update-Current version')} : ${oldVersion}`,
                 textWidth: 600,
                 // detail: i18n._(`key-App/${span.innerText}`)
-                detail: span.innerText
+                detail: `${text}\nLearn more about release notes please checkout [https://github.com/Snapmaker/Luban/releases]`
             };
             dialog.showMessageBoxSync(remote.getCurrentWindow(), dialogOpts).then((returnValue) => {
                 if (returnValue.response === 1) {
