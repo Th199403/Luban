@@ -76,7 +76,7 @@ const Update = {
             const span = document.createElement('SPAN');
             span.innerHTML = releaseNotes;
             span.style.textAlign = 'left';
-            console.log('span.innerText', span.innerText);
+            console.log('span.innerText', releaseNotes, span.innerText);
             const dialogOpts = {
                 type: 'info',
                 buttons: [i18n._('key-App/Update-Later'), i18n._('key-App/Update-Update Now')],
