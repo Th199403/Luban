@@ -91,7 +91,12 @@ export class Server extends events.EventEmitter {
             airPurifierFilterHealth: 0,
             headType: '',
             toolHead: '',
-            moduleStatusList: {}
+            moduleStatusList: {
+                'enclosure': false,
+                'rotaryModule': false,
+                'emergencyStopButton': true,
+                'airPurifier': false
+            }
         };
     }
 
@@ -219,7 +224,8 @@ export class Server extends events.EventEmitter {
         if (!this.token) {
             return;
         }
-        const api = `${this.host}/api/v1/status?token=${this.token}`;
+        const now = new Date().getTime();
+        const api = `${this.host}/api/v1/status?token=${this.token}&${now}`;
         request
             .get(api)
             .timeout(3000)
@@ -227,6 +233,7 @@ export class Server extends events.EventEmitter {
                 const { data, msg, code } = this._getResult(err, res);
                 if (msg) {
                     this.errorCount++;
+                    console.log('heartbeat error count=, ', this.errorCount, 'msg=', msg, 'code=', code);
                     if (this.errorCount >= 3) {
                         this._closeServer();
                         this.emit('http:close', { err: msg });
@@ -257,7 +264,7 @@ export class Server extends events.EventEmitter {
                 isNotNull(data.homed) && (this.state.isHomed = data.homed);
                 isNotNull(data.laserFocalLength) && (this.state.laserFocalLength = data.laserFocalLength);
                 isNotNull(data.laserPower) && (this.state.laserPower = data.laserPower);
-                isNotNull(data.laserCamera) && (this.state.laserCamera = data.laserCamera);
+                // isNotNull(data.laserCamera) && (this.state.laserCamera = data.laserCamera);
                 isNotNull(data.workSpeed) && (this.state.workSpeed = data.workSpeed);
                 isNotNull(data.nozzleTemperature) && (this.state.nozzleTemperature = data.nozzleTemperature);
                 isNotNull(data.nozzleTargetTemperature) && (this.state.nozzleTargetTemperature = data.nozzleTargetTemperature);
@@ -266,13 +273,13 @@ export class Server extends events.EventEmitter {
                 isNotNull(data.isEnclosureDoorOpen) && (this.state.isEnclosureDoorOpen = data.isEnclosureDoorOpen);
                 isNotNull(data.doorSwitchCount) && (this.state.doorSwitchCount = data.doorSwitchCount);
                 isNotNull(data.isEmergencyStopped) && (this.state.isEmergencyStopped = data.isEmergencyStopped);
-                isNotNull(data.laser10WErrorState) && (this.state.laser10WErrorState = data.laser10WErrorState);
+                // isNotNull(data.laser10WErrorState) && (this.state.laser10WErrorState = data.laser10WErrorState);
                 // this state controls filter widget disable
                 this.state.airPurifier = isNotNull(data.airPurifierSwitch);
                 isNotNull(data.airPurifierSwitch) && (this.state.airPurifierSwitch = data.airPurifierSwitch);
                 isNotNull(data.airPurifierFanSpeed) && (this.state.airPurifierFanSpeed = data.airPurifierFanSpeed);
-                isNotNull(data.airPurifierFilterHealth) && (this.state.airPurifierFilterHealth = data.airPurifierFilterHealth);
-                isNotNull(data.moduleList) && (this.state.moduleStatusList = data.moduleList);
+                // isNotNull(data.airPurifierFilterHealth) && (this.state.airPurifierFilterHealth = data.airPurifierFilterHealth);
+                // isNotNull(data.moduleList) && (this.state.moduleStatusList = data.moduleList);
                 this._updateGcodePrintingInfo(data);
 
                 if (this.waitConfirm) {
