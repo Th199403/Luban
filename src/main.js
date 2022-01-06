@@ -37,7 +37,7 @@ function getBrowserWindowOptions() {
         useContentSize: true,
         title: `${pkg.name} ${pkg.version}`,
         webPreferences: {
-            nodeIntegration: true
+            nodeIntegration: false
         }
     };
 

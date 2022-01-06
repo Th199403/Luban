@@ -74,13 +74,9 @@ const Update = {
             const { remote, ipcRenderer } = window.require('electron');
             const { dialog } = remote;
             const { releaseName, releaseNotes } = downloadInfo;
-            const span = document.createElement('SPAN');
-            span.innerHTML = `${releaseNotes}`;
-            // span.innerHTML = `${releaseNotes}\nLearn more about release notes please checkout [https://github.com/Snapmaker/Luban/releases]`;
-            span.style.textAlign = 'left';
             const text = htmlToText(releaseNotes, {
             });
-            console.log('span.innerText', releaseNotes, span.innerText, text);
+            console.log('span.innerText', releaseNotes, text);
             const dialogOpts = {
                 type: 'info',
                 buttons: [i18n._('key-App/Update-Later'), i18n._('key-App/Update-Update Now')],
@@ -93,7 +89,7 @@ const Update = {
                 // detail: i18n._(`key-App/${span.innerText}`)
                 detail: `${text}\nLearn more about release notes please checkout [https://github.com/Snapmaker/Luban/releases]`
             };
-            dialog.showMessageBoxSync(remote.getCurrentWindow(), dialogOpts).then((returnValue) => {
+            dialog.showMessageBox(remote.getCurrentWindow(), dialogOpts).then((returnValue) => {
                 if (returnValue.response === 1) {
                     ipcRenderer.send('startingDownloadUpdate');
                 }
