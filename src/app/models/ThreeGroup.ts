@@ -174,6 +174,7 @@ export default class ThreeGroup extends BaseModel {
                 if (model.meshObject instanceof THREE.Group) {
                     return (model as ThreeGroup).mergeGeometriesInGroup();
                 } else {
+                    model.updateTransformation(model.transformation);
                     model.meshObject.updateMatrix();
                     const clonedGeometry = (model.meshObject as THREE.Mesh).geometry.clone() as THREE.BufferGeometry;
                     clonedGeometry.applyMatrix4(model.meshObject.matrix);
@@ -273,7 +274,6 @@ export default class ThreeGroup extends BaseModel {
      * @returns ModelTransformation
      */
     onTransform() {
-        const geometrySize = ThreeUtils.getGeometrySize(this.mergeGeometriesInGroup(), true);
         const { uniformScalingState } = this.meshObject as any;
 
         const position = new THREE.Vector3();
@@ -294,8 +294,6 @@ export default class ThreeGroup extends BaseModel {
             scaleX: scale.x,
             scaleY: scale.y,
             scaleZ: scale.z,
-            width: geometrySize.x * scale.x,
-            height: geometrySize.y * scale.y,
             uniformScalingState
         };
 
