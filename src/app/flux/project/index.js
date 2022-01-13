@@ -79,9 +79,9 @@ export const actions = {
                 await dispatch(actions.getLastEnvironment(envHeadType));
             }
 
-            // const action = await actions.autoSaveEnvironment(envHeadType);
-            // interval[envHeadType] && clearInterval(interval[envHeadType]);
-            // interval[envHeadType] = setInterval(() => dispatch(action), 1000);
+            const action = await actions.autoSaveEnvironment(envHeadType);
+            interval[envHeadType] && clearInterval(interval[envHeadType]);
+            interval[envHeadType] = setInterval(() => dispatch(action), 1000);
         };
 
         startService(HEAD_LASER);
