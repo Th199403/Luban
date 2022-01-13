@@ -18,6 +18,7 @@ import definitionManager from '../manager/DefinitionManager';
 import api from '../../api';
 
 let toastId;
+let time2, time3, time4, time5;
 export const processActions = {
     recalculateAllToolPath: (headType) => (dispatch, getState) => {
         const { toolPathGroup, progressStatesManager } = getState()[headType];
@@ -42,6 +43,8 @@ export const processActions = {
     },
 
     preview: (headType) => (dispatch, getState) => {
+        // const { SVGActions, toolPathGroup, } = getState()[headType];
+        const time1 = new Date();
         const { SVGActions, toolPathGroup, progressStatesManager } = getState()[headType];
         let visibleToolPathsLength = 0;
         toolPathGroup.toolPaths.forEach((toolPath) => {
@@ -68,6 +71,8 @@ export const processActions = {
         // Different models cannot be selected in process page
         SVGActions.clearSelection();
         dispatch(baseActions.render(headType));
+        time2 = new Date();
+        console.log('time1 preview', time2 - time1);
     },
 
     showToolPathGroupObject: (headType) => (dispatch, getState) => {
@@ -321,6 +326,9 @@ export const processActions = {
     commitGenerateGcode: (headType) => (dispatch, getState) => {
         const { toolPathGroup, progressStatesManager } = getState()[headType];
         const toolPaths = toolPathGroup.getCommitGenerateGcodeInfos();
+        time3 = new Date();
+        console.log('time3', time3 - time2, toolPaths);
+        // console.log('commitGenerateGcode', time3, , toolPaths);
 
         if (!toolPaths || toolPaths.length === 0) {
             return;
@@ -347,6 +355,8 @@ export const processActions = {
     onGenerateGcode: (headType, taskResult) => async (dispatch, getState) => {
         const { modelGroup, toolPathGroup, progressStatesManager } = getState()[headType];
         const { toolPaths } = toolPathGroup;
+        time4 = new Date();
+        console.log('time4', time4 - time3);
         const suffix = headType === 'laser' ? '.nc' : '.cnc';
         const models = _.filter(modelGroup.getModels(), { 'visible': true });
         const toolPathsModelIds = toolPaths.reduce((prev, item) => {
@@ -387,8 +397,11 @@ export const processActions = {
             isGcodeGenerating: false,
             progress: progressStatesManager.updateProgress(STEP_STAGE.CNC_LASER_GENERATING_GCODE, 1)
         }));
+        toolPathGroup.renderAllToolPath();
         progressStatesManager.finishProgress(true);
         dispatch(baseActions.render(headType));
+        time5 = new Date();
+        console.log('time5', time5 - time4);
     },
 
     /**

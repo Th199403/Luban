@@ -43,7 +43,6 @@ class ToolPath {
     constructor(options) {
         const { id, name, baseName, headType, type, useLegacyEngine = false, modelMode,
             visibleModelIDs, modelIDs, gcodeConfig, toolParams = {}, materials = {}, modelGroup } = options;
-        console.log('visibleModelIDs', visibleModelIDs, options);
 
         this.id = id || uuid.v4();
         this.name = name;
@@ -264,19 +263,18 @@ class ToolPath {
         this.removeAllNonMeshObj();
     }
 
-    onGenerateToolpathModel(model, filename, renderResult) {
+    onGenerateToolpathModel(model, filename) {
         const modelMapResult = this.modelMap.get(model.modelID);
         if (modelMapResult) {
             modelMapResult.status = SUCCESS;
             modelMapResult.toolPathFile = filename;
-
-            const oldMeshObj = modelMapResult.meshObj;
-            oldMeshObj && this.object.remove(oldMeshObj);
-
-            const toolPathObj3D = this.renderToolpathObj(renderResult);
-
-            modelMapResult.meshObj = toolPathObj3D;
-            this.object.add(toolPathObj3D);
+            //
+            // const oldMeshObj = modelMapResult.meshObj;
+            // oldMeshObj && this.object.remove(oldMeshObj);
+            // const toolPathObj3D = this.renderToolpathObj(renderResult);
+            //
+            // modelMapResult.meshObj = toolPathObj3D;
+            // this.object.add(toolPathObj3D);
         }
     }
 

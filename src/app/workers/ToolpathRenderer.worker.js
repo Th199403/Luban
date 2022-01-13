@@ -38,7 +38,6 @@ onmessage = async (message) => {
                     renderResult: renderResult
                 }
             };
-
             postMessage(
                 data,
                 [

@@ -267,6 +267,7 @@ class ProgressStatesManager {
     }
 
     finishProgress(success = true) {
+        console.trace('finishProgress', success);
         // this.reset();
         if (success) {
             this.state = _STATE.SUCCESS;

@@ -46,6 +46,8 @@ import SvgModel from '../../models/SvgModel';
 import SVGActionsFactory from '../../models/SVGActionsFactory';
 import { NS } from '../../ui/SVGEditor/lib/namespaces';
 
+// let indexSucceed = 0;
+let time1, indexSucceed = 0;
 const getSourceType = (fileName) => {
     let sourceType;
     const extname = path.extname(fileName)
@@ -297,6 +299,7 @@ export const actions = {
             });
 
             controller.on('taskCompleted:generateToolPath', (taskResult) => {
+                console.log('taskCompleted:generateToolPath');
                 if (headType !== taskResult.headType) {
                     return;
                 }
@@ -309,10 +312,14 @@ export const actions = {
                         toolPath.onGenerateToolpathFailed(taskResult);
                     } else {
                         progressStatesManager.startNextStep();
-
+                        console.log('taskResult1', taskResult);
                         toolpathRendererWorker.postMessage({
                             taskResult: taskResult
                         });
+                        // const toolpathRendererWorker = new PromiseWorker(new ToolpathRendererWorker());
+                        // toolpathRendererWorker.postMessage({ taskResult: taskResult }).then((data) => {
+                        //   console.log('read event table finish', data);
+                        // });
                     }
                 }
             });
@@ -325,6 +332,7 @@ export const actions = {
             });
 
             controller.on('taskCompleted:generateViewPath', (taskResult) => {
+                console.log('taskCompleted:generateViewPath');
                 if (headType !== taskResult.headType) {
                     return;
                 }
@@ -367,18 +375,28 @@ export const actions = {
                         toolpath.onGenerateToolpathFinail();
                     }
 
-                    if (toolPathGroup && toolPathGroup._getCheckAndSuccessToolPaths()) {
+                    if (toolPathGroup) {
+                    // if (toolPathGroup && toolPathGroup._getCheckAndSuccessToolPaths()) {
                         dispatch(baseActions.updateState(headType, {
                             shouldGenerateGcodeCounter: shouldGenerateGcodeCounter + 1
                         }));
                     }
+                    indexSucceed++;
+                    console.log('succeed', new Date() - time1, indexSucceed, 'dd');
+                    // if (indexSucceed >= 5) {
+                    //     console.log('inside renderAllToolPath',);
+                    //     toolPathGroup.renderAllToolPath();
+                    // }
                     break;
                 }
                 case 'data': {
                     const { taskResult, index, renderResult } = value;
-
+                    if (time1) {
+                        console.log('index', new Date() - time1);
+                        time1 = new Date();
+                    }
                     const { toolPathGroup } = getState()[headType];
-
+                    toolPathGroup.addRenderToolPath(taskResult.taskId, taskResult.data[index], taskResult.filenames[index], renderResult);
                     const toolpath = toolPathGroup._getToolPath(taskResult.taskId);
 
                     if (toolpath) {

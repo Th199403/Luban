@@ -118,6 +118,7 @@ const Output = ({ headType }) => {
         }
     }, [previewFailed]);
     useEffect(() => {
+        // TODO remove it
         actions.onGenerateThumbnail();
         dispatch(editorActions.commitGenerateGcode(headType));
     }, [shouldGenerateGcodeCounter]);
