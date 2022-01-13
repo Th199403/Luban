@@ -387,6 +387,7 @@ export const processActions = {
             isGcodeGenerating: false,
             progress: progressStatesManager.updateProgress(STEP_STAGE.CNC_LASER_GENERATING_GCODE, 1)
         }));
+        toolPathGroup.renderAllToolPath();
         progressStatesManager.finishProgress(true);
         dispatch(baseActions.render(headType));
     },

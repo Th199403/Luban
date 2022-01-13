@@ -46,6 +46,7 @@ import SvgModel from '../../models/SvgModel';
 import SVGActionsFactory from '../../models/SVGActionsFactory';
 import { NS } from '../../ui/SVGEditor/lib/namespaces';
 
+
 const getSourceType = (fileName) => {
     let sourceType;
     const extname = path.extname(fileName)
@@ -309,7 +310,6 @@ export const actions = {
                         toolPath.onGenerateToolpathFailed(taskResult);
                     } else {
                         progressStatesManager.startNextStep();
-
                         toolpathRendererWorker.postMessage({
                             taskResult: taskResult
                         });
@@ -376,14 +376,13 @@ export const actions = {
                 }
                 case 'data': {
                     const { taskResult, index, renderResult } = value;
-
                     const { toolPathGroup } = getState()[headType];
-
-                    const toolpath = toolPathGroup._getToolPath(taskResult.taskId);
-
-                    if (toolpath) {
-                        toolpath.onGenerateToolpathModel(taskResult.data[index], taskResult.filenames[index], renderResult);
-                    }
+                    toolPathGroup.addRenderToolPath(taskResult.taskId, taskResult.data[index], taskResult.filenames[index], renderResult);
+                    // const toolpath = toolPathGroup._getToolPath(taskResult.taskId);
+                    //
+                    // if (toolpath) {
+                    //     toolpath.onGenerateToolpathModel(taskResult.data[index], taskResult.filenames[index], renderResult);
+                    // }
 
                     break;
                 }
