@@ -1,16 +1,21 @@
 import isEmpty from 'lodash/isEmpty';
+import workerpool from 'workerpool';
 import ToolpathToBufferGeometry from './GcodeToBufferGeometry/ToolpathToBufferGeometry';
 // import api from '../api';
 
-onmessage = async (message) => {
-    if (isEmpty(message.data)) {
-        postMessage({
+const onmessage = async (taskResult, indexStart) => {
+    console.log('taskResult', workerpool, taskResult);
+    if (isEmpty(taskResult.data)) {
+        // postMessage({
+        //     status: 'err',
+        //     value: 'Data is empty'
+        // });
+        workerpool.workerEmit({
             status: 'err',
             value: 'Data is empty'
         });
         return;
     }
-    const { taskResult } = message.data;
     const { headType } = taskResult;
 
     try {
@@ -19,7 +24,14 @@ onmessage = async (message) => {
             const renderResult = await new ToolpathToBufferGeometry().parse(
                 filename,
                 (progress) => {
-                    postMessage({
+                    // postMessage({
+                    //     status: 'progress',
+                    //     headType: headType,
+                    //     value: {
+                    //         progress: progress / taskResult.data.length + i / taskResult.data.length
+                    //     }
+                    // });
+                    workerpool.workerEmit({
                         status: 'progress',
                         headType: headType,
                         value: {
@@ -39,7 +51,14 @@ onmessage = async (message) => {
                 }
             };
 
-            postMessage(
+            // postMessage(
+            //     data,
+            //     [
+            //         renderResult.positions.buffer,
+            //         renderResult.gCodes.buffer
+            //     ]
+            // );
+            workerpool.workerEmit(
                 data,
                 [
                     renderResult.positions.buffer,
@@ -52,18 +71,31 @@ onmessage = async (message) => {
             status: 'succeed',
             headType: headType,
             value: {
+                indexStart: indexStart,
                 taskResult: taskResult
             }
         };
 
-        postMessage(
+        // postMessage(
+        //     data
+        // );
+        workerpool.workerEmit(
             data
         );
     } catch (err) {
-        postMessage({
+        // postMessage({
+        //     status: 'err',
+        //     headType: headType,
+        //     value: err
+        // });
+        workerpool.workerEmit({
             status: 'err',
             headType: headType,
             value: err
         });
     }
 };
+
+workerpool.worker({
+    onmessage: onmessage
+});
