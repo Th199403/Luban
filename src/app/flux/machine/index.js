@@ -228,6 +228,12 @@ export const actions = {
                 printingCustomConfigs: customConfigsArray
             }));
         }
+
+        if (machineStore.get('shouldAutoPreviewGcode') === false) {
+            dispatch(baseActions.updateState({
+                shouldAutoPreviewGcode: false
+            }));
+        }
     },
 
     /**
