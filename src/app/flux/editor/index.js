@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import path from 'path';
 import uuid from 'uuid';
 import _, { includes } from 'lodash';
-
 import workerpool from 'workerpool';
 import onmessage from '../../workers/ToolpathRenderer.worker';
 import api from '../../api';
@@ -214,14 +213,11 @@ function recordScaleActionsToHistory(scaleActionsFn, elements, SVGActions, headT
         });
     }
 }
-
-// const toolpathRendererWorker = new ToolpathRendererWorker();
-const pool = workerpool.pool('e366402093be36c26fb5.worker.js', {
+console.log('onmessage', onmessage);
+const pool = workerpool.pool('ToolpathRenderer.worker.custom.worker.js', {
     minWorkers: 10,
     maxWorkers: 10,
 });
-let indexStart = 0;
-let time1 = [];
 const scaleExtname = ['.svg', '.dxf'];
 
 export const actions = {
@@ -316,17 +312,11 @@ export const actions = {
                     } else {
                         progressStatesManager.startNextStep();
 
-                        indexStart++;
-                        time1.push(new Date());
-
-                        console.log('pool333 onmessage', onmessage);
-                        pool.exec('onmessage', [taskResult, indexStart], {
+                        pool.exec('onmessage', [taskResult], {
                             on: function (payload) {
                                 const { status, value } = payload;
-                                console.log('payload', payload);
                                 switch (status) {
                                     case 'succeed': {
-                                        const { indexStart: realIndexStart } = value;
                                         const { shouldGenerateGcodeCounter } = getState()[headType];
                                         const toolpath = toolPathGroup._getToolPath(taskResult.taskId);
                                         if (toolpath) {
@@ -338,7 +328,6 @@ export const actions = {
                                                 shouldGenerateGcodeCounter: shouldGenerateGcodeCounter + 1
                                             }));
                                         }
-                                        console.log('date2', realIndexStart, time1, new Date() - time1[realIndexStart - 1]);
                                         break;
                                     }
                                     case 'data': {
@@ -355,7 +344,6 @@ export const actions = {
                                                 progress: progressStatesManager.updateProgress(STEP_STAGE.CNC_LASER_RENDER_TOOLPATH, progress)
                                             }));
                                         } else {
-                                            console.log('pool333', pool.stats());
                                             dispatch(actions.updateState(headType, {
                                                 progress: progressStatesManager.updateProgress(STEP_STAGE.CNC_LASER_RENDER_TOOLPATH, progress)
                                             }));
@@ -375,10 +363,6 @@ export const actions = {
                                 }
                             }
                         });
-                        console.log('date', indexStart, time1);
-                        // toolpathRendererWorker.postMessage({
-                        //     taskResult: taskResult
-                        // });
                     }
                 }
             });
@@ -387,8 +371,6 @@ export const actions = {
                 if (headType !== taskResult.headType) {
                     return;
                 }
-                time1 = [];
-                console.log('taskCompleted:generateGcode');
                 dispatch(processActions.onGenerateGcode(headType, taskResult));
             });
 

@@ -103,7 +103,6 @@ module.exports = {
                 loader: 'worker-loader',
                 options: {
                     filename: (pathData) => {
-                        console.log('pathData', pathData);
                         if (
                             /\.worker\.(c|m)?js$/i.test(pathData.chunk.entryModule.resource)
                         ) {
