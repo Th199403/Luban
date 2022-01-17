@@ -102,15 +102,7 @@ module.exports = {
                 test: /\.worker\.(j|t)s$/,
                 loader: 'worker-loader',
                 options: {
-                    filename: (pathData) => {
-                        if (
-                            /\.worker\.(c|m)?js$/i.test(pathData.chunk.entryModule.resource)
-                        ) {
-                            return '[name].custom.worker.js';
-                        }
-
-                        return '[name].js';
-                    },
+                    filename: '[name].js',
                 },
             },
             {
