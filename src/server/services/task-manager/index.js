@@ -1,5 +1,6 @@
 import TaskManager, {
     Task,
+    TaskArray,
     TASK_TYPE_GENERATE_GCODE,
     TASK_TYPE_GENERATE_TOOLPATH,
     TASK_TYPE_GENERATE_VIEWPATH,
@@ -26,8 +27,9 @@ const stop = () => {
     // Keep empty currently
 };
 
-const addGenerateToolPathTask = (socket, task) => {
-    instance.addTask(new Task(task.taskId, socket, task.data, TASK_TYPE_GENERATE_TOOLPATH, task.headType, task.modelId));
+const addGenerateToolPathTask = (socket, taskArray) => {
+    console.log('taskArray[0]', taskArray[0]);
+    instance.addTask(new TaskArray(taskArray[0].taskId, socket, taskArray, TASK_TYPE_GENERATE_TOOLPATH, taskArray[0].headType));
 };
 
 const addGenerateGcodeTask = (socket, task) => {

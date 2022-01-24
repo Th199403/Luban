@@ -48,6 +48,31 @@ export class Task {
     }
 }
 
+export class TaskArray {
+    constructor(taskId, socket, data, taskType, headType, modelId = '') {
+        this.taskId = taskId;
+        this.modelId = modelId;
+        this.socket = socket;
+        this.data = data;
+        this.taskType = taskType;
+        this.headType = headType;
+        this.taskStatus = TASK_STATUS_IDLE; // idle, previewing, previewed, deprecated
+        this.failedCount = 0;
+        this.finishTime = 0;
+    }
+
+    equal(task) {
+        return task && task.taskId === this.taskId && task.taskType === this.taskType && task.modelId === this.modelId;
+    }
+
+    getData() {
+        return {
+            ...this,
+            socket: null
+        };
+    }
+}
+
 class TaskManager extends EventEmitter {
     constructor() {
         super();
@@ -123,8 +148,9 @@ class TaskManager extends EventEmitter {
             onProgress(0.05);
 
             if (taskSelected.taskType === TASK_TYPE_GENERATE_TOOLPATH) {
-                const res = await generateToolPath(taskSelected.data, onProgress);
-                taskSelected.filenames = res.filenames;
+                const filenames = await generateToolPath(taskSelected.data, onProgress);
+                console.log('res', filenames);
+                taskSelected.filenames = filenames;
             } else if (taskSelected.taskType === TASK_TYPE_GENERATE_GCODE) {
                 const res = await generateGcode(taskSelected.data, onProgress);
                 taskSelected.gcodeFile = res.gcodeFile;
@@ -141,7 +167,6 @@ class TaskManager extends EventEmitter {
                 taskSelected.stlInfo = res.stlFile;
                 taskSelected.svgInfo = res.svgFiles;
             }
-
 
             if (taskSelected.taskStatus !== TASK_STATUS_DEPRECATED) {
                 taskSelected.taskStatus = TASK_STATUS_COMPLETED;

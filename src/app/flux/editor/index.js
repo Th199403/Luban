@@ -296,73 +296,78 @@ export const actions = {
                 dispatch(actions.onReceiveProcessImageTaskResult(headType, taskResult));
             });
 
-            controller.on('taskCompleted:generateToolPath', (taskResult) => {
-                if (headType !== taskResult.headType) {
+            controller.on('taskCompleted:generateToolPath', (toolPathTaskResult) => {
+                if (headType !== toolPathTaskResult.headType) {
                     return;
                 }
+                toolPathTaskResult.data.forEach((taskResult) => {
+                    const { toolPathGroup, progressStatesManager } = getState()[headType];
+                    taskResult.filenames = toolPathTaskResult.filenames.find(d => d.taskId === taskResult.taskId)?.filenames;
+                    const toolPath = toolPathGroup._getToolPath(taskResult.taskId);
 
-                const { toolPathGroup, progressStatesManager } = getState()[headType];
-                const toolPath = toolPathGroup._getToolPath(taskResult.taskId);
+                    if (toolPath) {
+                        if (taskResult.taskStatus === 'failed') {
+                            toolPath.onGenerateToolpathFailed(taskResult);
+                        } else {
+                            progressStatesManager.startNextStep();
+                            pool.exec('onmessage', [taskResult], {
+                                on: function (payload) {
+                                    const { status, value } = payload;
+                                    switch (status) {
+                                        case 'succeed': {
+                                            const { shouldGenerateGcodeCounter } = getState()[headType];
+                                            const toolpath = toolPathGroup._getToolPath(taskResult.taskId);
+                                            if (toolpath) {
+                                                toolpath.onGenerateToolpathFinail();
+                                            }
 
-                if (toolPath) {
-                    if (taskResult.taskStatus === 'failed') {
-                        toolPath.onGenerateToolpathFailed(taskResult);
-                    } else {
-                        progressStatesManager.startNextStep();
-
-                        pool.exec('onmessage', [taskResult], {
-                            on: function (payload) {
-                                const { status, value } = payload;
-                                switch (status) {
-                                    case 'succeed': {
-                                        const { shouldGenerateGcodeCounter } = getState()[headType];
-                                        const toolpath = toolPathGroup._getToolPath(taskResult.taskId);
-                                        if (toolpath) {
-                                            toolpath.onGenerateToolpathFinail();
+                                            if (toolPathGroup && toolPathGroup._getCheckAndSuccessToolPaths()) {
+                                                dispatch(baseActions.updateState(headType, {
+                                                    shouldGenerateGcodeCounter: shouldGenerateGcodeCounter + 1
+                                                }));
+                                            }
+                                            break;
                                         }
+                                        case 'data': {
+                                            const { taskResult: newTaskResult, index, renderResult } = value;
+                                            const toolpath = toolPathGroup._getToolPath(newTaskResult.taskId);
 
-                                        if (toolPathGroup && toolPathGroup._getCheckAndSuccessToolPaths()) {
+                                            if (toolpath) {
+                                                toolpath.onGenerateToolpathModel(newTaskResult.data[index], newTaskResult.filenames[index], renderResult);
+                                            }
+                                            break;
+                                        }
+                                        case 'progress': {
+                                            const { progress } = value;
+                                            if (progress < 0.1) {
+                                                progressStatesManager.startNextStep();
+                                                dispatch(actions.updateState(headType, {
+                                                    stage: STEP_STAGE.CNC_LASER_RENDER_TOOLPATH,
+                                                    progress: progressStatesManager.updateProgress(STEP_STAGE.CNC_LASER_RENDER_TOOLPATH, progress)
+                                                }));
+                                            } else {
+                                                dispatch(actions.updateState(headType, {
+                                                    progress: progressStatesManager.updateProgress(STEP_STAGE.CNC_LASER_RENDER_TOOLPATH, progress)
+                                                }));
+                                            }
+                                            break;
+                                        }
+                                        case 'err': {
                                             dispatch(baseActions.updateState(headType, {
-                                                shouldGenerateGcodeCounter: shouldGenerateGcodeCounter + 1
+                                                stage: STEP_STAGE.CNC_LASER_GENERATE_TOOLPATH_FAILED,
+                                                progress: 1
                                             }));
+                                            progressStatesManager.finishProgress(false);
+                                            break;
                                         }
-                                        break;
+                                        default:
+                                            break;
                                     }
-                                    case 'data': {
-                                        const { taskResult: newTaskResult, index, renderResult } = value;
-                                        toolPathGroup.addRenderToolPath(newTaskResult.taskId, newTaskResult.data[index], newTaskResult.filenames[index], renderResult);
-                                        break;
-                                    }
-                                    case 'progress': {
-                                        const { progress } = value;
-                                        if (progress < 0.1) {
-                                            progressStatesManager.startNextStep();
-                                            dispatch(actions.updateState(headType, {
-                                                stage: STEP_STAGE.CNC_LASER_RENDER_TOOLPATH,
-                                                progress: progressStatesManager.updateProgress(STEP_STAGE.CNC_LASER_RENDER_TOOLPATH, progress)
-                                            }));
-                                        } else {
-                                            dispatch(actions.updateState(headType, {
-                                                progress: progressStatesManager.updateProgress(STEP_STAGE.CNC_LASER_RENDER_TOOLPATH, progress)
-                                            }));
-                                        }
-                                        break;
-                                    }
-                                    case 'err': {
-                                        dispatch(baseActions.updateState(headType, {
-                                            stage: STEP_STAGE.CNC_LASER_GENERATE_TOOLPATH_FAILED,
-                                            progress: 1
-                                        }));
-                                        progressStatesManager.finishProgress(false);
-                                        break;
-                                    }
-                                    default:
-                                        break;
                                 }
-                            }
-                        });
+                            });
+                        }
                     }
-                }
+                });
             });
 
             controller.on('taskCompleted:generateGcode', (taskResult) => {
