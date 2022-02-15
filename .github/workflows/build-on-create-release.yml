@@ -11,7 +11,7 @@ jobs:
     name: Build Windows Packages
 
     # windows-2019
-    runs-on: windows-2016
+    runs-on: windows-latest
 
     steps:
       - name: Checkout Code
