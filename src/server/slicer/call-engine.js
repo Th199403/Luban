@@ -39,6 +39,9 @@ function slice(modelInfo, onProgress, onSucceed, onError) {
                     const start = item.search('[0-9.]*%');
                     const end = item.indexOf('%');
                     sliceProgress = Number(item.slice(start, end));
+                    if (item.indexOf('ERROR') !== -1) {
+                        log.error(item);
+                    }
                     if (toolPathLength < 10) {
                         onProgress(sliceProgress);
                     } else {
@@ -52,6 +55,7 @@ function slice(modelInfo, onProgress, onSucceed, onError) {
         })
         .end((err, res) => {
             if (err) {
+                log.error(`LubanEngine slice error, Code: ${err.code} | Msg: ${err.msg}`);
                 onError();
             } else {
                 onSucceed({
