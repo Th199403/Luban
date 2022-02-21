@@ -567,6 +567,7 @@ export const actions = {
 
                 modelGroup.unselectAllModels();
                 dispatch(actions.loadGcode(gcodeFilename));
+                dispatch(actions.setTransformMode(''));
             });
             controller.on('slice:progress', (progress) => {
                 const state = getState().printing;
@@ -1947,7 +1948,7 @@ export const actions = {
             models,
             validArea: modelGroup.getValidArea(),
             angle,
-            offset: offset + 2, // TODO, just for floating pointer error
+            offset,
             padding
         }], (payload) => {
             const { status, value } = payload;
@@ -2019,7 +2020,11 @@ export const actions = {
                         stage: STEP_STAGE.PRINTING_ARRANGING_MODELS,
                         progress: progressStatesManager.updateProgress(STEP_STAGE.PRINTING_ARRANGING_MODELS, 1)
                     }));
+                    dispatch(actions.updateState(modelGroup.getState()));
+                    dispatch(actions.destroyGcodeLine());
                     dispatch(actions.updateAllModelColors());
+                    dispatch(actions.displayModel());
+                    dispatch(actions.render());
                     progressStatesManager.finishProgress(true);
                     break;
                 }
