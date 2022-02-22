@@ -1995,10 +1995,9 @@ export const actions = {
                                 positionX: position.x,
                                 positionY: position.y
                             });
+                            modelGroup.stickToPlateAndCheckOverstepped(model);
                         }
                     });
-
-                    modelGroup.onModelAfterTransform();
 
                     // record for undo|redo
                     modelGroup.getModels().forEach((model) => {
@@ -2010,11 +2009,7 @@ export const actions = {
                         operations.push(operation);
                     });
                     operations.registCallbackAfterAll(() => {
-                        dispatch(actions.updateState(modelGroup.getState()));
-                        dispatch(actions.destroyGcodeLine());
-                        dispatch(actions.updateAllModelColors());
-                        dispatch(actions.displayModel());
-                        dispatch(actions.render());
+                        dispatch(actions.onModelAfterTransform());
                     });
                     dispatch(operationHistoryActions.setOperations(INITIAL_STATE.name, operations));
 
@@ -2022,11 +2017,7 @@ export const actions = {
                         stage: STEP_STAGE.PRINTING_ARRANGING_MODELS,
                         progress: progressStatesManager.updateProgress(STEP_STAGE.PRINTING_ARRANGING_MODELS, 1)
                     }));
-                    dispatch(actions.updateState(modelGroup.getState()));
-                    dispatch(actions.destroyGcodeLine());
-                    dispatch(actions.updateAllModelColors());
-                    dispatch(actions.displayModel());
-                    dispatch(actions.render());
+                    dispatch(actions.onModelAfterTransform());
                     progressStatesManager.finishProgress(true);
                     break;
                 }
