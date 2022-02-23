@@ -29,6 +29,7 @@ import styles from './styles.styl';
 import { loadModelFailPopup, scaletoFitPopup } from './VisualizerPopup';
 
 import { STEP_STAGE } from '../../../lib/manager/ProgressManager';
+import ModeToggleBtn from './ModeToggleBtn';
 
 const initQuaternion = new Quaternion();
 
@@ -465,6 +466,8 @@ class Visualizer extends PureComponent {
                 <div className={styles['visualizer-preview-control']}>
                     <VisualizerPreviewControl />
                 </div>
+
+                <ModeToggleBtn />
 
                 <div className={styles['visualizer-info']}>
                     <VisualizerInfo />
