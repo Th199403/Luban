@@ -594,11 +594,11 @@ export const actions = {
             server.setToken(savedServerToken);
         }
         // TODO: add emit socket event
-        const socket = controller.openWifiPort({ host: server.host, token: server.token });
-        socket.on('connection:open', (options) => {
-            const { res, err, body } = options;
+        const CONNECTION_OPEN = 'connection:open';
+        const socket = controller.emitEvent(CONNECTION_OPEN, { host: server.host, token: server.token });
+        socket.on(CONNECTION_OPEN, (options) => {
+            const { err, res, body } = options;
             res.body = body;
-            console.log('frontend22', options, body);
             server.open(err, res, (insideErr, data, text) => {
                 if (insideErr) {
                     callback && callback(insideErr, data, text);
@@ -812,8 +812,14 @@ export const actions = {
 
     closeServer: () => (dispatch, getState) => {
         const { server } = getState().machine;
-        server.close(() => {
-            dispatch(actions.resetMachineState());
+        const CONNECTION_CLOSE = 'connection:close';
+        const socket = controller.emitEvent(CONNECTION_CLOSE, { host: server.host, token: server.token });
+        socket.close(CONNECTION_CLOSE, (options) => {
+            const { err, res, body } = options;
+            res.body = body;
+            server.close(err, res, () => {
+                dispatch(actions.resetMachineState());
+            });
         });
     },
 
@@ -949,6 +955,7 @@ export const actions = {
         dispatch(actions.executeGcodeG54(series, headType));
     },
 
+
     startServerGcode: (callback) => (dispatch, getState) => {
         const { server, size, workflowStatus, isLaserPrintAutoMode, laserFocalLength, materialThickness } = getState().machine;
         const { gcodeFile, headType, series, isRotate, toolHead } = getState().workspace;
@@ -1037,10 +1044,16 @@ export const actions = {
 
     resumeServerGcode: (callback) => (dispatch, getState) => {
         const { server } = getState().machine;
-        server.resumeGcode((err) => {
-            if (err) {
-                callback && callback(err);
-            }
+        const CONNECTION_RESUME_GCODE = 'connection:resumeGcode';
+        const socket = controller.emitEvent(CONNECTION_RESUME_GCODE, { host: server.host, token: server.token });
+        socket.resumeGcode(CONNECTION_RESUME_GCODE, (options) => {
+            const { err, res, body } = options;
+            res.body = body;
+            server.close(err, res, (insideErr) => {
+                if (insideErr) {
+                    callback && callback(insideErr);
+                }
+            });
         });
     },
 

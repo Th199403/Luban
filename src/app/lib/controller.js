@@ -48,6 +48,7 @@ class SerialPortClient {
         // HTTP events
         'http:discover': [],
         'connection:open': [],
+        'connection:close': [],
 
         // Controller events
         'feeder:status': [],
@@ -235,11 +236,16 @@ class SerialPortClient {
         return this;
     }
 
-    openWifiPort(options) {
-        console.log('openWifiPort', options);
-        socketController.emit('connection:open', options);
+    emitEvent(eventName, options) {
+        console.log('emitEvent', eventName, options);
+        if (eventName in this.callbacks) {
+            socketController.emit(eventName, options);
+        } else {
+            console.error('don\'t register eventName in controller');
+        }
         return this;
     }
+
 
 
     closePort(port) {

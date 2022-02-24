@@ -163,28 +163,12 @@ export class Server extends events.EventEmitter {
         this.waitConfirm = true;
         this.startHeartbeat();
         callback(null, data);
-
-        // const api = `${this.host}/api/v1/connect`;
-        // request
-        //     .post(api)
-        //     .timeout(3000)
-        //     .send(this.token ? `token=${this.token}` : '')
-        //     .end((err, res) => {
-        //
-        //     });
     };
 
-    close = (callback) => {
-        const api = `${this.host}/api/v1/disconnect`;
-        request
-            .post(api)
-            .timeout(3000)
-            .send(`token=${this.token}`)
-            .end((err, res) => {
-                this._closeServer();
-                const { msg, data } = this._getResult(err, res);
-                callback && callback(msg, data);
-            });
+    close = (err, res, callback) => {
+        const { msg, data } = this._getResult(err, res);
+        this._closeServer();
+        callback && callback(msg, data);
     };
 
     startHeartbeat = () => {
@@ -409,26 +393,34 @@ export class Server extends events.EventEmitter {
             });
     };
 
-    resumeGcode = (callback) => {
+    resumeGcode = (err, res, callback) => {
         if (!this.token) {
             callback && callback({
                 msg: 'this token is null'
             });
             return;
         }
-        const api = `${this.host}/api/v1/resume_print`;
-        request
-            .post(api)
-            .timeout(120000)
-            .send(`token=${this.token}`)
-            .end((err, res) => {
-                const { msg, code, data } = this._getResult(err, res);
-                if (msg) {
-                    callback && callback({ status: code, message: msg });
-                    return;
-                }
-                callback && callback(null, data);
-            });
+
+        const { msg, code, data } = this._getResult(err, res);
+        if (msg) {
+            callback && callback({ status: code, message: msg });
+            return;
+        }
+        callback && callback(null, data);
+
+        // const api = `${this.host}/api/v1/resume_print`;
+        // request
+        //     .post(api)
+        //     .timeout(120000)
+        //     .send(`token=${this.token}`)
+        //     .end((err, res) => {
+        //         const { msg, code, data } = this._getResult(err, res);
+        //         if (msg) {
+        //             callback && callback({ status: code, message: msg });
+        //             return;
+        //         }
+        //         callback && callback(null, data);
+        //     });
     };
 
     stopGcode = (callback) => {

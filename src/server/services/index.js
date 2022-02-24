@@ -38,15 +38,16 @@ function startServices(server) {
 
     // communication: http
     socketServer.registerEvent('http:discover', wifiServerManager.refreshDevices);
-    socketServer.registerEvent('http:connect', socketHttp.connect);
 
     // communication: serial port
     socketServer.registerEvent('serialport:list', socketSerial.serialportList);
     socketServer.registerEvent('serialport:open', socketSerial.serialportOpen);
-    socketServer.registerEvent('connection:open', socketHttp.serialportOpen);
     socketServer.registerEvent('serialport:close', socketSerial.serialportClose);
     socketServer.registerEvent('command', socketSerial.command);
     socketServer.registerEvent('writeln', socketSerial.writeln);
+
+    socketServer.registerEvent('connection:open', socketHttp.connectionOpen);
+    socketServer.registerEvent('connection:close', socketHttp.connectionClose);
 
     // task manager
     socketServer.registerEvent('taskCommit:generateToolPath', TaskManager.addGenerateToolPathTask);
