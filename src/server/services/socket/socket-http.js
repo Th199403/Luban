@@ -20,7 +20,6 @@ const connectionOpen = (socket, options) => {
 
 const connectionClose = (socket, options) => {
     const { host, token } = options;
-    console.log('connectionClose', options);
     const api = `${host}/api/v1/disconnect`;
     request
         .post(api)
@@ -31,7 +30,47 @@ const connectionClose = (socket, options) => {
         });
 };
 
+const resumeGcode = (socket, options) => {
+    const { host, token } = options;
+    console.log('resumeGcode', options);
+    const api = `${host}/api/v1/resume_print`;
+    request
+        .post(api)
+        .timeout(120000)
+        .send(`token=${token}`)
+        .end((err, res) => {
+            socket.emit('connection:resumeGcode', { err, res, body: res.body });
+        });
+};
+const pauseGcode = (socket, options) => {
+    const { host, token } = options;
+    console.log('resumeGcode', options);
+    const api = `${host}/api/v1/pause_print`;
+    request
+        .post(api)
+        .timeout(120000)
+        .send(`token=${token}`)
+        .end((err, res) => {
+            socket.emit('connection:pauseGcode', { err, res, body: res.body });
+        });
+};
+const stopGcode = (socket, options) => {
+    const { host, token } = options;
+    console.log('resumeGcode', options);
+    const api = `${host}/api/v1/stop_print`;
+    request
+        .post(api)
+        .timeout(120000)
+        .send(`token=${token}`)
+        .end((err, res) => {
+            socket.emit('connection:topGcode', { err, res, body: res.body });
+        });
+};
+
 export default {
     connectionOpen,
-    connectionClose
+    connectionClose,
+    resumeGcode,
+    pauseGcode,
+    stopGcode,
 };

@@ -599,9 +599,9 @@ export const actions = {
         socket.on(CONNECTION_OPEN, (options) => {
             const { err, res, body } = options;
             res.body = body;
-            server.open(err, res, (insideErr, data, text) => {
-                if (insideErr) {
-                    callback && callback(insideErr, data, text);
+            server.open(err, res, ({ msg, data, text }) => {
+                if (msg) {
+                    callback && callback({ msg, data, text });
                     return;
                 }
 
@@ -805,7 +805,7 @@ export const actions = {
                 server.once('http:close', () => {
                     dispatch(actions.resetMachineState());
                 });
-                callback && callback(null, data);
+                callback && callback({ data });
             });
         });
     },
@@ -814,10 +814,11 @@ export const actions = {
         const { server } = getState().machine;
         const CONNECTION_CLOSE = 'connection:close';
         const socket = controller.emitEvent(CONNECTION_CLOSE, { host: server.host, token: server.token });
-        socket.close(CONNECTION_CLOSE, (options) => {
+        socket.on(CONNECTION_CLOSE, (options) => {
             const { err, res, body } = options;
             res.body = body;
-            server.close(err, res, () => {
+            server.getResultAndRunCallback(err, res, () => {
+                server._closeServer();
                 dispatch(actions.resetMachineState());
             });
         });
@@ -1046,37 +1047,50 @@ export const actions = {
         const { server } = getState().machine;
         const CONNECTION_RESUME_GCODE = 'connection:resumeGcode';
         const socket = controller.emitEvent(CONNECTION_RESUME_GCODE, { host: server.host, token: server.token });
-        socket.resumeGcode(CONNECTION_RESUME_GCODE, (options) => {
+        socket.on(CONNECTION_RESUME_GCODE, (options) => {
             const { err, res, body } = options;
             res.body = body;
-            server.close(err, res, (insideErr) => {
-                if (insideErr) {
-                    callback && callback(insideErr);
-                }
+            server.getResultAndRunCallback(err, res, ({ msg, status, data }) => {
+                callback && callback({ msg, status, data });
             });
         });
     },
 
-    pauseServerGcode: () => (dispatch, getState) => {
+    pauseServerGcode: (callback) => (dispatch, getState) => {
         const { server, workflowStatus } = getState().machine;
         if (workflowStatus !== WORKFLOW_STATUS_RUNNING) {
             return;
         }
-        server.pauseGcode();
+        const CONNECTION_PAUSE_GCODE = 'connection:pauseGcode';
+        const socket = controller.emitEvent(CONNECTION_PAUSE_GCODE, { host: server.host, token: server.token });
+        socket.on(CONNECTION_PAUSE_GCODE, (options) => {
+            const { err, res, body } = options;
+            res.body = body;
+            server.getResultAndRunCallback(err, res, ({ msg, status, data }) => {
+                callback && callback({ msg, status, data });
+            });
+        });
     },
 
-    stopServerGcode: () => (dispatch, getState) => {
+    stopServerGcode: (callback) => (dispatch, getState) => {
         const { server, workflowStatus } = getState().machine;
         if (workflowStatus === WORKFLOW_STATUS_IDLE || workflowStatus === WORKFLOW_STATUS_UNKNOWN) {
             return;
         }
-        server.stopGcode((msg) => {
-            if (msg) {
-                return;
-            }
-            dispatch(baseActions.updateState({
-                workflowStatus: WORKFLOW_STATUS_IDLE
-            }));
+        const CONNECTION_STOP_GCODE = 'connection:stopGcode';
+        const socket = controller.emitEvent(CONNECTION_STOP_GCODE, { host: server.host, token: server.token });
+        socket.on(CONNECTION_STOP_GCODE, (options) => {
+            const { err, res, body } = options;
+            res.body = body;
+            server.getResultAndRunCallback(err, res, ({ msg, status, data }) => {
+                if (msg) {
+                    callback && callback({ msg, status, data });
+                    return;
+                }
+                dispatch(baseActions.updateState({
+                    workflowStatus: WORKFLOW_STATUS_IDLE
+                }));
+            });
         });
     },
 

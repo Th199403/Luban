@@ -48,6 +48,7 @@ function startServices(server) {
 
     socketServer.registerEvent('connection:open', socketHttp.connectionOpen);
     socketServer.registerEvent('connection:close', socketHttp.connectionClose);
+    socketServer.registerEvent('connection:resumeGcode', socketHttp.resumeGcode);
 
     // task manager
     socketServer.registerEvent('taskCommit:generateToolPath', TaskManager.addGenerateToolPathTask);

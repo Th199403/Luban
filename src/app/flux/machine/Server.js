@@ -123,7 +123,7 @@ export class Server extends events.EventEmitter {
             this.open(callback);
         }
         if (msg) {
-            callback({ message: msg, status: code }, data, text);
+            callback({ msg, status: code }, data, text);
             return;
         }
         if (data) {
@@ -162,13 +162,7 @@ export class Server extends events.EventEmitter {
         // this.token = data.token;
         this.waitConfirm = true;
         this.startHeartbeat();
-        callback(null, data);
-    };
-
-    close = (err, res, callback) => {
-        const { msg, data } = this._getResult(err, res);
-        this._closeServer();
-        callback && callback(msg, data);
+        callback({ data });
     };
 
     startHeartbeat = () => {
@@ -371,29 +365,7 @@ export class Server extends events.EventEmitter {
             });
     };
 
-    pauseGcode = (callback) => {
-        if (!this.token) {
-            callback && callback({
-                msg: 'this token is null'
-            });
-            return;
-        }
-        const api = `${this.host}/api/v1/pause_print`;
-        request
-            .post(api)
-            .timeout(120000)
-            .send(`token=${this.token}`)
-            .end((err, res) => {
-                const { msg, data } = this._getResult(err, res);
-                if (msg) {
-                    callback && callback(msg);
-                    return;
-                }
-                callback && callback(msg, data);
-            });
-    };
-
-    resumeGcode = (err, res, callback) => {
+    getResultAndRunCallback = (err, res, callback) => {
         if (!this.token) {
             callback && callback({
                 msg: 'this token is null'
@@ -402,46 +374,8 @@ export class Server extends events.EventEmitter {
         }
 
         const { msg, code, data } = this._getResult(err, res);
-        if (msg) {
-            callback && callback({ status: code, message: msg });
-            return;
-        }
-        callback && callback(null, data);
-
-        // const api = `${this.host}/api/v1/resume_print`;
-        // request
-        //     .post(api)
-        //     .timeout(120000)
-        //     .send(`token=${this.token}`)
-        //     .end((err, res) => {
-        //         const { msg, code, data } = this._getResult(err, res);
-        //         if (msg) {
-        //             callback && callback({ status: code, message: msg });
-        //             return;
-        //         }
-        //         callback && callback(null, data);
-        //     });
-    };
-
-    stopGcode = (callback) => {
-        if (!this.token) {
-            callback && callback({ msg: 'this token is null' });
-            return;
-        }
-        const api = `${this.host}/api/v1/stop_print`;
-        request
-            .post(api)
-            .timeout(120000)
-            .send(`token=${this.token}`)
-            .end((err, res) => {
-                const { msg, data } = this._getResult(err, res);
-                if (msg) {
-                    callback && callback(msg);
-                    return;
-                }
-                callback && callback(msg, data);
-            });
-    };
+        callback && callback({ msg, data, status: code });
+    }
 
     executeGcode = (gcode, callback) => {
         if (!this.token) {
@@ -748,6 +682,7 @@ export class Server extends events.EventEmitter {
         }
         return {
             code,
+            msg: '',
             data: res.body,
             text: res.text
         };

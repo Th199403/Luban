@@ -324,15 +324,15 @@ class Visualizer extends PureComponent {
             } else {
                 const { workflowStatus } = this.props;
                 if (workflowStatus === WORKFLOW_STATUS_IDLE) {
-                    this.props.startServerGcode((err) => {
-                        if (err) {
-                            if (err.status === 202) {
+                    this.props.startServerGcode(({ msg, status }) => {
+                        if (msg) {
+                            if (status === 202) {
                                 modalSmallHOC({
                                     title: i18n._('key-Workspace/Page-Filament Runout Recovery'),
                                     text: i18n._('key-Workspace/Page-Filament has run out. Please load new filament to continue printing.'),
                                     img: IMAGE_WIFI_ERROR
                                 });
-                            } else if (err.status === 203) {
+                            } else if (status === 203) {
                                 modalSmallHOC({
                                     title: i18n._('key-Workspace/Page-Enclosure Door Open'),
                                     text: i18n._('key-Workspace/Page-One or both of the enclosure panels is/are opened. Please close the panel(s) to continue printing.'),
@@ -350,15 +350,15 @@ class Visualizer extends PureComponent {
                     });
                 }
                 if (workflowStatus === WORKFLOW_STATUS_PAUSED) {
-                    this.props.resumeServerGcode((err) => {
-                        if (err) {
-                            if (err.status === 202) {
+                    this.props.resumeServerGcode(({ msg, status }) => {
+                        if (msg) {
+                            if (status === 202) {
                                 modalSmallHOC({
                                     title: i18n._('key-Workspace/Page-Filament Runout Recovery'),
                                     text: i18n._('key-Workspace/Page-Filament has run out. Please load new filament to continue printing.'),
                                     img: IMAGE_WIFI_ERROR
                                 });
-                            } else if (err.status === 203) {
+                            } else if (status === 203) {
                                 modalSmallHOC({
                                     title: i18n._('key-Workspace/Page-Enclosure Door Open'),
                                     text: i18n._('key-Workspace/Page-One or both of the enclosure panels is/are opened. Please close the panel(s) to continue printing.'),
