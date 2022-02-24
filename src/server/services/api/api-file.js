@@ -208,11 +208,6 @@ export const uploadGcodeFile = async (req, res) => {
     if (!controller) {
         return;
     }
-    controller.command(null, 'gcode:loadfile', uploadPath, (err) => {
-        if (err) {
-            log.error(`Failed to upload file ${uploadPath}`);
-        }
-    });
     */
 };
 
