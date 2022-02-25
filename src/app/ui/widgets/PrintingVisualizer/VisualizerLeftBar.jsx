@@ -2,21 +2,21 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useDispatch, useSelector, shallowEqual } from 'react-redux';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
-import * as THREE from 'three';
+// import * as THREE from 'three';
 import { cloneDeep, filter, find } from 'lodash';
 import i18n from '../../../lib/i18n';
-import { toFixed } from '../../../lib/numeric-utils';
+// import { toFixed } from '../../../lib/numeric-utils';
 import UniApi from '../../../lib/uni-api';
-import { NumberInput as Input } from '../../components/Input';
-import Select from '../../components/Select';
+// import { NumberInput as Input } from '../../components/Input';
+// import Select from '../../components/Select';
 import styles from './styles.styl';
 import { actions as printingActions } from '../../../flux/printing';
 import { actions as projectActions } from '../../../flux/project';
-import { actions as machineActions } from '../../../flux/machine';
+// import { actions as machineActions } from '../../../flux/machine';
 import modal from '../../../lib/modal';
 import SvgIcon from '../../components/SvgIcon';
 import { Button } from '../../components/Buttons';
-import Checkbox from '../../components/Checkbox';
+// import Checkbox from '../../components/Checkbox';
 import Dropdown from '../../components/Dropdown';
 import Menu from '../../components/Menu';
 import RotationAnalysisOverlay from './Overlay/RotationAnalysisOverlay';
@@ -25,8 +25,14 @@ import SupportOverlay from './Overlay/SupportOverlay';
 import { DUAL_EXTRUDER_TOOLHEAD_FOR_SM2, HEAD_PRINTING,
     EPSILON, BOTH_EXTRUDER_MAP_NUMBER, LEFT_EXTRUDER_MAP_NUMBER } from '../../../constants';
 import { machineStore } from '../../../store/local-storage';
-import TipTrigger from '../../components/TipTrigger';
+// import TipTrigger from '../../components/TipTrigger';
 import PrimeTowerModel from '../../../models/PrimeTowerModel';
+/* eslint-disable-next-line import/no-cycle */
+import TranslateOverlay from './Overlay/translateOverlay';
+/* eslint-disable-next-line import/no-cycle */
+import ScaleOverlay from './Overlay/scaleOverlay';
+/* eslint-disable-next-line import/no-cycle */
+import RotateOverlay from './Overlay/rotateOverlay';
 
 const extruderLabelMap = {
     '0': 'Extruder L',
@@ -70,7 +76,7 @@ export const renderExtruderIcon = (leftExtruderColor, rightExtruderColor) => (
         )}
     </div>
 );
-function CancelButton({ onClick }) {
+export const CancelButton = ({ onClick }) => {
     return (
         <SvgIcon
             size={24}
@@ -79,18 +85,18 @@ function CancelButton({ onClick }) {
             onClick={onClick}
         />
     );
-}
+};
 CancelButton.propTypes = {
     onClick: PropTypes.func.isRequired,
 };
 function VisualizerLeftBar({ setTransformMode, supportActions, updateBoundingBox, autoRotateSelectedModel, arrangeAllModels }) {
     const size = useSelector(state => state?.machine?.size, shallowEqual);
-    const printingArrangeSettings = useSelector(state => state?.machine?.printingArrangeSettings, shallowEqual);
-    const selectedGroup = useSelector(state => state?.printing?.modelGroup?.selectedGroup, shallowEqual);
+    // const printingArrangeSettings = useSelector(state => state?.machine?.printingArrangeSettings, shallowEqual);
+    // const selectedGroup = useSelector(state => state?.printing?.modelGroup?.selectedGroup, shallowEqual);
     const selectedModelArray = useSelector(state => state?.printing?.modelGroup?.selectedModelArray);
     const modelGroup = useSelector(state => state?.printing?.modelGroup);
     const models = useSelector(state => state?.printing?.modelGroup?.models);
-    const primeTowerHeight = useSelector(state => state?.printing?.primeTowerHeight, shallowEqual);
+    // const primeTowerHeight = useSelector(state => state?.printing?.primeTowerHeight, shallowEqual);
     const helpersExtruderConfig = useSelector(state => state?.printing?.helpersExtruderConfig);
     const { isOpenSelectModals, isOpenHelpers: _isOpenHelpers, modelExtruderInfoShow, helpersExtruderInfoShow } = useSelector(state => state?.printing);
     const isSupportSelected = useSelector(state => state?.printing?.modelGroup?.isSupportSelected());
@@ -104,7 +110,7 @@ function VisualizerLeftBar({ setTransformMode, supportActions, updateBoundingBox
     const [helpersExtrurder, setHelpersExtruder] = useState(helpersExtruderConfig || originalHelpersExtruder);
     const [isOpenModels, setIsOpenModels] = useState(isOpenSelectModals);
     const [isOpenHelpers, setIsOpenHelpers] = useState(_isOpenHelpers);
-    const selectedModelBBoxDes = useSelector(state => state?.printing?.modelGroup?.getSelectedModelBBoxWHD(), shallowEqual);
+    // const selectedModelBBoxDes = useSelector(state => state?.printing?.modelGroup?.getSelectedModelBBoxWHD(), shallowEqual);
     const displayedType = useSelector(state => state?.printing?.displayedType, shallowEqual);
     // const colorL = '#FF8B00';
     // const colorR = '#0053AA';
@@ -113,28 +119,10 @@ function VisualizerLeftBar({ setTransformMode, supportActions, updateBoundingBox
     const materialDefinitions = useSelector(state => state?.printing?.materialDefinitions, shallowEqual);
     const defaultMaterialId = useSelector(state => state?.printing?.defaultMaterialId, shallowEqual);
     const defaultMaterialIdRight = useSelector(state => state?.printing?.defaultMaterialIdRight, shallowEqual);
-    const [arragneSettings, setArragneSettings] = useState(printingArrangeSettings);
-    let modelSize = {};
-    if (isSupportSelected || isPrimeTowerSelected) {
-        const model = selectedModelArray[0];
-        const { min, max } = model.boundingBox;
-        modelSize = {
-            scaledX: (max.x - min.x) / selectedGroup.scale.x,
-            scaledY: (max.y - min.y) / selectedGroup.scale.y,
-            scaledZ: (max.z - min.z) / selectedGroup.scale.z,
-            x: Number((max.x - min.x).toFixed(1)),
-            y: Number((max.y - min.y).toFixed(1)),
-            z: Number((max.z - min.z).toFixed(1))
-        };
-    }
     const dispatch = useDispatch();
     const fileInput = useRef(null);
 
     const actions = {
-        handleArragneSettingsChange: (settings) => {
-            setArragneSettings(settings);
-            dispatch(machineActions.updateArrangeSettings(settings));
-        },
         onClickToUpload: () => {
             fileInput.current.value = null;
             fileInput.current.click();
@@ -149,91 +137,6 @@ function VisualizerLeftBar({ setTransformMode, supportActions, updateBoundingBox
                     body: e.message
                 });
             }
-        },
-        changeUniformScalingState: (uniformScalingState) => {
-            const newTransformation = {};
-            newTransformation.uniformScalingState = !uniformScalingState;
-            dispatch(printingActions.updateSelectedModelTransformation(newTransformation));
-            actions.onModelAfterTransform();
-        },
-        onModelTransform: (transformations, isReset, _isPrimeTowerSelected = false) => {
-            const newTransformation = {};
-            for (const type of Object.keys(transformations)) {
-                let value = transformations[type];
-                switch (type) {
-                    case 'moveX':
-                        value = Math.min(Math.max(value, -size.x / 2), size.x / 2);
-                        newTransformation.positionX = value;
-                        break;
-                    case 'moveY':
-                        value = Math.min(Math.max(value, -size.y / 2), size.y / 2);
-                        newTransformation.positionY = value;
-                        break;
-                    case 'scaleX':
-                        if (_isPrimeTowerSelected) {
-                            newTransformation.scaleY = (transformation.scaleX > 0 ? value : -value);
-                            newTransformation.uniformScalingState = false;
-                        }
-                        newTransformation.scaleX = (transformation.scaleX > 0 ? value : -value);
-                        break;
-                    case 'scaleY':
-                        if (_isPrimeTowerSelected) {
-                            newTransformation.scaleX = (transformation.scaleY > 0 ? value : -value);
-                            newTransformation.uniformScalingState = false;
-                        }
-                        newTransformation.scaleY = (transformation.scaleY > 0 ? value : -value);
-                        break;
-                    case 'scaleZ':
-                        newTransformation.scaleZ = (transformation.scaleZ > 0 ? value : -value);
-                        break;
-                    case 'rotateX':
-                        newTransformation.rotationX = value;
-                        break;
-                    case 'rotateY':
-                        newTransformation.rotationY = value;
-                        break;
-                    case 'rotateZ':
-                        newTransformation.rotationZ = value;
-                        break;
-                    case 'uniformScalingState':
-                        newTransformation.uniformScalingState = value;
-                        break;
-                    default:
-                        break;
-                }
-            }
-            if (isReset) {
-                dispatch(printingActions.updateSelectedModelTransformation(newTransformation, _isPrimeTowerSelected));
-            } else {
-                dispatch(printingActions.updateSelectedModelTransformation(newTransformation));
-            }
-        },
-        resetPosition: (_isPrimeTowerSelected = false) => {
-            const { max } = modelGroup._bbox;
-            const moveX = _isPrimeTowerSelected ? max.x - 50 : 0;
-            const moveY = _isPrimeTowerSelected ? max.y - 50 : 0;
-            actions.onModelTransform({
-                'moveX': moveX,
-                'moveY': moveY
-            });
-            actions.onModelAfterTransform();
-        },
-        resetScale: (_isPrimeTowerSelected) => {
-            actions.onModelTransform({
-                'scaleX': 1,
-                'scaleY': 1,
-                'scaleZ': _isPrimeTowerSelected ? primeTowerHeight : 1,
-                'uniformScalingState': !_isPrimeTowerSelected
-            }, true);
-            actions.onModelAfterTransform();
-        },
-        resetRotation: () => {
-            actions.onModelTransform({
-                'rotateX': 0,
-                'rotateY': 0,
-                'rotateZ': 0
-            });
-            actions.onModelAfterTransform();
         },
         mirrorSelectedModel: (value) => {
             switch (value) {
@@ -279,18 +182,6 @@ function VisualizerLeftBar({ setTransformMode, supportActions, updateBoundingBox
                 actions.onClickToUpload();
             }
         },
-        scaleToFitSelectedModel: () => {
-            const scalar = ['x', 'y', 'z'].reduce((prev, key) => Math.min((size[key] - 5) / selectedModelBBoxDes[key], prev), Number.POSITIVE_INFINITY);
-            const newTransformation = {
-                scaleX: scalar * transformation.scaleX,
-                scaleY: scalar * transformation.scaleY,
-                scaleZ: scalar * transformation.scaleZ,
-                positionX: 0,
-                positionY: 0
-            };
-            dispatch(printingActions.updateSelectedModelTransformation(newTransformation));
-            actions.onModelAfterTransform();
-        },
         rotateWithAnalysis: () => {
             supportActions.stopSupportMode();
             actions.rotateOnlyForUniformScale(() => {
@@ -298,11 +189,6 @@ function VisualizerLeftBar({ setTransformMode, supportActions, updateBoundingBox
                 setTimeout(() => {
                     setShowRotationAnalyzeModal(true);
                 }, 100);
-            });
-        },
-        autoRotate: () => {
-            actions.rotateOnlyForUniformScale(() => {
-                autoRotateSelectedModel();
             });
         },
         rotateOnlyForUniformScale: (rotateFn) => {
@@ -441,7 +327,6 @@ function VisualizerLeftBar({ setTransformMode, supportActions, updateBoundingBox
         </Menu>
     );
     const renderExtruderStatus = (status) => {
-        // <div>{i18n._(`key-Printing/LeftBar-${extruderLabelMap[status]}`)}</div>
         const leftExtruderColor = status === '1' ? colorR : colorL;
         const rightExtruderColor = status === '0' ? colorL : colorR;
         return (
@@ -475,15 +360,6 @@ function VisualizerLeftBar({ setTransformMode, supportActions, updateBoundingBox
             <SupportOverlay editSupport={() => { actions.editSupport(); }} />
         );
     };
-    let moveX = 0;
-    let moveY = 0;
-    let scaleXPercent = 100;
-    let scaleYPercent = 100;
-    let scaleZPercent = 100;
-    let rotateX = 0;
-    let rotateY = 0;
-    let rotateZ = 0;
-    let uniformScalingState = true;
     // TODO: refactor these flags
     const transformDisabled = showRotationAnalyzeModal || showEditSupportModal || !(selectedModelArray.length > 0 && selectedModelArray.every((model) => {
         return model.visible === true;
@@ -491,20 +367,8 @@ function VisualizerLeftBar({ setTransformMode, supportActions, updateBoundingBox
     // TODO
     const hasModels = modelGroup.getModels().some(model => model.visible && !(model instanceof PrimeTowerModel));
     const supportDisabled = (displayedType !== 'model' || modelGroup.getModelsAttachedSupport(false).length === 0);
-    const rotationAnalysisEnable = (selectedModelArray.length === 1 && selectedModelArray[0].visible && !selectedModelArray[0].parent);
     const isDualExtruder = machineStore.get('machine.toolHead.printingToolhead') === DUAL_EXTRUDER_TOOLHEAD_FOR_SM2;
     const [dualExtruderDisabled, setDualExtruderDisabled] = useState(!models.length);
-    if (selectedModelArray.length >= 1) {
-        moveX = Number(toFixed(transformation.positionX, 1));
-        moveY = Number(toFixed(transformation.positionY, 1));
-        rotateX = Number(toFixed(THREE.Math.radToDeg(transformation.rotationX), 1));
-        rotateY = Number(toFixed(THREE.Math.radToDeg(transformation.rotationY), 1));
-        rotateZ = Number(toFixed(THREE.Math.radToDeg(transformation.rotationZ), 1));
-        scaleXPercent = Number(toFixed((Math.abs(transformation.scaleX) * 100), 1));
-        scaleYPercent = Number(toFixed((Math.abs(transformation.scaleY) * 100), 1));
-        scaleZPercent = Number(toFixed((Math.abs(transformation.scaleZ) * 100), 1));
-        uniformScalingState = transformation.uniformScalingState;
-    }
 
     useEffect(() => {
         UniApi.Event.on('appbar-menu:printing.import', actions.importFile);
@@ -725,509 +589,30 @@ function VisualizerLeftBar({ setTransformMode, supportActions, updateBoundingBox
                     </nav>
                 </div>
                 {!showRotationAnalyzeModal && transformMode === 'translate' && (
-                    <div
-                        className="position-ab width-360 margin-left-72 border-default-grey-1 border-radius-8 background-color-white"
-                        style={{
-                            marginTop: '60px'
-                        }}
-                    >
-                        <div className="sm-flex justify-space-between border-bottom-normal padding-vertical-10 padding-horizontal-16 height-40">
-                            {i18n._('key-Printing/LeftBar-Move')}
-                            <CancelButton
-                                onClick={() => setTransformMode('')}
-                            />
-                        </div>
-                        <div className="padding-vertical-10 padding-horizontal-16 height-40">
-                            {i18n._('key-Printing/LeftBar-Model position')}
-                        </div>
-                        <div className="padding-vertical-16 padding-horizontal-16 ">
-                            <div className="sm-flex justify-space-between height-32 margin-bottom-8">
-                                <span className="sm-flex-auto color-red-1">X</span>
-                                <div className="sm-flex-auto">
-                                    <Input
-                                        suffix="mm"
-                                        size="small"
-                                        disabled={transformDisabled}
-                                        min={-size.x / 2}
-                                        max={size.x / 2}
-                                        value={moveX}
-                                        onChange={(value) => {
-                                            actions.onModelTransform({ 'moveX': value });
-                                            actions.onModelAfterTransform();
-                                        }}
-                                    />
-                                </div>
-                                <span className="sm-flex-auto color-green-1">Y</span>
-                                <div className="sm-flex-auto">
-                                    <Input
-                                        suffix="mm"
-                                        size="small"
-                                        disabled={transformDisabled}
-                                        min={-size.y / 2}
-                                        max={size.y / 2}
-                                        value={moveY}
-                                        onChange={(value) => {
-                                            actions.onModelTransform({ 'moveY': value });
-                                            actions.onModelAfterTransform();
-                                        }}
-                                    />
-                                </div>
-                            </div>
-                            {!isSupportSelected && (
-                                <div className="sm-flex">
-                                    <Button
-                                        className="margin-vertical-16"
-                                        type="primary"
-                                        priority="level-three"
-                                        width="100%"
-                                        disabled={transformDisabled}
-                                        onClick={() => actions.resetPosition(isPrimeTowerSelected)}
-                                    >
-                                        <span>{i18n._('key-Printing/LeftBar-Move to Center')}</span>
-                                    </Button>
-                                </div>
-                            )}
-                            <div className="border-top-normal padding-vertical-10 padding-horizontal-16 height-40">
-                                {i18n._('key-Printing/LeftBar-Arrange Options')}
-                            </div>
-                            <div className="padding-top-16 padding-horizontal-16">
-                                <TipTrigger
-                                    title={i18n._('key-Printing/LeftBar-Rotation Step Around Z Axis')}
-                                    content={i18n._('key-Printing/LeftBar-Rotation Step Around Z Axis Content')}
-                                    placement="right"
-                                >
-                                    <div className="sm-flex justify-space-between height-32 margin-bottom-8">
-                                        <span>
-                                            {i18n._('key-Printing/LeftBar-Rotation Step Around Z Axis')}
-                                        </span>
-                                        <div>
-                                            <Select
-                                                size="middle"
-                                                options={[
-                                                    {
-                                                        value: 360,
-                                                        label: '不旋转'
-                                                    },
-                                                    {
-                                                        value: 20,
-                                                        label: '20°'
-                                                    },
-                                                    {
-                                                        value: 30,
-                                                        label: '30°'
-                                                    },
-                                                    {
-                                                        value: 36,
-                                                        label: '36°'
-                                                    },
-                                                    {
-                                                        value: 45,
-                                                        label: '45°'
-                                                    },
-                                                    {
-                                                        value: 60,
-                                                        label: '60°'
-                                                    },
-                                                    {
-                                                        value: 90,
-                                                        label: '90°'
-                                                    },
-                                                    {
-                                                        value: 180,
-                                                        label: '180°'
-                                                    }
-                                                ]}
-                                                value={arragneSettings.angle}
-                                                onChange={(option) => {
-                                                    actions.handleArragneSettingsChange({
-                                                        ...arragneSettings,
-                                                        angle: option.value
-                                                    });
-                                                }}
-                                            />
-                                        </div>
-                                    </div>
-                                </TipTrigger>
-                                <TipTrigger
-                                    title={i18n._('key-Printing/LeftBar-Min Model Distance')}
-                                    content={i18n._('key-Printing/LeftBar-Min Model Distance Content')}
-                                    placement="right"
-                                >
-                                    <div className="sm-flex justify-space-between height-32 margin-bottom-8">
-                                        <span>
-                                            {i18n._('key-Printing/LeftBar-Min Model Distance')}
-                                        </span>
-                                        <div>
-                                            <Input
-                                                suffix="mm"
-                                                size="small"
-                                                min={1}
-                                                value={arragneSettings.offset}
-                                                onChange={(offset) => {
-                                                    actions.handleArragneSettingsChange({
-                                                        ...arragneSettings,
-                                                        offset
-                                                    });
-                                                }}
-                                            />
-                                        </div>
-                                    </div>
-                                </TipTrigger>
-                                <TipTrigger
-                                    title={i18n._('key-Printing/LeftBar-X & Y Margins')}
-                                    content={i18n._('key-Printing/LeftBar-X & Y Margins Content')}
-                                    placement="right"
-                                >
-                                    <div className="sm-flex justify-space-between height-32 margin-bottom-8">
-                                        <span>
-                                            {i18n._('key-Printing/LeftBar-X & Y Margins')}
-                                        </span>
-                                        <div>
-                                            <Input
-                                                suffix="mm"
-                                                size="small"
-                                                min={0}
-                                                value={arragneSettings.padding}
-                                                onChange={(padding) => {
-                                                    actions.handleArragneSettingsChange({
-                                                        ...arragneSettings,
-                                                        padding
-                                                    });
-                                                }}
-                                            />
-                                        </div>
-                                    </div>
-                                </TipTrigger>
-                                <div className="sm-flex">
-                                    <Button
-                                        className="margin-top-32"
-                                        type="primary"
-                                        priority="level-three"
-                                        width="100%"
-                                        onClick={() => {
-                                            const { angle, offset, padding } = arragneSettings;
-                                            arrangeAllModels(angle, offset, padding);
-                                        }}
-                                        disabled={!hasModels}
-                                    >
-                                        <span>{i18n._('key-Printing/LeftBar-Auto Arrange')}</span>
-                                    </Button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <TranslateOverlay
+                        setTransformMode={setTransformMode}
+                        onModelAfterTransform={actions.onModelAfterTransform}
+                        arrangeAllModels={arrangeAllModels}
+                        transformDisabled={transformDisabled}
+                        size={size}
+                        hasModels={hasModels}
+                    />
                 )}
                 {!transformDisabled && !isSupportSelected && transformMode === 'scale' && (
-                    <div
-                        className="position-ab width-280 margin-left-72 border-default-grey-1 border-radius-8 background-color-white"
-                        style={{
-                            marginTop: '112px'
-                        }}
-                    >
-                        <div className="sm-flex justify-space-between border-bottom-normal padding-vertical-10 padding-horizontal-16 height-40">
-                            {i18n._('key-Printing/LeftBar-Scale')}
-                            <CancelButton
-                                onClick={() => setTransformMode('')}
-                            />
-                        </div>
-                        <div className="padding-vertical-16 padding-horizontal-16">
-                            <div className="sm-flex height-32 margin-bottom-8">
-                                <span className="sm-flex-auto width-16 color-red-1">X</span>
-                                <div className="position-ab sm-flex-auto margin-horizontal-24">
-                                    {isPrimeTowerSelected && (
-                                        <Input
-                                            suffix="mm"
-                                            size="small"
-                                            min={1}
-                                            value={modelSize.x}
-                                            onChange={(value) => {
-                                                actions.onModelTransform({ 'scaleX': value / modelSize.scaledX }, false, true);
-                                                actions.onModelAfterTransform();
-                                            }}
-                                            className="margin-right-8"
-                                        />
-                                    )}
-                                    <Input
-                                        suffix="%"
-                                        size="small"
-                                        min={1}
-                                        value={scaleXPercent}
-                                        onChange={(value) => {
-                                            actions.onModelTransform({ 'scaleX': value / 100 }, false, isPrimeTowerSelected);
-                                            actions.onModelAfterTransform();
-                                        }}
-                                    />
-                                </div>
-                            </div>
-                            <div className="sm-flex height-32 margin-bottom-8">
-                                <span className="sm-flex-auto width-16 color-green-1">Y</span>
-                                <div className="position-ab sm-flex-auto margin-horizontal-24">
-                                    {isPrimeTowerSelected && (
-                                        <Input
-                                            suffix="mm"
-                                            size="small"
-                                            min={1}
-                                            value={modelSize.y}
-                                            onChange={(value) => {
-                                                actions.onModelTransform({ 'scaleY': value / modelSize.scaledY }, false, true);
-                                                actions.onModelAfterTransform();
-                                            }}
-                                            className="margin-right-8"
-                                        />
-                                    )}
-                                    <Input
-                                        suffix="%"
-                                        size="small"
-                                        min={1}
-                                        value={scaleYPercent}
-                                        onChange={(value) => {
-                                            actions.onModelTransform({ 'scaleY': value / 100 }, false, isPrimeTowerSelected);
-                                            actions.onModelAfterTransform();
-                                        }}
-                                    />
-                                </div>
-                            </div>
-                            {!isPrimeTowerSelected && (
-                                <div className="sm-flex height-32 margin-bottom-8">
-                                    <span className="sm-flex-auto width-16 color-blue-2">Z</span>
-                                    <div className="position-ab sm-flex-auto margin-horizontal-24">
-                                        <Input
-                                            suffix="%"
-                                            size="small"
-                                            min={1}
-                                            value={scaleZPercent}
-                                            onChange={(value) => {
-                                                actions.onModelTransform({ 'scaleZ': value / 100 });
-                                                actions.onModelAfterTransform();
-                                            }}
-                                        />
-                                    </div>
-                                </div>
-                            )}
-                            <div className="sm-flex height-32 margin-bottom-8">
-                                <Checkbox
-                                    defaultChecked={isPrimeTowerSelected ? true : uniformScalingState}
-                                    checked={isPrimeTowerSelected ? true : uniformScalingState}
-                                    onClick={() => {
-                                        actions.changeUniformScalingState(uniformScalingState); // Todo: bug, state error
-                                    }}
-                                    disabled={isPrimeTowerSelected}
-                                />
-                                <span
-                                    className="height-20 margin-horizontal-8"
-                                >
-                                    {i18n._('key-Printing/LeftBar-Uniform Scaling')}
-                                </span>
-                            </div>
-                            <div className="sm-flex">
-                                {!isPrimeTowerSelected && (
-                                    <Button
-                                        className="margin-top-32 margin-right-8"
-                                        type="primary"
-                                        priority="level-three"
-                                        width="100%"
-                                        onClick={actions.scaleToFitSelectedModel}
-                                    >
-                                        <span>{i18n._('key-Printing/LeftBar-Scale to Fit')}</span>
-                                    </Button>
-                                )}
-                                <Button
-                                    className="margin-top-32 margin-left-8"
-                                    type="primary"
-                                    priority="level-three"
-                                    width="100%"
-                                    onClick={() => actions.resetScale(isPrimeTowerSelected)}
-                                >
-                                    <span>{i18n._('key-Printing/LeftBar-Reset')}</span>
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {!transformDisabled && isSupportSelected && transformMode === 'scale' && (
-                    <div
-                        className="position-ab width-280 margin-left-72 border-default-grey-1 border-radius-8 background-color-white"
-                        style={{
-                            marginTop: '112px'
-                        }}
-                    >
-                        <div className="sm-flex justify-space-between border-bottom-normal padding-vertical-10 padding-horizontal-16 height-40">
-                            {i18n._('key-Printing/LeftBar-Scale')}
-                            <CancelButton
-                                onClick={() => setTransformMode('')}
-                            />
-                        </div>
-                        <div className="padding-vertical-16 padding-horizontal-16">
-                            <div className="sm-flex height-32 margin-bottom-8">
-                                <span className="sm-flex-auto width-16 color-red-1">X</span>
-                                <div className="position-ab sm-flex-auto margin-horizontal-24">
-                                    <Input
-                                        size="small"
-                                        min={1}
-                                        value={modelSize.x}
-                                        suffix="mm"
-                                        onChange={(value) => {
-                                            actions.onModelTransform({ 'scaleX': value / modelSize.scaledX });
-                                            actions.onModelAfterTransform();
-                                        }}
-                                    />
-                                </div>
-                            </div>
-                            <div className="sm-flex height-32 margin-bottom-8">
-                                <span className="sm-flex-auto width-16 color-green-1">Y</span>
-                                <div className="position-ab sm-flex-auto margin-horizontal-24">
-                                    <Input
-                                        size="small"
-                                        min={1}
-                                        value={modelSize.y}
-                                        suffix="mm"
-                                        onChange={(value) => {
-                                            actions.onModelTransform({ 'scaleY': value / modelSize.scaledY });
-                                            actions.onModelAfterTransform();
-                                        }}
-                                    />
-                                </div>
-                            </div>
-                            <div className="sm-flex height-32 margin-bottom-8">
-                                <span className="sm-flex-auto width-16 color-blue-2">Z</span>
-                                <div className="position-ab sm-flex-auto margin-horizontal-24">
-                                    <Input
-                                        size="small"
-                                        min={1}
-                                        suffix="mm"
-                                        value={modelSize.z}
-                                        onChange={(value) => {
-                                            actions.onModelTransform({ 'scaleZ': value / modelSize.scaledZ });
-                                            actions.onModelAfterTransform();
-                                        }}
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                        {!isSupportSelected && (
-                            <div className="sm-flex">
-                                <Button
-                                    className="margin-top-32 margin-right-8"
-                                    type="primary"
-                                    priority="level-three"
-                                    width="100%"
-                                    onClick={actions.autoRotate}
-                                    disabled={selectedModelArray.length > 1}
-                                >
-                                    <span>{i18n._('key-Printing/LeftBar-Auto Rotate')}</span>
-                                </Button>
-                                <Button
-                                    className="margin-top-32 margin-left-8"
-                                    type="primary"
-                                    priority="level-three"
-                                    width="100%"
-                                    onClick={actions.resetRotation}
-                                >
-                                    <span>{i18n._('key-Printing/LeftBar-Reset')}</span>
-                                </Button>
-                            </div>
-                        )}
-                    </div>
+                    <ScaleOverlay
+                        setTransformMode={setTransformMode}
+                        onModelAfterTransform={actions.onModelAfterTransform}
+                        size={size}
+                    />
                 )}
                 {showRotationAnalyzeModal && renderRotationAnalyzeModal()}
                 {!transformDisabled && transformMode === 'rotate' && !isPrimeTowerSelected && (
-                    <div
-                        className="position-ab width-280 margin-left-72 border-default-grey-1 border-radius-8 background-color-white"
-                        style={{
-                            marginTop: '164px'
-                        }}
-                    >
-                        <div className="sm-flex justify-space-between border-bottom-normal padding-vertical-10 padding-horizontal-16 height-40">
-                            {i18n._('key-Printing/LeftBar-Rotate')}
-                            <CancelButton
-                                onClick={() => setTransformMode('')}
-                            />
-                        </div>
-                        <div className="padding-vertical-16 padding-horizontal-16">
-                            <div className="sm-flex height-32 margin-bottom-8">
-                                <span className="sm-flex-auto width-16 color-red-1">X</span>
-                                <div className="position-ab sm-flex-auto margin-horizontal-24">
-                                    <Input
-                                        size="small"
-                                        min={-180}
-                                        max={180}
-                                        value={rotateX}
-                                        suffix="°"
-                                        onChange={(degree) => {
-                                            actions.onModelTransform({ 'rotateX': THREE.Math.degToRad(degree) });
-                                            actions.onModelAfterTransform();
-                                        }}
-                                    />
-                                </div>
-                            </div>
-                            <div className="sm-flex height-32 margin-bottom-8">
-                                <span className="sm-flex-auto width-16 color-green-1">Y</span>
-                                <div className="position-ab sm-flex-auto margin-horizontal-24">
-                                    <Input
-                                        size="small"
-                                        min={-180}
-                                        max={180}
-                                        suffix="°"
-                                        value={rotateY}
-                                        onChange={(degree) => {
-                                            actions.onModelTransform({ 'rotateY': THREE.Math.degToRad(degree) });
-                                            actions.onModelAfterTransform();
-                                        }}
-                                    />
-                                </div>
-                            </div>
-                            <div className="sm-flex height-32 margin-bottom-8">
-                                <span className="sm-flex-auto width-16 color-blue-2">Z</span>
-                                <div className="position-ab sm-flex-auto margin-horizontal-24">
-                                    <Input
-                                        size="small"
-                                        min={-180}
-                                        max={180}
-                                        suffix="°"
-                                        value={rotateZ}
-                                        onChange={(degree) => {
-                                            actions.onModelTransform({ 'rotateZ': THREE.Math.degToRad(degree) });
-                                            actions.onModelAfterTransform();
-                                        }}
-                                    />
-                                </div>
-                            </div>
-                            <div className="sm-flex">
-                                <Button
-                                    className="margin-top-32 margin-right-8"
-                                    type="primary"
-                                    priority="level-three"
-                                    width="100%"
-                                    onClick={actions.autoRotate}
-                                    disabled={!rotationAnalysisEnable}
-                                >
-                                    <span>{i18n._('key-Printing/LeftBar-Auto Rotate')}</span>
-                                </Button>
-                                <Button
-                                    className="margin-top-32 margin-left-8"
-                                    type="primary"
-                                    priority="level-three"
-                                    width="100%"
-                                    onClick={actions.resetRotation}
-                                >
-                                    <span>{i18n._('key-Printing/LeftBar-Reset')}</span>
-                                </Button>
-                            </div>
-                            <div className="sm-flex">
-                                <Button
-                                    className="margin-top-16"
-                                    type="primary"
-                                    priority="level-three"
-                                    width="100%"
-                                    disabled={!rotationAnalysisEnable}
-                                    onClick={actions.rotateWithAnalysis}
-                                >
-                                    <span>{i18n._('key-Printing/LeftBar-Rotate on Face')}</span>
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
+                    <RotateOverlay
+                        setTransformMode={setTransformMode}
+                        onModelAfterTransform={actions.onModelAfterTransform}
+                        rotateWithAnalysis={actions.rotateWithAnalysis}
+                        autoRotateSelectedModel={autoRotateSelectedModel}
+                    />
                 )}
 
                 {!transformDisabled && transformMode === 'mirror' && !isPrimeTowerSelected && (
@@ -1434,7 +819,6 @@ function VisualizerLeftBar({ setTransformMode, supportActions, updateBoundingBox
 }
 VisualizerLeftBar.propTypes = {
     supportActions: PropTypes.object,
-    // scaleToFitSelectedModel: PropTypes.func.isRequired,
     autoRotateSelectedModel: PropTypes.func.isRequired,
     setTransformMode: PropTypes.func.isRequired,
     updateBoundingBox: PropTypes.func.isRequired,
