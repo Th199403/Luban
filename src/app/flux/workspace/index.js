@@ -8,7 +8,6 @@ import workerManager from '../../lib/manager/workerManager';
 
 import gcodeBufferGeometryToObj3d from '../../workers/GcodeToBufferGeometry/gcodeBufferGeometryToObj3d';
 import { CONNECTION_STATUS_CONNECTED, EPSILON, MACHINE_SERIES, PROTOCOL_TEXT } from '../../constants';
-import { controller } from '../../lib/controller';
 
 // Actions
 const ACTION_SET_STATE = 'WORKSPACE/ACTION_SET_STATE';
@@ -393,7 +392,7 @@ export const actions = {
     },
 
     unloadGcode: () => (dispatch) => {
-        controller.command('gcode:unload');
+        dispatch(actions.executeGcode(null, null, 'gcode:unload'));
         dispatch(actions.updateState({ uploadState: 'idle' }));
     },
 

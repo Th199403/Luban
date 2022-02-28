@@ -38,9 +38,7 @@ class SerialPortClient {
 
         // Serial Port events
         'serialport:list': [],
-        'serialport:open': [],
         'serialport:connected': [],
-        'serialport:close': [],
         'serialport:emergencyStop': [],
         'serialport:read': [],
         'serialport:write': [],
@@ -49,6 +47,9 @@ class SerialPortClient {
         'http:discover': [],
         'connection:open': [],
         'connection:close': [],
+        'connection:resumeGcode': [],
+        'connection:pauseGcode': [],
+        'connection:executeGcode': [],
 
         // Controller events
         'feeder:status': [],
@@ -146,9 +147,9 @@ class SerialPortClient {
                 // log.debug(`socket.on('${eventName}'):`, args);
                 log.debug(`socket.on('${eventName}'):`, options);
 
-                if (eventName === 'serialport:open') {
-                    console.log('eventName', eventName);
+                if (eventName === 'connection:open') {
                     const { controllerType = 'Marlin', port } = options;
+                    console.log('controller', controllerType, port);
                     if (this.ports.indexOf(port) === -1) {
                         this.ports.push(port);
                     }
@@ -157,22 +158,24 @@ class SerialPortClient {
 
                     this.type = controllerType;
                 }
-                if (eventName === 'serialport:close') {
+                if (eventName === 'connection:close') {
                     const { port } = options;
-                    const portIndex = this.ports.indexOf(port);
-                    if (portIndex !== -1) {
-                        this.ports.splice(portIndex, 1);
-                    }
-                    if (!isEmpty(this.ports)) {
-                        this.port = this.ports[0];
-                        this.workspacePort = this.ports[0];
-                    } else {
-                        this.workspacePort = '';
-                        this.port = '';
-                        this.type = '';
-                        this.state = {};
-                        this.settings = {};
-                        this.workflowState = WORKFLOW_STATE_IDLE;
+                    if (port) {
+                        const portIndex = this.ports.indexOf(port);
+                        if (portIndex !== -1) {
+                            this.ports.splice(portIndex, 1);
+                        }
+                        if (!isEmpty(this.ports)) {
+                            this.port = this.ports[0];
+                            this.workspacePort = this.ports[0];
+                        } else {
+                            this.workspacePort = '';
+                            this.port = '';
+                            this.type = '';
+                            this.state = {};
+                            this.settings = {};
+                            this.workflowState = WORKFLOW_STATE_IDLE;
+                        }
                     }
                 }
                 if (eventName === 'workflow:state') {
@@ -192,9 +195,6 @@ class SerialPortClient {
                 this.callbacks[eventName].forEach((callback) => {
                     // callback.apply(callback, args);
                     // callback.apply(callback, options);
-                    if (eventName === 'serialport:open') {
-                        console.log('controller', callback, options);
-                    }
                     callback.apply(callback, [options]);
                 });
             });
@@ -231,25 +231,19 @@ class SerialPortClient {
         socketController.emit('serialport:list', { dataSource: this.dataSource });
     }
 
-    openPort(port, connectionTimeout, type = 'serialport') {
-        socketController.emit('serialport:open', { port, type, dataSource: this.dataSource, connectionTimeout: connectionTimeout });
-        return this;
-    }
-
     emitEvent(eventName, options) {
         console.log('emitEvent', eventName, options);
         if (eventName in this.callbacks) {
             socketController.emit(eventName, options);
         } else {
-            console.error('don\'t register eventName in controller');
+            this.callbacks[eventName] = [];
+            socketController.on(eventName, (params = {}) => {
+                this.callbacks[eventName].forEach((callback) => {
+                    callback.apply(callback, [params]);
+                });
+            });
         }
         return this;
-    }
-
-
-
-    closePort(port) {
-        socketController.emit('serialport:close', { port, dataSource: this.dataSource });
     }
 
     // Discover Wi-Fi enabled Snapmakers

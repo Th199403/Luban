@@ -4,6 +4,7 @@ import TaskManager from './task-manager';
 import socketSerial from './socket/socket-serial';
 import socketHttp from './socket/socket-http';
 import socketSlice from './socket/socket-slice';
+import connectionManager from './socket/ConnectionManager';
 import wifiServerManager from './socket/WifiServerManager';
 
 import urljoin from '../lib/urljoin';
@@ -38,17 +39,22 @@ function startServices(server) {
 
     // communication: http
     socketServer.registerEvent('http:discover', wifiServerManager.refreshDevices);
-
     // communication: serial port
     socketServer.registerEvent('serialport:list', socketSerial.serialportList);
-    socketServer.registerEvent('serialport:open', socketSerial.serialportOpen);
-    socketServer.registerEvent('serialport:close', socketSerial.serialportClose);
+
+
+    // socketServer.registerEvent('serialport:close', socketSerial.serialportClose);
     socketServer.registerEvent('command', socketSerial.command);
     socketServer.registerEvent('writeln', socketSerial.writeln);
 
     socketServer.registerEvent('connection:open', socketHttp.connectionOpen);
-    socketServer.registerEvent('connection:close', socketHttp.connectionClose);
-    socketServer.registerEvent('connection:resumeGcode', socketHttp.resumeGcode);
+    socketServer.registerEvent('connection:close', connectionManager.connectionClose);
+    socketServer.registerEvent('connection:resumeGcode', connectionManager.resumeGcode);
+    socketServer.registerEvent('connection:pauseGcode', connectionManager.pauseGcode);
+    socketServer.registerEvent('connection:stopGcode', connectionManager.stopGcode);
+    socketServer.registerEvent('connection:executeGcode', connectionManager.executeGcode);
+    socketServer.registerEvent('connection:startHeartbeat', connectionManager.startHeartbeat);
+
 
     // task manager
     socketServer.registerEvent('taskCommit:generateToolPath', TaskManager.addGenerateToolPathTask);

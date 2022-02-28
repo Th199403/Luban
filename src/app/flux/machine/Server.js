@@ -11,7 +11,8 @@ import {
     LEVEL_ONE_POWER_LASER_FOR_SM2, SINGLE_EXTRUDER_TOOLHEAD_FOR_SM2
 } from '../../constants';
 import { valueOf } from '../../lib/contants-utils';
-import workerManager from '../../lib/manager/workerManager';
+import { controller } from '../../lib/controller';
+
 
 /**
  * Server represents HTTP Server on Snapmaker 2.
@@ -99,8 +100,8 @@ export class Server extends events.EventEmitter {
     _closeServer() {
         this._stateInit();
         this.heartBeatWorker && this.heartBeatWorker.terminate();
-        this.gcodeInfos = [];
-        this.isGcodeExecuting = false;
+        // this.gcodeInfos = [];
+        // this.isGcodeExecuting = false;
     }
 
     get host() {
@@ -115,9 +116,8 @@ export class Server extends events.EventEmitter {
         return false;
     }
 
-    open = (err, res, callback) => {
-        const { msg, data, code, text } = this._getResult(err, res);
-        console.log('msg, data, code, text', this.token, msg, data, code, text);
+    open = (options, callback) => {
+        const { msg, data, code, text } = options;
         if (this.token && code === 403) {
             this.token = '';
             this.open(callback);
@@ -166,19 +166,17 @@ export class Server extends events.EventEmitter {
     };
 
     startHeartbeat = () => {
-        this.heartBeatWorker = workerManager.heartBeat([{
-            host: this.host,
-            token: this.token
-        }], (e) => {
-            const { status, msg, res } = e;
-
-            if (status === 'offline') {
-                this.emit('http:close', { err: msg });
-            } else {
-                const { data, code } = this._getResult(null, res);
-                this.receiveHeartbeat(data, code);
-            }
-        });
+        const CONNECTION_HEARTBEAT = 'connection:startHeartbeat';
+        controller.emitEvent(CONNECTION_HEARTBEAT, { eventName: CONNECTION_HEARTBEAT })
+            .on(CONNECTION_HEARTBEAT, (result) => {
+                const { status, msg, res } = result;
+                if (status === 'offline') {
+                    this.emit('http:close', { err: msg });
+                } else {
+                    const { data, code } = this._getResult(null, res);
+                    this.receiveHeartbeat(data, code);
+                }
+            });
     }
 
     uploadFile = (filename, file, callback) => {
@@ -249,34 +247,6 @@ export class Server extends events.EventEmitter {
         }
     };
 
-    uploadGcodeFile = (filename, file, type, callback) => {
-        if (!this.token) {
-            callback && callback({
-                msg: 'this token is null'
-            });
-            return;
-        }
-        const api = `${this.host}/api/v1/prepare_print`;
-        if (type === HEAD_PRINTING) {
-            type = '3DP';
-        } else if (type === HEAD_LASER) {
-            type = 'Laser';
-        } else if (type === HEAD_CNC) {
-            type = 'CNC';
-        }
-        request
-            .post(api)
-            .field('token', this.token)
-            .field('type', type)
-            .attach('file', file, filename)
-            .end((err, res) => {
-                const { msg, data } = this._getResult(err, res);
-                if (callback) {
-                    callback(msg, data);
-                }
-            });
-    };
-
     getLaserMaterialThickness = (options, callback) => {
         if (!this.token) {
             callback && callback({
@@ -341,41 +311,6 @@ export class Server extends events.EventEmitter {
                 }
             });
     };
-
-    startGcode = (callback) => {
-        if (!this.token) {
-            callback && callback({
-                msg: 'this token is null'
-            });
-            return;
-        }
-        const api = `${this.host}/api/v1/start_print`;
-        request
-            .post(api)
-            .timeout(120000)
-            .send(`token=${this.token}`)
-            .end((err, res) => {
-                const { msg, code, data } = this._getResult(err, res);
-                if (msg) {
-                    callback && callback({ message: msg, status: code });
-                    return;
-                }
-                this.state.gcodePrintingInfo.startTime = new Date().getTime();
-                callback && callback(null, data);
-            });
-    };
-
-    getResultAndRunCallback = (err, res, callback) => {
-        if (!this.token) {
-            callback && callback({
-                msg: 'this token is null'
-            });
-            return;
-        }
-
-        const { msg, code, data } = this._getResult(err, res);
-        callback && callback({ msg, data, status: code });
-    }
 
     executeGcode = (gcode, callback) => {
         if (!this.token) {

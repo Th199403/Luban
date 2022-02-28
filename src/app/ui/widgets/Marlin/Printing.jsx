@@ -111,6 +111,7 @@ class Printing extends PureComponent {
         const { isConnected, heatedBedTemperature, heatedBedTargetTemperature, nozzleTemperature, nozzleTargetTemperature, workflowStatus } = this.props;
         const { zOffsetMarks, zOffsetValue } = this.state;
         const actions = this.actions;
+        console.log('nozzleTemperatureValue', this.state.nozzleTemperatureValue, nozzleTemperature);
         return (
             <div>
                 {workflowStatus === 'running' && <WorkSpeed />}
