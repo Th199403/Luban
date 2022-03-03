@@ -9,7 +9,8 @@ export enum WorkerMethods {
     generateToolPath = 'generateToolPath',
     generateViewPath = 'generateViewPath',
     loadSize = 'loadSize',
-    processImage = 'processImage'
+    processImage = 'processImage',
+    heartBeat='heartBeat'
     // LUBAN worker methods END
 }
 
@@ -24,6 +25,7 @@ class WorkerManager {
 }
 
 Object.entries(WorkerMethods).forEach(([, method]) => {
+    console.log('WorkerMethods', method)
     // eslint-disable-next-line func-names
     WorkerManager.prototype[method] = function (data: any, onmessage?: (payload: unknown) => void) {
         const pool = (

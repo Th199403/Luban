@@ -47,9 +47,12 @@ class SerialPortClient {
         'http:discover': [],
         'connection:open': [],
         'connection:close': [],
-        'connection:resumeGcode': [],
-        'connection:pauseGcode': [],
-        'connection:executeGcode': [],
+        // 'connection:startGcode': [],
+        // 'connection:resumeGcode': [],
+        // 'connection:pauseGcode': [],
+        // 'connection:stopGcode': [],
+        // 'connection:executeGcode': [],
+        // 'connection:startHeartbeat': [],
 
         // Controller events
         'feeder:status': [],
@@ -149,14 +152,15 @@ class SerialPortClient {
 
                 if (eventName === 'connection:open') {
                     const { controllerType = 'Marlin', port } = options;
-                    console.log('controller', controllerType, port);
-                    if (this.ports.indexOf(port) === -1) {
-                        this.ports.push(port);
-                    }
-                    this.port = port;
-                    this.workspacePort = port;
+                    if (port) {
+                        if (this.ports.indexOf(port) === -1) {
+                            this.ports.push(port);
+                        }
+                        this.port = port;
+                        this.workspacePort = port;
 
-                    this.type = controllerType;
+                        this.type = controllerType;
+                    }
                 }
                 if (eventName === 'connection:close') {
                     const { port } = options;
@@ -193,8 +197,6 @@ class SerialPortClient {
                     this.settings = options.settings;
                 }
                 this.callbacks[eventName].forEach((callback) => {
-                    // callback.apply(callback, args);
-                    // callback.apply(callback, options);
                     callback.apply(callback, [options]);
                 });
             });
@@ -205,6 +207,7 @@ class SerialPortClient {
         socketController.disconnect();
     }
 
+    // Note: 'on' and 'off' function must be registered during initialization
     on(eventName, callback) {
         const callbacks = this.callbacks[eventName];
         if (!callbacks) {
@@ -231,19 +234,10 @@ class SerialPortClient {
         socketController.emit('serialport:list', { dataSource: this.dataSource });
     }
 
-    emitEvent(eventName, options) {
-        console.log('emitEvent', eventName, options);
-        if (eventName in this.callbacks) {
-            socketController.emit(eventName, options);
-        } else {
-            this.callbacks[eventName] = [];
-            socketController.on(eventName, (params = {}) => {
-                this.callbacks[eventName].forEach((callback) => {
-                    callback.apply(callback, [params]);
-                });
-            });
-        }
-        return this;
+    emitEvent(eventName, options = {}) {
+        socketController.emit(eventName, { ...options, eventName });
+        console.log('eventName', eventName);
+        return socketController;
     }
 
     // Discover Wi-Fi enabled Snapmakers

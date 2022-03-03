@@ -24,6 +24,7 @@ import {
     WORKFLOW_STATUS_UNKNOWN,
     IMAGE_WIFI_ERROR,
     IMAGE_WIFI_WARNING,
+    CONNECTION_TYPE_WIFI,
     HEAD_CNC,
     HEAD_PRINTING,
     HEAD_LASER
@@ -260,9 +261,11 @@ class Visualizer extends PureComponent {
             return (this.props.headType === HEAD_LASER);
         },
         handleRun: () => {
-            const { workflowStatus } = this.props;
+            const { workflowStatus, connectionType } = this.props;
             const { workflowState } = this.state;
-            if (workflowStatus === WORKFLOW_STATUS_IDLE || workflowState === WORKFLOW_STATE_IDLE) {
+            console.log('workflowState', workflowState, workflowStatus);
+            if ((connectionType === CONNECTION_TYPE_WIFI && workflowStatus === WORKFLOW_STATUS_IDLE)
+                || (connectionType === CONNECTION_TYPE_SERIAL && workflowState === WORKFLOW_STATE_IDLE)) {
                 this.props.startServerGcode({
                     workflowState
                 }, ({ msg, code }) => {
@@ -291,7 +294,8 @@ class Visualizer extends PureComponent {
                 });
             }
 
-            if (workflowStatus === WORKFLOW_STATUS_PAUSED || workflowState === WORKFLOW_STATE_PAUSED) {
+            if ((connectionType === CONNECTION_TYPE_WIFI && workflowStatus === WORKFLOW_STATUS_PAUSED)
+                || (connectionType === CONNECTION_TYPE_SERIAL && workflowState === WORKFLOW_STATE_PAUSED)) {
                 this.props.resumeServerGcode({
                     headType: this.props.headType,
                     pause3dpStatus: this.props.pause3dpStatus,
@@ -630,7 +634,7 @@ class Visualizer extends PureComponent {
     }
 
     startToolheadRotationAnimation() {
-        this.toolheadRotationAnimation.start();
+        this.toolheadRotationAnimation && this.toolheadRotationAnimation.start();
     }
 
     stopToolheadRotationAnimation() {

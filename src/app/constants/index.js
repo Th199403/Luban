@@ -6,7 +6,14 @@ export const IMPERIAL_UNITS = 'in';
 export const METRIC_UNITS = 'mm';
 
 export const EPSILON = 1e-6;
-
+export const CONNECTION_OPEN = 'connection:open';
+export const CONNECTION_CLOSE = 'connection:close';
+export const CONNECTION_EXECUTE_GCODE = 'connection:executeGcode';
+export const CONNECTION_START_GCODE = 'connection:startGcode';
+export const CONNECTION_RESUME_GCODE = 'connection:resumeGcode';
+export const CONNECTION_PAUSE_GCODE = 'connection:pauseGcode';
+export const CONNECTION_STOP_GCODE = 'connection:stopGcode';
+export const CONNECTION_HEARTBEAT = 'connection:startHeartbeat';
 // Controller
 export const MARLIN = 'Marlin';
 

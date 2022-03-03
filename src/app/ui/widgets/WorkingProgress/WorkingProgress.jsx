@@ -34,6 +34,7 @@ const WorkingProgress = ({ widgetActions, controlActions }) => {
     }, []);
     useEffect(() => {
         const newCurrent = connectionType === 'wifi' ? workflowStatus : workflowState;
+        console.log('workflowState, workflowStatus, connectionType', workflowState, workflowStatus, connectionType);
         setCurrentWorkflowStatus(newCurrent);
     }, [workflowState, workflowStatus, connectionType]);
     useEffect(() => {
@@ -47,6 +48,7 @@ const WorkingProgress = ({ widgetActions, controlActions }) => {
         }
     }, [isConnected, currentWorkflowStatus, sent, total]);
     const handleMachine = (type) => {
+        console.log('handleMachine', type);
         switch (type) {
             case 'run':
                 controlActions.onCallBackRun();

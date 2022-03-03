@@ -18,7 +18,14 @@ import {
     MACHINE_TOOL_HEADS,
     SINGLE_EXTRUDER_TOOLHEAD_FOR_ORIGINAL,
     LEVEL_ONE_POWER_LASER_FOR_ORIGINAL,
-    STANDARD_CNC_TOOLHEAD_FOR_ORIGINAL
+    STANDARD_CNC_TOOLHEAD_FOR_ORIGINAL,
+    CONNECTION_OPEN,
+    CONNECTION_CLOSE,
+    CONNECTION_EXECUTE_GCODE,
+    CONNECTION_START_GCODE,
+    CONNECTION_RESUME_GCODE,
+    CONNECTION_PAUSE_GCODE,
+    CONNECTION_STOP_GCODE
 } from '../../constants';
 
 import i18n from '../../lib/i18n';
@@ -38,13 +45,6 @@ import setting from '../../config/settings';
 import baseActions, { ACTION_UPDATE_STATE } from './action-base';
 import discoverActions from './action-discover';
 import connectActions from './action-connect';
-
-// TODO: add emit socket event
-const CONNECTION_OPEN = 'connection:open';
-const CONNECTION_EXECUTE_GCODE = 'connection:executeGcode';
-const CONNECTION_CLOSE = 'connection:close';
-const CONNECTION_START_GCODE = 'connection:startGcode';
-const CONNECTION_RESUME_GCODE = 'connection:resumeGcode';
 
 const INITIAL_STATE = {
     // region server discover
@@ -556,7 +556,6 @@ export const actions = {
      */
     openServer: (args, callback) => (dispatch, getState) => {
         const { server, isOpen, connectionType, savedServerAddress, savedServerToken } = getState().machine;
-        console.log('isOpen', isOpen, connectionType);
         if (isOpen) {
             return;
         }
@@ -573,12 +572,13 @@ export const actions = {
             host: server?.host,
             token: server?.token,
             connectionType,
-            eventName: CONNECTION_OPEN,
             ...args
         })
-            .on(CONNECTION_OPEN, (options) => {
+            .once(CONNECTION_OPEN, (options) => {
                 if (connectionType === CONNECTION_TYPE_WIFI) {
+                    console.log('connectionOpen', options);
                     server.open(options, ({ msg, data, text }) => {
+                        console.log('msg, data, text', msg, data, text);
                         if (msg) {
                             callback && callback({ msg, data, text });
                             return;
@@ -690,9 +690,7 @@ export const actions = {
                                 dispatch(baseActions.updateState({
                                     isEmergencyStopped
                                 }));
-                                server.close(() => {
-                                    dispatch(actions.resetMachineState());
-                                });
+                                dispatch(actions.closeServer());
                                 return;
                             }
                             dispatch(baseActions.updateState({
@@ -810,10 +808,10 @@ export const actions = {
             });
     },
 
-    closeServer: (args) => (dispatch, getState) => {
+    closeServer: () => (dispatch, getState) => {
         const { server, connectionType } = getState().machine;
-        controller.emitEvent(CONNECTION_CLOSE, { eventName: CONNECTION_CLOSE, ...args })
-            .on(CONNECTION_CLOSE, (options) => {
+        controller.emitEvent(CONNECTION_CLOSE)
+            .once(CONNECTION_CLOSE, (options) => {
                 if (connectionType === CONNECTION_TYPE_WIFI) {
                     server._closeServer();
                     dispatch(actions.resetMachineState());
@@ -920,10 +918,10 @@ export const actions = {
             }
             return;
         }
+        console.trace('CONNECTION_EXECUTE_GCODE gcodeArray', gcode);
         controller
-            .emitEvent(CONNECTION_EXECUTE_GCODE, { gcode, context, cmd, eventName: CONNECTION_EXECUTE_GCODE })
-            .on(CONNECTION_EXECUTE_GCODE, (gcodeArray) => {
-                console.log('CONNECTION_EXECUTE_GCODE gcodeArray', gcodeArray);
+            .emitEvent(CONNECTION_EXECUTE_GCODE, { gcode, context, cmd })
+            .once(CONNECTION_EXECUTE_GCODE, (gcodeArray) => {
                 if (connectionType === CONNECTION_TYPE_WIFI) {
                     if (gcodeArray) {
                         dispatch(actions.addConsoleLogs(gcodeArray));
@@ -956,7 +954,7 @@ export const actions = {
             isLaserPrintAutoMode, laserFocalLength, materialThickness } = getState().machine;
         const { gcodeFile, headType, series, isRotate, toolHead } = getState().workspace;
         const { background } = getState().laser;
-        controller.emitEvent(CONNECTION_START_GCODE, { eventName: CONNECTION_START_GCODE,
+        controller.emitEvent(CONNECTION_START_GCODE, {
             headType,
             workflowStatus,
             isLaserPrintAutoMode,
@@ -974,7 +972,7 @@ export const actions = {
             // for serialport indiviual
             ...args
         })
-            .on(CONNECTION_START_GCODE, (options) => {
+            .once(CONNECTION_START_GCODE, (options) => {
                 dispatch(baseActions.updateState({
                     isSendedOnWifi: true
                 }));
@@ -996,8 +994,8 @@ export const actions = {
     },
 
     resumeServerGcode: (args, callback) => () => {
-        controller.emitEvent(CONNECTION_RESUME_GCODE, { eventName: CONNECTION_RESUME_GCODE, ...args })
-            .on(CONNECTION_RESUME_GCODE, (options) => {
+        controller.emitEvent(CONNECTION_RESUME_GCODE, args)
+            .once(CONNECTION_RESUME_GCODE, (options) => {
                 callback && callback(options);
             });
     },
@@ -1007,9 +1005,8 @@ export const actions = {
         if (workflowStatus !== WORKFLOW_STATUS_RUNNING) {
             return;
         }
-        const CONNECTION_PAUSE_GCODE = 'connection:pauseGcode';
-        controller.emitEvent(CONNECTION_PAUSE_GCODE, { eventName: CONNECTION_PAUSE_GCODE })
-            .on(CONNECTION_PAUSE_GCODE, (options) => {
+        controller.emitEvent(CONNECTION_PAUSE_GCODE)
+            .once(CONNECTION_PAUSE_GCODE, (options) => {
                 callback && callback(options);
             });
     },
@@ -1019,9 +1016,8 @@ export const actions = {
         if (workflowStatus === WORKFLOW_STATUS_IDLE || workflowStatus === WORKFLOW_STATUS_UNKNOWN) {
             return;
         }
-        const CONNECTION_STOP_GCODE = 'connection:stopGcode';
-        controller.emitEvent(CONNECTION_STOP_GCODE, { eventName: CONNECTION_STOP_GCODE })
-            .on(CONNECTION_STOP_GCODE, (options) => {
+        controller.emitEvent(CONNECTION_STOP_GCODE)
+            .once(CONNECTION_STOP_GCODE, (options) => {
                 const { msg, code, data } = options;
                 if (msg) {
                     callback && callback({ msg, code, data });

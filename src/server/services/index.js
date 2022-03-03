@@ -2,7 +2,6 @@ import SocketServer from '../lib/SocketManager';
 import TaskManager from './task-manager';
 
 import socketSerial from './socket/socket-serial';
-import socketHttp from './socket/socket-http';
 import socketSlice from './socket/socket-slice';
 import connectionManager from './socket/ConnectionManager';
 import wifiServerManager from './socket/WifiServerManager';
@@ -47,8 +46,9 @@ function startServices(server) {
     socketServer.registerEvent('command', socketSerial.command);
     socketServer.registerEvent('writeln', socketSerial.writeln);
 
-    socketServer.registerEvent('connection:open', socketHttp.connectionOpen);
+    socketServer.registerEvent('connection:open', connectionManager.connectionOpen);
     socketServer.registerEvent('connection:close', connectionManager.connectionClose);
+    socketServer.registerEvent('connection:startGcode', connectionManager.startGcode);
     socketServer.registerEvent('connection:resumeGcode', connectionManager.resumeGcode);
     socketServer.registerEvent('connection:pauseGcode', connectionManager.pauseGcode);
     socketServer.registerEvent('connection:stopGcode', connectionManager.stopGcode);

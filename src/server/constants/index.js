@@ -39,10 +39,6 @@ export const CURA_ENGINE_MACOS = `${RESOURCES_DIR}/CuraEngine/3.6/macOS/CuraEngi
 export const CURA_ENGINE_LINUX = `${RESOURCES_DIR}/CuraEngine/3.6/Linux/CuraEngine`;
 export const CURA_ENGINE_WIN64 = `${RESOURCES_DIR}/CuraEngine/3.6/Windows-x64/CuraEngine.exe`;
 
-const publicPath = global.PUBLIC_PATH || '';
-export const DATA_PATH = `${publicPath}/data`;
-
-export const DATA_PREFIX = `${publicPath}/data/Tmp`;
 export const LEVEL_TWO_POWER_LASER_FOR_SM2 = 'levelTwoLaserToolheadForSM2';
 
 export const WORKFLOW_STATE_PAUSED = 'paused';

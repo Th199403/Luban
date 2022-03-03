@@ -103,12 +103,13 @@ class SocketHttp {
             .timeout(3000)
             .send(`token=${this.token}`)
             .end((err, res) => {
+                console.log('connectionClose inside', this.socket, _getResult(err, res));
                 this.socket && this.socket.emit('connection:close', _getResult(err, res));
             });
         this.host = '';
         this.token = '';
-        this.socket = null;
         this.heartBeatWorker && this.heartBeatWorker.terminate();
+        console.log('connectionClose');
     };
 
     startGcode = () => {
@@ -155,7 +156,7 @@ class SocketHttp {
             });
     };
 
-    executeGcode = (socket, options, callback) => {
+    executeGcode = (options, callback) => {
         const { gcode } = options;
         const split = gcode.split('\n');
         this.gcodeInfos.push({
@@ -186,7 +187,6 @@ class SocketHttp {
     };
 
     _executeGcode = (gcode) => {
-        console.log('resumeGcode', gcode);
         const api = `${this.host}/api/v1/execute_code`;
         return new Promise((resolve) => {
             const req = request.post(api);
@@ -201,7 +201,7 @@ class SocketHttp {
         });
     };
 
-    startHeartbeat = (socket, options) => {
+    startHeartbeat = (options) => {
         const { eventName } = options;
         this.heartBeatWorker = workerManager.heartBeat([{
             host: this.host,
@@ -226,7 +226,7 @@ class SocketHttp {
             .field('type', type)
             .attach('file', file, filename)
             .end((err, res) => {
-                const { msg, data } = this._getResult(err, res);
+                const { msg, data } = _getResult(err, res);
                 if (callback) {
                     callback(msg, data);
                 }

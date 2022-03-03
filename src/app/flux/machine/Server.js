@@ -5,8 +5,8 @@ import {
     HEAD_LASER,
     HEAD_PRINTING,
     MACHINE_SERIES,
-    WORKFLOW_STATUS_IDLE,
     WORKFLOW_STATUS_UNKNOWN,
+    CONNECTION_HEARTBEAT,
     LEVEL_TWO_POWER_LASER_FOR_SM2, STANDARD_CNC_TOOLHEAD_FOR_SM2,
     LEVEL_ONE_POWER_LASER_FOR_SM2, SINGLE_EXTRUDER_TOOLHEAD_FOR_SM2
 } from '../../constants';
@@ -99,9 +99,6 @@ export class Server extends events.EventEmitter {
 
     _closeServer() {
         this._stateInit();
-        this.heartBeatWorker && this.heartBeatWorker.terminate();
-        // this.gcodeInfos = [];
-        // this.isGcodeExecuting = false;
     }
 
     get host() {
@@ -159,15 +156,14 @@ export class Server extends events.EventEmitter {
             this.state.toolHead = toolHead;
         }
 
-        // this.token = data.token;
         this.waitConfirm = true;
         this.startHeartbeat();
         callback({ data });
     };
 
     startHeartbeat = () => {
-        const CONNECTION_HEARTBEAT = 'connection:startHeartbeat';
-        controller.emitEvent(CONNECTION_HEARTBEAT, { eventName: CONNECTION_HEARTBEAT })
+        // NOTE: For heartbeat, must keep listening to the change event
+        controller.emitEvent(CONNECTION_HEARTBEAT)
             .on(CONNECTION_HEARTBEAT, (result) => {
                 const { status, msg, res } = result;
                 if (status === 'offline') {
@@ -310,64 +306,6 @@ export class Server extends events.EventEmitter {
                     callback(msg, data, text);
                 }
             });
-    };
-
-    executeGcode = (gcode, callback) => {
-        if (!this.token) {
-            return Promise.resolve();
-        }
-        if (this.isConnected && this.status !== WORKFLOW_STATUS_IDLE) {
-            return Promise.resolve();
-        }
-        return new Promise(resolve => {
-            const split = gcode.split('\n');
-            this.gcodeInfos.push({
-                gcodes: split,
-                callback: (result) => {
-                    callback && callback(result);
-                    resolve(result);
-                }
-            });
-            this.startExecuteGcode();
-        });
-    };
-
-    _executeGcode = (gcode) => {
-        const api = `${this.host}/api/v1/execute_code`;
-        return new Promise((resolve) => {
-            const req = request.post(api);
-            req.timeout(300000)
-                .send(`token=${this.token}`)
-                .send(`code=${gcode}`)
-                // .send(formData)
-                .end((err, res) => {
-                    const { data, text } = this._getResult(err, res);
-                    resolve({ data, text });
-                });
-            window.addEventListener('cancelReq', () => {
-                req.abort();
-            });
-        });
-    };
-
-    startExecuteGcode = async () => {
-        if (this.isGcodeExecuting) {
-            return;
-        }
-        this.isGcodeExecuting = true;
-        while (this.gcodeInfos.length > 0) {
-            const splice = this.gcodeInfos.splice(0, 1)[0];
-            const result = [];
-            for (const gcode of splice.gcodes) {
-                const { text } = await this._executeGcode(gcode);
-                result.push(gcode);
-                if (text) {
-                    result.push(text);
-                }
-            }
-            splice.callback && splice.callback(result);
-        }
-        this.isGcodeExecuting = false;
     };
 
     _getStatus = () => {

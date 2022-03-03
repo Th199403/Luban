@@ -47,6 +47,7 @@ class SocketSerial {
                         inuse: portsInUse.indexOf(port.path) >= 0
                     };
                 });
+                console.log('availablePorts', availablePorts, dataSource);
 
                 socket.emit('serialport:list', { ports: availablePorts, dataSource });
             })
