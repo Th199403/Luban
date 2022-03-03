@@ -918,7 +918,6 @@ export const actions = {
             }
             return;
         }
-        console.trace('CONNECTION_EXECUTE_GCODE gcodeArray', gcode);
         controller
             .emitEvent(CONNECTION_EXECUTE_GCODE, { gcode, context, cmd })
             .once(CONNECTION_EXECUTE_GCODE, (gcodeArray) => {
@@ -1000,22 +999,14 @@ export const actions = {
             });
     },
 
-    pauseServerGcode: (callback) => (dispatch, getState) => {
-        const { workflowStatus } = getState().machine;
-        if (workflowStatus !== WORKFLOW_STATUS_RUNNING) {
-            return;
-        }
+    pauseServerGcode: (callback) => () => {
         controller.emitEvent(CONNECTION_PAUSE_GCODE)
             .once(CONNECTION_PAUSE_GCODE, (options) => {
                 callback && callback(options);
             });
     },
 
-    stopServerGcode: (callback) => (dispatch, getState) => {
-        const { workflowStatus } = getState().machine;
-        if (workflowStatus === WORKFLOW_STATUS_IDLE || workflowStatus === WORKFLOW_STATUS_UNKNOWN) {
-            return;
-        }
+    stopServerGcode: (callback) => (dispatch) => {
         controller.emitEvent(CONNECTION_STOP_GCODE)
             .once(CONNECTION_STOP_GCODE, (options) => {
                 const { msg, code, data } = options;

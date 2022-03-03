@@ -44,13 +44,11 @@ class ConnectionManager {
         if (this.connectionType === CONNECTION_TYPE_WIFI) {
             const { gcodeFile, series, laserFocalLength, background, size, workPosition, originOffset } = options;
             const gcodeFilePath = `${DataStorage.tmpDir}/${gcodeFile.uploadName}`;
-            console.log('gcodeFilePath', gcodeFilePath);
             readFile(gcodeFilePath, (err, res) => {
                 if (err) {
                     log.error(`get file err, err=${err}`);
                     return;
                 }
-                console.log('res', res);
                 const file = res;
                 const promises = [];
                 if (series !== MACHINE_SERIES.ORIGINAL.value && series !== MACHINE_SERIES.CUSTOM.value && headType === HEAD_LASER && !isRotate) {
@@ -104,6 +102,7 @@ class ConnectionManager {
             });
         } else {
             const { workflowState } = options;
+            console.log('this.socket', this.socket, socket, workflowState);
             if (headType === HEAD_LASER && workflowState !== WORKFLOW_STATE_PAUSED) {
                 this.socket.command(this.socket, {
                     args: ['G0 X0 Y0 F1000']
@@ -184,7 +183,9 @@ class ConnectionManager {
         if (this.connectionType === CONNECTION_TYPE_WIFI) {
             this.socket.pauseGcode();
         } else {
-            this.socket.command(this.socket, 'gcode:pause');
+            this.socket.command(this.socket, {
+                cmd: 'gcode:pause',
+            });
         }
     };
 
@@ -192,14 +193,15 @@ class ConnectionManager {
         if (this.connectionType === CONNECTION_TYPE_WIFI) {
             this.socket.stopGcode();
         } else {
-            this.socket.command(this.socket, 'gcode:stop');
+            this.socket.command(this.socket, {
+                cmd: 'gcode:stop',
+            });
         }
     };
 
     // when using executeGcode, the cmd param is always 'gcode'
     executeGcode = (socket, options, callback) => {
         const { gcode, context, cmd = 'gcode' } = options;
-        console.log('options', options);
         if (this.connectionType === CONNECTION_TYPE_WIFI) {
             this.socket.executeGcode(options, callback);
         } else {
@@ -212,9 +214,7 @@ class ConnectionManager {
 
 
     startHeartbeat = (socket, options) => {
-        const { eventName } = options;
-        socketHttp.startHeartbeat(options);
-        console.log('eventName', eventName, this.socket, this.host);
+        this.socket.startHeartbeat(options);
     }
 }
 

@@ -91,7 +91,9 @@ class SocketHttp {
             .timeout(3000)
             .send(token ? `token=${this.token}` : '')
             .end((err, res) => {
-                console.log('res', res.body);
+                if (res?.body?.token) {
+                    this.token = res.body.token;
+                }
                 this.socket && this.socket.emit('connection:open', _getResult(err, res));
             });
     };
@@ -103,13 +105,11 @@ class SocketHttp {
             .timeout(3000)
             .send(`token=${this.token}`)
             .end((err, res) => {
-                console.log('connectionClose inside', this.socket, _getResult(err, res));
                 this.socket && this.socket.emit('connection:close', _getResult(err, res));
             });
         this.host = '';
         this.token = '';
         this.heartBeatWorker && this.heartBeatWorker.terminate();
-        console.log('connectionClose');
     };
 
     startGcode = () => {

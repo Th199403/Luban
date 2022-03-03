@@ -4,7 +4,7 @@ import logger from '../../lib/logger';
 import { MarlinController } from '../../controllers';
 import ensureArray from '../../lib/ensure-array';
 import config from '../configstore';
-import { PROTOCOL_SCREEN, WRITE_SOURCE_CLIENT } from '../../controllers/constants';
+import { PROTOCOL_TEXT, WRITE_SOURCE_CLIENT } from '../../controllers/constants';
 
 const log = logger('service:socket-server');
 class SocketSerial {
@@ -47,8 +47,6 @@ class SocketSerial {
                         inuse: portsInUse.indexOf(port.path) >= 0
                     };
                 });
-                console.log('availablePorts', availablePorts, dataSource);
-
                 socket.emit('serialport:list', { ports: availablePorts, dataSource });
             })
             .catch(err => {
@@ -57,16 +55,14 @@ class SocketSerial {
     };
 
     serialportOpen = (socket, options) => {
-        const { port, dataSource, connectionTimeout } = options;
+        const { port, dataSource = PROTOCOL_TEXT, connectionTimeout } = options;
         log.debug(`socket.open("${port}"): socket=${socket.id}`);
         this.port = port;
         this.dataSource = dataSource;
         this.socket = socket;
         let controller = store.get(`controllers["${port}/${dataSource}"]`);
         if (!controller) {
-            if (dataSource === PROTOCOL_SCREEN) {
-                console.log('dataSource');
-            } else {
+            if (dataSource === PROTOCOL_TEXT) {
                 controller = new MarlinController({ port, dataSource, baudrate: 115200, connectionTimeout: connectionTimeout });
             }
         }
@@ -126,8 +122,17 @@ class SocketSerial {
         socket.emit('connection:close', { port: port, dataSource: dataSource });
     };
 
+    /**
+     *
+     * @param options
+     *      {
+     *          cmd='gcode:start',
+     *          args=[gcode, context]
+     *      }
+     */
+
     command = (socket, options) => {
-        const { cmd = 'gcode', args } = options;
+        const { cmd = 'gcode', args = [] } = options;
         const port = this.port;
         const dataSource = this.dataSource;
         log.debug(`socket.command("${port}", "${cmd}"): id=${socket.id}, args=${JSON.stringify(args)}`);

@@ -5,7 +5,8 @@ import api from '../../api';
 import log from '../../lib/log';
 import { generateRandomPathName } from '../../../shared/lib/random-utils';
 import workerManager from '../../lib/manager/workerManager';
-
+/* eslint-disable-next-line import/no-cycle */
+// import { actions as machineActions } from '../machine';
 import gcodeBufferGeometryToObj3d from '../../workers/GcodeToBufferGeometry/gcodeBufferGeometryToObj3d';
 import { CONNECTION_STATUS_CONNECTED, EPSILON, MACHINE_SERIES, PROTOCOL_TEXT } from '../../constants';
 
@@ -392,7 +393,7 @@ export const actions = {
     },
 
     unloadGcode: () => (dispatch) => {
-        dispatch(actions.executeGcode(null, null, 'gcode:unload'));
+        // dispatch(machineActions.executeGcode(null, null, 'gcode:unload'));
         dispatch(actions.updateState({ uploadState: 'idle' }));
     },
 
