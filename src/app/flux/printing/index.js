@@ -1927,6 +1927,7 @@ export const actions = {
 
         dispatch(actions.unselectAllModels());
         const { modelGroup, progressStatesManager } = getState().printing;
+        const { size } = getState().machine;
 
         progressStatesManager.startProgress(PROCESS_STAGE.PRINTING_ARRANGE_MODELS);
         dispatch(actions.updateState({
@@ -1971,8 +1972,7 @@ export const actions = {
             models.push(modelInfo);
         });
 
-        console.log('memory', performance.memory);
-        workerManager.arrangeModels([{
+        const res = workerManager.arrangeModels([{
             models,
             validArea: modelGroup.getValidArea(),
             angle,
@@ -2022,7 +2022,7 @@ export const actions = {
                     parts.forEach((part) => {
                         const model = modelGroup.getModel(part.modelID);
                         if (part.angle === undefined || part.position === undefined) {
-                            const position = modelGroup.arrangeOutsidePlate(model);
+                            const position = modelGroup.arrangeOutsidePlate(model, size);
                             model.updateTransformation({
                                 positionX: position.x,
                                 positionY: position.y
@@ -2059,6 +2059,7 @@ export const actions = {
                             showArrangeModelsError: true
                         }));
                     }
+                    res.terminate();
                     break;
                 }
                 case 'progress': {
@@ -2083,6 +2084,7 @@ export const actions = {
                     dispatch(appGlobalActions.updateShowArrangeModelsError({
                         showArrangeModelsError: true
                     }));
+                    res.terminate();
                     break;
                 }
                 default:
