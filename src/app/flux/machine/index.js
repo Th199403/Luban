@@ -25,7 +25,8 @@ import {
     CONNECTION_START_GCODE,
     CONNECTION_RESUME_GCODE,
     CONNECTION_PAUSE_GCODE,
-    CONNECTION_STOP_GCODE
+    CONNECTION_STOP_GCODE,
+    CONNECTION_GET_GCODEFILE
 } from '../../constants';
 
 import i18n from '../../lib/i18n';
@@ -576,9 +577,7 @@ export const actions = {
         })
             .once(CONNECTION_OPEN, (options) => {
                 if (connectionType === CONNECTION_TYPE_WIFI) {
-                    console.log('connectionOpen', options);
                     server.open(options, ({ msg, data, text }) => {
-                        console.log('msg, data, text', msg, data, text);
                         if (msg) {
                             callback && callback({ msg, data, text });
                             return;
@@ -630,20 +629,21 @@ export const actions = {
                                 }));
                                 dispatch(actions.executeGcodeG54(series, headType));
                                 if (_.includes([WORKFLOW_STATUS_PAUSED, WORKFLOW_STATUS_RUNNING], status)) {
-                                    server.getGcodeFile((error, gcode) => {
-                                        if (error) {
-                                            return;
-                                        }
-                                        dispatch(workspaceActions.clearGcode());
-                                        let suffix = 'gcode';
-                                        if (headType === HEAD_LASER) {
-                                            suffix = 'nc';
-                                        } else if (headType === HEAD_CNC) {
-                                            suffix = 'cnc';
-                                        }
-                                        dispatch(workspaceActions.clearGcode());
-                                        dispatch(workspaceActions.renderGcode(`print.${suffix}`, gcode, true, true));
-                                    });
+                                    controller.emitEvent(CONNECTION_GET_GCODEFILE, args)
+                                        .once(CONNECTION_GET_GCODEFILE, ({ msg: error, text: gcode }) => {
+                                            if (error) {
+                                                return;
+                                            }
+                                            dispatch(workspaceActions.clearGcode());
+                                            let suffix = 'gcode';
+                                            if (headType === HEAD_LASER) {
+                                                suffix = 'nc';
+                                            } else if (headType === HEAD_CNC) {
+                                                suffix = 'cnc';
+                                            }
+                                            dispatch(workspaceActions.clearGcode());
+                                            dispatch(workspaceActions.renderGcode(`print.${suffix}`, gcode, true, true));
+                                        });
                                 }
                             } else {
                             // TODO: Why is modal code here???

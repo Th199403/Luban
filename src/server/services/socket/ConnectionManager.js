@@ -102,7 +102,6 @@ class ConnectionManager {
             });
         } else {
             const { workflowState } = options;
-            console.log('this.socket', this.socket, socket, workflowState);
             if (headType === HEAD_LASER && workflowState !== WORKFLOW_STATE_PAUSED) {
                 this.socket.command(this.socket, {
                     args: ['G0 X0 Y0 F1000']
@@ -215,6 +214,18 @@ class ConnectionManager {
 
     startHeartbeat = (socket, options) => {
         this.socket.startHeartbeat(options);
+    };
+
+    getLaserMaterialThickness = (socket, options) => {
+        this.socket.getLaserMaterialThickness(options);
+    };
+
+    getGcodeFile = () => {
+        this.socket.getLaserMaterialThickness();
+    };
+
+    uploadFile = () => {
+        this.socket.uploadFile();
     }
 }
 

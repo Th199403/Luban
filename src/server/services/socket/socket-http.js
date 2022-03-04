@@ -232,6 +232,38 @@ class SocketHttp {
                 }
             });
     };
+
+    getLaserMaterialThickness = (options) => {
+        const { x, y, feedRate } = options;
+        const api = `${this.host}/api/request_Laser_Material_Thickness?token=${this.token}&x=${x}&y=${y}&feedRate=${feedRate}`;
+        request
+            .get(api)
+            .end((err, res) => {
+                this.socket && this.socket.emit('connection:materialThickness', _getResult(err, res));
+            });
+    };
+
+    getGcodeFile = () => {
+        const api = `${this.host}/api/v1/print_file?token=${this.token}`;
+        request
+            .get(api)
+            .end((err, res) => {
+                this.socket && this.socket.emit('connection:getGcodeFile', _getResult(err, res));
+            });
+    };
+
+    uploadFile = (options) => {
+        const { filename, file } = options;
+        const api = `${this.host}/api/v1/upload`;
+        request
+            .post(api)
+            .timeout(300000)
+            .field('token', this.token)
+            .attach('file', file, filename)
+            .end((err, res) => {
+                this.socket && this.socket.emit('connection:uploadFile', _getResult(err, res));
+            });
+    }
 }
 
 const socketHttp = new SocketHttp();

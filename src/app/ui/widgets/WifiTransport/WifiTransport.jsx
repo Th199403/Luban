@@ -10,6 +10,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import _ from 'lodash';
 import path from 'path';
 import request from 'superagent';
+import { controller } from '../../../lib/controller';
 import { pathWithRandomSuffix } from '../../../../shared/lib/random-utils';
 import i18n from '../../../lib/i18n';
 import UniApi from '../../../lib/uni-api';
@@ -19,7 +20,7 @@ import {
     CONNECTION_TYPE_WIFI, WORKFLOW_STATE_IDLE, WORKFLOW_STATUS_IDLE,
     DATA_PREFIX, HEAD_CNC, HEAD_LASER, HEAD_PRINTING,
     LEVEL_TWO_POWER_LASER_FOR_SM2,
-    CONNECTION_TYPE_SERIAL
+    CONNECTION_TYPE_SERIAL, CONNECTION_MATERIALTHICKNESS
 } from '../../../constants';
 import { actions as workspaceActions, WORKSPACE_STAGE } from '../../../flux/workspace';
 import { actions as projectActions } from '../../../flux/project';
@@ -330,17 +331,19 @@ function WifiTransport({ widgetActions, controlActions }) {
                 const deltaRedLine = 30;
                 const x = (maxX + minX) / 2 - originOffset.x + z0 / Math.sqrt(3) - deltaRedLine + deltaX / 2;
                 const y = (maxY + minY) / 2 - originOffset.y + deltaY / 2;
-                const options = {
+                const args = {
                     x: x,
                     y: y,
                     feedRate: 1500
                 };
-                server.getLaserMaterialThickness(options, async ({ status, thickness }) => {
-                    if (status) {
-                        await actions.onChangeMaterialThickness(thickness);
-                        controlActions.onCallBackRun();
-                    }
-                });
+                controller.emitEvent(CONNECTION_MATERIALTHICKNESS, args)
+                    .once(CONNECTION_MATERIALTHICKNESS, ({ data }) => {
+                        const { status, thickness } = data;
+                        if (status) {
+                            actions.onChangeMaterialThickness(thickness);
+                            controlActions.onCallBackRun();
+                        }
+                    });
                 return;
             }
             controlActions.onCallBackRun();
@@ -399,7 +402,7 @@ function WifiTransport({ widgetActions, controlActions }) {
             dispatch(machineActions.updateIsLaserPrintAutoMode(!isLaserPrintAutoMode));
         },
 
-        onChangeMaterialThickness: async (value) => {
+        onChangeMaterialThickness: (value) => {
             if (value < 0) {
                 // safely setting
                 value = 0;

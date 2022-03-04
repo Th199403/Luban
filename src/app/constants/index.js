@@ -14,6 +14,9 @@ export const CONNECTION_RESUME_GCODE = 'connection:resumeGcode';
 export const CONNECTION_PAUSE_GCODE = 'connection:pauseGcode';
 export const CONNECTION_STOP_GCODE = 'connection:stopGcode';
 export const CONNECTION_HEARTBEAT = 'connection:startHeartbeat';
+export const CONNECTION_MATERIALTHICKNESS = 'connection:materialThickness';
+export const CONNECTION_GET_GCODEFILE = 'connection:getGcodeFile';
+
 // Controller
 export const MARLIN = 'Marlin';
 

@@ -243,70 +243,6 @@ export class Server extends events.EventEmitter {
         }
     };
 
-    getLaserMaterialThickness = (options, callback) => {
-        if (!this.token) {
-            callback && callback({
-                msg: 'this token is null'
-            });
-            return;
-        }
-        const { x, y, feedRate } = options;
-        const api = `${this.host}/api/request_Laser_Material_Thickness?token=${this.token}&x=${x}&y=${y}&feedRate=${feedRate}`;
-        const req = request.get(api);
-        req.end((err, res) => {
-            const { data } = this._getResult(err, res);
-            const { status, thickness } = data;
-            if (callback) {
-                callback({
-                    status,
-                    thickness
-                });
-            }
-        });
-        window.addEventListener('cancelReq', () => {
-            req.abort();
-        });
-    }
-
-    getGcodeFile = (callback) => {
-        if (!this.token) {
-            callback && callback({
-                msg: 'this token is null'
-            });
-            return;
-        }
-        const api = `${this.host}/api/v1/print_file?token=${this.token}`;
-        request
-            .get(api)
-            .end((err, res) => {
-                const { msg } = this._getResult(err, res);
-                if (callback) {
-                    callback(msg, res.text);
-                }
-            });
-    };
-
-
-    uploadFile = (filename, file, callback) => {
-        if (!this.token) {
-            callback && callback({
-                msg: 'this token is null'
-            });
-            return;
-        }
-        const api = `${this.host}/api/v1/upload`;
-        request
-            .post(api)
-            .timeout(300000)
-            .field('token', this.token)
-            .attach('file', file, filename)
-            .end((err, res) => {
-                const { msg, data, text } = this._getResult(err, res);
-                if (callback) {
-                    callback(msg, data, text);
-                }
-            });
-    };
 
     _getStatus = () => {
         return {
@@ -342,6 +278,73 @@ export class Server extends events.EventEmitter {
             airPurifierFilterHealth: this.state.airPurifierFilterHealth,
             moduleStatusList: this.state.moduleStatusList
         };
+    };
+
+    // TODO: to refactor
+
+    getLaserMaterialThickness = (options, callback) => {
+        if (!this.token) {
+            callback && callback({
+                msg: 'this token is null'
+            });
+            return;
+        }
+        const { x, y, feedRate } = options;
+        const api = `${this.host}/api/request_Laser_Material_Thickness?token=${this.token}&x=${x}&y=${y}&feedRate=${feedRate}`;
+        const req = request.get(api);
+        req.end((err, res) => {
+            const { data } = this._getResult(err, res);
+            const { status, thickness } = data;
+            if (callback) {
+                callback({
+                    status,
+                    thickness
+                });
+            }
+        });
+        // TODO:
+        window.addEventListener('cancelReq', () => {
+            req.abort();
+        });
+    }
+
+    getGcodeFile = (callback) => {
+        if (!this.token) {
+            callback && callback({
+                msg: 'this token is null'
+            });
+            return;
+        }
+        const api = `${this.host}/api/v1/print_file?token=${this.token}`;
+        request
+            .get(api)
+            .end((err, res) => {
+                const { msg } = this._getResult(err, res);
+                if (callback) {
+                    callback(msg, res.text);
+                }
+            });
+    };
+
+    uploadFile = (filename, file, callback) => {
+        if (!this.token) {
+            callback && callback({
+                msg: 'this token is null'
+            });
+            return;
+        }
+        const api = `${this.host}/api/v1/upload`;
+        request
+            .post(api)
+            .timeout(300000)
+            .field('token', this.token)
+            .attach('file', file, filename)
+            .end((err, res) => {
+                const { msg, data, text } = this._getResult(err, res);
+                if (callback) {
+                    callback(msg, data, text);
+                }
+            });
     };
 
     updateNozzleTemperature = (nozzleTemp, callback) => {
@@ -504,6 +507,8 @@ export class Server extends events.EventEmitter {
                 callback && callback(msg, data);
             });
     };
+
+    // TODO: to refactor
 
     isJSON = (str) => {
         if (typeof str === 'string') {

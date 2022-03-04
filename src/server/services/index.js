@@ -17,7 +17,19 @@ export {
     configstore,
     monitor
 };
+const connectionEventsObject = {
+    'connection:open': connectionManager.connectionOpen,
+    'connection:close': connectionManager.connectionClose,
+    'connection:startGcode': connectionManager.startGcode,
+    'connection:resumeGcode': connectionManager.resumeGcode,
+    'connection:pauseGcode': connectionManager.pauseGcode,
+    'connection:stopGcode': connectionManager.stopGcode,
+    'connection:executeGcode': connectionManager.executeGcode,
+    'connection:startHeartbeat': connectionManager.startHeartbeat,
+    'connection:getLaserMaterialThickness': connectionManager.getLaserMaterialThickness,
+    'connection:getGcodeFile': connectionManager.getGcodeFile,
 
+};
 
 function startServices(server) {
     // Start socket server
@@ -46,14 +58,18 @@ function startServices(server) {
     socketServer.registerEvent('command', socketSerial.command);
     socketServer.registerEvent('writeln', socketSerial.writeln);
 
-    socketServer.registerEvent('connection:open', connectionManager.connectionOpen);
-    socketServer.registerEvent('connection:close', connectionManager.connectionClose);
-    socketServer.registerEvent('connection:startGcode', connectionManager.startGcode);
-    socketServer.registerEvent('connection:resumeGcode', connectionManager.resumeGcode);
-    socketServer.registerEvent('connection:pauseGcode', connectionManager.pauseGcode);
-    socketServer.registerEvent('connection:stopGcode', connectionManager.stopGcode);
-    socketServer.registerEvent('connection:executeGcode', connectionManager.executeGcode);
-    socketServer.registerEvent('connection:startHeartbeat', connectionManager.startHeartbeat);
+    Object.entries(connectionEventsObject).forEach(([key, value]) => {
+        socketServer.registerEvent(key, value);
+    });
+
+    // socketServer.registerEvent('connection:open', connectionManager.connectionOpen);
+    // socketServer.registerEvent('connection:close', connectionManager.connectionClose);
+    // socketServer.registerEvent('connection:startGcode', connectionManager.startGcode);
+    // socketServer.registerEvent('connection:resumeGcode', connectionManager.resumeGcode);
+    // socketServer.registerEvent('connection:pauseGcode', connectionManager.pauseGcode);
+    // socketServer.registerEvent('connection:stopGcode', connectionManager.stopGcode);
+    // socketServer.registerEvent('connection:executeGcode', connectionManager.executeGcode);
+    // socketServer.registerEvent('connection:startHeartbeat', connectionManager.startHeartbeat);
 
 
     // task manager
