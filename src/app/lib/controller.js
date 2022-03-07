@@ -47,13 +47,6 @@ class SerialPortClient {
         'http:discover': [],
         'connection:open': [],
         'connection:close': [],
-        // 'connection:startGcode': [],
-        // 'connection:resumeGcode': [],
-        // 'connection:pauseGcode': [],
-        // 'connection:stopGcode': [],
-        // 'connection:executeGcode': [],
-        // 'connection:startHeartbeat': [],
-
         // Controller events
         'feeder:status': [],
         'sender:status': [],

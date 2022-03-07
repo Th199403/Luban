@@ -28,6 +28,20 @@ const connectionEventsObject = {
     'connection:startHeartbeat': connectionManager.startHeartbeat,
     'connection:getLaserMaterialThickness': connectionManager.getLaserMaterialThickness,
     'connection:getGcodeFile': connectionManager.getGcodeFile,
+    'connection:uploadFile': connectionManager.uploadFile,
+    'connection:updateNozzleTemperature': connectionManager.updateNozzleTemperature,
+    'connection:updateBedTemperature': connectionManager.updateBedTemperature,
+    'connection:updateZOffset': connectionManager.updateZOffset,
+    'connection:loadFilament': connectionManager.loadFilament,
+    'connection:unloadFilament': connectionManager.unloadFilament,
+    'connection:updateWorkSpeedFactor': connectionManager.updateWorkSpeedFactor,
+    'connection:updateLaserPower': connectionManager.updateLaserPower,
+    // 'connection:getEnclosureStatus': connectionManager.getEnclosureStatus,
+    'connection:setEnclosureLight': connectionManager.setEnclosureLight,
+    'connection:setEnclosureFan': connectionManager.setEnclosureFan,
+    'connection:setDoorDetection': connectionManager.setDoorDetection,
+    'connection:setFilterSwitch': connectionManager.setFilterSwitch,
+    'connection:setFilterWorkSpeed': connectionManager.setFilterWorkSpeed,
 
 };
 
@@ -61,16 +75,6 @@ function startServices(server) {
     Object.entries(connectionEventsObject).forEach(([key, value]) => {
         socketServer.registerEvent(key, value);
     });
-
-    // socketServer.registerEvent('connection:open', connectionManager.connectionOpen);
-    // socketServer.registerEvent('connection:close', connectionManager.connectionClose);
-    // socketServer.registerEvent('connection:startGcode', connectionManager.startGcode);
-    // socketServer.registerEvent('connection:resumeGcode', connectionManager.resumeGcode);
-    // socketServer.registerEvent('connection:pauseGcode', connectionManager.pauseGcode);
-    // socketServer.registerEvent('connection:stopGcode', connectionManager.stopGcode);
-    // socketServer.registerEvent('connection:executeGcode', connectionManager.executeGcode);
-    // socketServer.registerEvent('connection:startHeartbeat', connectionManager.startHeartbeat);
-
 
     // task manager
     socketServer.registerEvent('taskCommit:generateToolPath', TaskManager.addGenerateToolPathTask);

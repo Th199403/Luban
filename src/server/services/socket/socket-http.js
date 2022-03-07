@@ -62,7 +62,8 @@ const _getResult = (err, res) => {
         text: res.text
     };
 };
-
+// let timeoutHandle = null;
+let intervalHandle = null;
 /**
  * A singleton to manage devices connection.
  */
@@ -79,6 +80,8 @@ class SocketHttp {
 
     heartBeatWorker= null;
 
+    moduleSettings=null;
+
     connectionOpen = (socket, options) => {
         const { host, token } = options;
         this.host = host;
@@ -86,6 +89,7 @@ class SocketHttp {
         this.socket = socket;
         log.debug(`wifi host="${this.host}" : token=${this.token}`);
         const api = `${this.host}/api/v1/connect`;
+        intervalHandle = setInterval(this.getEnclosureStatus, 1000);
         request
             .post(api)
             .timeout(3000)
@@ -110,6 +114,7 @@ class SocketHttp {
         this.host = '';
         this.token = '';
         this.heartBeatWorker && this.heartBeatWorker.terminate();
+        clearInterval(intervalHandle);
     };
 
     startGcode = () => {
@@ -263,7 +268,192 @@ class SocketHttp {
             .end((err, res) => {
                 this.socket && this.socket.emit('connection:uploadFile', _getResult(err, res));
             });
-    }
+    };
+
+    updateNozzleTemperature = (options) => {
+        const { nozzleTemperatureValue, eventName } = options;
+        const api = `${this.host}/api/v1/override_nozzle_temperature`;
+        request
+            .post(api)
+            .send(`token=${this.token}`)
+            .send(`nozzleTemp=${nozzleTemperatureValue}`)
+            .end((err, res) => {
+                this.socket && this.socket.emit(eventName, _getResult(err, res));
+            });
+    };
+
+    updateBedTemperature = (options) => {
+        const { heatedBedTemperatureValue, eventName } = options;
+        const api = `${this.host}/api/v1/override_bed_temperature`;
+        request
+            .post(api)
+            .send(`token=${this.token}`)
+            .send(`heatedBedTemp=${heatedBedTemperatureValue}`)
+            .end((err, res) => {
+                this.socket && this.socket.emit(eventName, _getResult(err, res));
+            });
+    };
+
+    updateZOffset = (options) => {
+        const { zOffset, eventName } = options;
+        const api = `${this.host}/api/v1/override_z_offset`;
+        request
+            .post(api)
+            .send(`token=${this.token}`)
+            .send(`zOffset=${zOffset}`)
+            .end((err, res) => {
+                this.socket && this.socket.emit(eventName, _getResult(err, res));
+            });
+    };
+
+    loadFilament = (options) => {
+        const { eventName } = options;
+        const api = `${this.host}/api/v1/filament_load`;
+        request
+            .post(api)
+            .send(`token=${this.token}`)
+            .end((err, res) => {
+                this.socket && this.socket.emit(eventName, _getResult(err, res));
+            });
+    };
+
+    unloadFilament = (options) => {
+        const { eventName } = options;
+        const api = `${this.host}/api/v1/filament_unload`;
+        request
+            .post(api)
+            .send(`token=${this.token}`)
+            .end((err, res) => {
+                this.socket && this.socket.emit(eventName, _getResult(err, res));
+            });
+    };
+
+    updateWorkSpeedFactor = (options) => {
+        const { eventName, workSpeedFactor } = options;
+        const api = `${this.host}/api/v1/override_work_speed`;
+        request
+            .post(api)
+            .send(`token=${this.token}`)
+            .send(`workSpeed=${workSpeedFactor}`)
+            .end((err, res) => {
+                this.socket && this.socket.emit(eventName, _getResult(err, res));
+            });
+    };
+
+    updateLaserPower = (options) => {
+        const { eventName, laserPower } = options;
+        const api = `${this.host}/api/v1/override_laser_power`;
+        request
+            .post(api)
+            .send(`token=${this.token}`)
+            .send(`laserPower=${laserPower}`)
+            .end((err, res) => {
+                this.socket && this.socket.emit(eventName, _getResult(err, res));
+            });
+    };
+
+    getEnclosureStatus = () => {
+        const api = `${this.host}/api/v1/enclosure?token=${this.token}`;
+        request
+            .get(api)
+            .end((err, res) => {
+                const currentModuleStatus = _getResult(err, res)?.data;
+                if (this.moduleSettings !== currentModuleStatus) {
+                    console.log('getEnclosureStatus', this.moduleSettings, currentModuleStatus);
+                    this.moduleSettings = currentModuleStatus;
+                    this.socket && this.socket.emit('Marlin:settings', {
+                        enclosureDoorDetection: currentModuleStatus?.isDoorEnabled,
+                        enclosureOnline: currentModuleStatus?.isReady,
+                        enclosureFan: currentModuleStatus?.fan,
+                        enclosureLight: currentModuleStatus?.led,
+                    });
+                }
+            });
+    };
+
+    setEnclosureLight = (options) => {
+        const { eventName, value } = options;
+        const api = `${this.host}/api/v1/enclosure`;
+        request
+            .post(api)
+            .send(`token=${this.token}`)
+            .send(`led=${value}`)
+            .end((err, res) => {
+                this.socket && this.socket.emit(eventName, _getResult(err, res));
+            });
+    };
+
+    setEnclosureFan = (options) => {
+        const { eventName, value } = options;
+        const api = `${this.host}/api/v1/enclosure`;
+        request
+            .post(api)
+            .send(`token=${this.token}`)
+            .send(`fan=${value}`)
+            .end((err, res) => {
+                this.socket && this.socket.emit(eventName, _getResult(err, res));
+            });
+    };
+
+   setDoorDetection = (options) => {
+       const { eventName, enable } = options;
+       const api = `${this.host}/api/v1/enclosure`;
+       request
+           .post(api)
+           .send(`token=${this.token}`)
+           .send(`isDoorEnabled=${enable}`)
+           .end((err, res) => {
+               this.socket && this.socket.emit(eventName, _getResult(err, res));
+           });
+   };
+
+   setFilterSwitch = (options) => {
+       const { eventName, enable } = options;
+       const api = `${this.host}/api/v1/air_purifier_switch`;
+       request
+           .post(api)
+           .send(`token=${this.token}`)
+           .send(`switch=${enable}`)
+           .end((err, res) => {
+               this.socket && this.socket.emit(eventName, _getResult(err, res));
+           });
+   };
+
+   setFilterWorkSpeed = (options) => {
+       const { eventName, value } = options;
+       const api = `${this.host}/api/v1/air_purifier_fan_speed`;
+       request
+           .post(api)
+           .send(`token=${this.token}`)
+           .send(`fan_speed=${value}`)
+           .end((err, res) => {
+               this.socket && this.socket.emit(eventName, _getResult(err, res));
+           });
+   };
+
+   setFilterSwitch = (options) => {
+       const { eventName, enable } = options;
+       const api = `${this.host}/api/v1/air_purifier_switch`;
+       request
+           .post(api)
+           .send(`token=${this.token}`)
+           .send(`switch=${enable}`)
+           .end((err, res) => {
+               this.socket && this.socket.emit(eventName, _getResult(err, res));
+           });
+   };
+
+   setFilterWorkSpeed = (options) => {
+       const { eventName, value } = options;
+       const api = `${this.host}/api/v1/air_purifier_fan_speed`;
+       request
+           .post(api)
+           .send(`token=${this.token}`)
+           .send(`fan_speed=${value}`)
+           .end((err, res) => {
+               this.socket && this.socket.emit(eventName, _getResult(err, res));
+           });
+   };
 }
 
 const socketHttp = new SocketHttp();

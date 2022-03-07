@@ -20,7 +20,7 @@ import {
     CONNECTION_TYPE_WIFI, WORKFLOW_STATE_IDLE, WORKFLOW_STATUS_IDLE,
     DATA_PREFIX, HEAD_CNC, HEAD_LASER, HEAD_PRINTING,
     LEVEL_TWO_POWER_LASER_FOR_SM2,
-    CONNECTION_TYPE_SERIAL, CONNECTION_MATERIALTHICKNESS
+    CONNECTION_TYPE_SERIAL, CONNECTION_MATERIALTHICKNESS, CONNECTION_UPLOAD_FILE
 } from '../../../constants';
 import { actions as workspaceActions, WORKSPACE_STAGE } from '../../../flux/workspace';
 import { actions as projectActions } from '../../../flux/project';
@@ -219,7 +219,7 @@ function WifiTransport({ widgetActions, controlActions }) {
     const originOffset = useSelector(state => state?.machine?.originOffset);
     const toolHeadName = useSelector(state => state?.workspace?.toolHead);
     const { previewBoundingBox, headType, gcodeFiles, previewModelGroup, previewRenderState, previewStage, isRotate } = useSelector(state => state.workspace);
-    const { server, isConnected, connectionType, size, workflowStatus, workflowState, isSendedOnWifi } = useSelector(state => state.machine);
+    const { isConnected, connectionType, size, workflowStatus, workflowState, isSendedOnWifi } = useSelector(state => state.machine);
     const [loadToWorkspaceOnLoad, setLoadToWorkspaceOnLoad] = useState(true);
     const [selectFileName, setSelectFileName] = useState('');
     const [selectFileType, setSelectFileType] = useState('');
@@ -367,24 +367,25 @@ function WifiTransport({ widgetActions, controlActions }) {
                 const blob = new Blob([gcode], { type: 'text/plain' });
                 const file = new File([blob], find.name);
                 file.renderGcodeFileName = find.renderGcodeFileName;
-                server.uploadFile(find.name, file, (err, data, text) => {
-                    isSendingFile.current.removeContainer();
-                    if (err) {
-                        modalSmallHOC({
-                            title: i18n._('key-Workspace/WifiTransport-Failed to send file.'),
-                            text: text,
-                            iconColor: '#FF4D4F',
-                            img: 'WarningTipsError'
-                        });
-                    } else {
-                        (modalSmallHOC({
-                            title: i18n._('key-Workspace/WifiTransport-File sent successfully.'),
-                            text: i18n._('key-Workspace/WifiTransport-Your file was successfully sent. Receive it on the Touchscreen.'),
-                            iconColor: '#4CB518',
-                            img: 'WarningTipsSuccess'
-                        }));
-                    }
-                });
+                controller.emitEvent(CONNECTION_UPLOAD_FILE, { filename: find.name, file: file })
+                    .once(CONNECTION_UPLOAD_FILE, ({ err, text }) => {
+                        isSendingFile.current.removeContainer();
+                        if (err) {
+                            modalSmallHOC({
+                                title: i18n._('key-Workspace/WifiTransport-Failed to send file.'),
+                                text: text,
+                                iconColor: '#FF4D4F',
+                                img: 'WarningTipsError'
+                            });
+                        } else {
+                            (modalSmallHOC({
+                                title: i18n._('key-Workspace/WifiTransport-File sent successfully.'),
+                                text: i18n._('key-Workspace/WifiTransport-Your file was successfully sent. Receive it on the Touchscreen.'),
+                                iconColor: '#4CB518',
+                                img: 'WarningTipsSuccess'
+                            }));
+                        }
+                    });
             });
         },
         importFile: (fileObj) => {

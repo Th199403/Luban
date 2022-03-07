@@ -211,22 +211,181 @@ class ConnectionManager {
         }
     };
 
+    updateNozzleTemperature = (socket, options) => {
+        if (this.connectionType === CONNECTION_TYPE_WIFI) {
+            this.socket.updateNozzleTemperature(options);
+        } else {
+            const { nozzleTemperatureValue } = options;
+            this.socket.command(this.socket, {
+                args: [`M104 S${nozzleTemperatureValue}`]
+            });
+        }
+    }
 
-    startHeartbeat = (socket, options) => {
-        this.socket.startHeartbeat(options);
-    };
+    updateBedTemperature = (socket, options) => {
+        if (this.connectionType === CONNECTION_TYPE_WIFI) {
+            this.socket.updateBedTemperature(options);
+        } else {
+            const { heatedBedTemperatureValue } = options;
+            this.socket.command(this.socket, {
+                args: [`M140 S${heatedBedTemperatureValue}`]
+            });
+        }
+    }
 
     getLaserMaterialThickness = (socket, options) => {
         this.socket.getLaserMaterialThickness(options);
     };
 
+    loadFilament = (socket, options) => {
+        if (this.connectionType === CONNECTION_TYPE_WIFI) {
+            this.socket.loadFilament(options);
+        } else {
+            this.socket.command(this.socket, {
+                args: ['G91;\nG0 E60 F200;\nG90;']
+            });
+        }
+    }
+
+    unloadFilament = (socket, options) => {
+        if (this.connectionType === CONNECTION_TYPE_WIFI) {
+            this.socket.unloadFilament(options);
+        } else {
+            this.socket.command(this.socket, {
+                args: ['G91;\nG0 E6 F200;\nG0 E-60 F150;\nG90;']
+            });
+        }
+    }
+
+    updateWorkSpeedFactor = (socket, options) => {
+        if (this.connectionType === CONNECTION_TYPE_WIFI) {
+            this.socket.updateWorkSpeedFactor(options);
+        } else {
+            const { workSpeedValue } = options;
+            this.socket.command(this.socket, {
+                args: [`M220 S${workSpeedValue}`]
+            });
+        }
+    }
+
+    updateLaserPower = (socket, options) => {
+        const { isPrinting, laserPower, laserPowerOpen } = options;
+        if (isPrinting) {
+            if (this.connectionType === CONNECTION_TYPE_WIFI) {
+                this.socket.updateLaserPower(options);
+            } else {
+                this.executeGcode(
+                    this.socket,
+                    { gcode: `M3 P${laserPower} S${laserPower * 255 / 100}` }
+                );
+            }
+        } else {
+            if (laserPowerOpen) {
+                this.executeGcode(
+                    this.socket,
+                    { gcode: `M3 P${laserPower} S${laserPower * 255 / 100}` }
+                );
+            }
+            this.executeGcode(
+                this.socket,
+                { gcode: 'M500' }
+            );
+        }
+    }
+
+    switchLaserPower = (socket, options) => {
+        const { isSM2, laserPower, laserPowerOpen } = options;
+        if (laserPowerOpen) {
+            this.executeGcode(
+                this.socket,
+                { gcode: 'M3 P0 S0' }
+            );
+        } else {
+            if (isSM2) {
+                this.executeGcode(
+                    this.socket,
+                    { gcode: 'M3 P1 S2.55' }
+                );
+            } else {
+                this.executeGcode(
+                    this.socket,
+                    { gcode: `M3 P${laserPower} S${laserPower * 255 / 100}` }
+                );
+            }
+        }
+    };
+
+    setEnclosureLight = (socket, options) => {
+        if (this.connectionType === CONNECTION_TYPE_WIFI) {
+            this.socket.setEnclosureLight(options);
+        } else {
+            const { value } = options;
+            this.executeGcode(
+                this.socket,
+                { gcode: `M1010 S3 P${value};` }
+            );
+        }
+    };
+
+    setEnclosureFan = (socket, options) => {
+        if (this.connectionType === CONNECTION_TYPE_WIFI) {
+            this.socket.setEnclosureFan(options);
+        } else {
+            const { value } = options;
+            this.executeGcode(
+                this.socket,
+                { gcode: `M1010 S4 P${value};` }
+            );
+        }
+    };
+
+    setFilterSwitch = (socket, options) => {
+        if (this.connectionType === CONNECTION_TYPE_WIFI) {
+            this.socket.setFilterSwitch(options);
+        } else {
+            const { value, enable } = options;
+            this.executeGcode(
+                this.socket,
+                { gcode: `M1011 F${enable ? value : 0};` }
+            );
+        }
+    };
+
+    setFilterWorkSpeed = (socket, options) => {
+        if (this.connectionType === CONNECTION_TYPE_WIFI) {
+            this.socket.setFilterWorkSpeed(options);
+        } else {
+            const { value } = options;
+            this.executeGcode(
+                this.socket,
+                { gcode: `M1011 F${value};` }
+            );
+        }
+    };
+
+    // only for Wifi
+    setDoorDetection = (socket, options) => {
+        if (this.connectionType === CONNECTION_TYPE_WIFI) {
+            this.socket.setDoorDetection(options);
+        }
+    };
+
+    startHeartbeat = (socket, options) => {
+        this.socket.startHeartbeat(options);
+    };
+
     getGcodeFile = () => {
-        this.socket.getLaserMaterialThickness();
+        this.socket.getGcodeFile();
     };
 
     uploadFile = () => {
         this.socket.uploadFile();
+    };
+
+    updateZOffset = (socket, options) => {
+        this.socket.updateZOffset(options);
     }
+    // only for Wifi
 }
 
 const connectionManager = new ConnectionManager();

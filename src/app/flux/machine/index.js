@@ -376,18 +376,29 @@ export const actions = {
             'Marlin:settings': (options) => {
                 const { enclosureDoorDetection, enclosureOnline, enclosureFan = 0, enclosureLight = 0,
                     airPurifierHasPower, airPurifier, airPurifierSwitch, airPurifierFanSpeed, airPurifierFilterHealth, emergencyStopOnline } = options.settings;
-                dispatch(baseActions.updateState({
-                    enclosureDoorDetection,
-                    enclosureOnline,
-                    enclosureFan,
-                    enclosureLight,
-                    airPurifier,
-                    airPurifierSwitch,
-                    airPurifierFanSpeed,
-                    airPurifierFilterHealth,
-                    airPurifierHasPower,
-                    emergencyStopOnline
-                }));
+                console.log('Marlin:settings', options.settings);
+                // TODO:
+                if (!_.isNil(airPurifier)) {
+                    dispatch(baseActions.updateState({
+                        enclosureDoorDetection,
+                        enclosureOnline,
+                        enclosureFan,
+                        enclosureLight,
+                        airPurifier,
+                        airPurifierSwitch,
+                        airPurifierFanSpeed,
+                        airPurifierFilterHealth,
+                        airPurifierHasPower,
+                        emergencyStopOnline
+                    }));
+                } else {
+                    dispatch(baseActions.updateState({
+                        enclosureDoorDetection,
+                        enclosureOnline,
+                        enclosureFan,
+                        enclosureLight
+                    }));
+                }
             },
             'serialport:connected': (data) => {
                 const { err } = data;
