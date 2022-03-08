@@ -132,6 +132,9 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v2
+        with:
+          minimum-size: 14GB
+          maximum-size: 14GB
 
       - name: Checkout submodules
         run: git submodule update --init --recursive
@@ -145,9 +148,6 @@ jobs:
       - run: npm install
 
       - run: npm run build
-        with:
-          minimum-size: 16GB
-          maximum-size: 16GB
 
       # ----------------------------------------------------------------
       # Build macOS x64
