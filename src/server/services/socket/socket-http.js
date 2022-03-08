@@ -1,5 +1,6 @@
 // import store from '../../store';
 import request from 'superagent';
+import { isEqual } from 'lodash';
 import logger from '../../lib/logger';
 import workerManager from '../task-manager/workerManager';
 import { HEAD_PRINTING, HEAD_LASER, HEAD_CNC } from '../../constants';
@@ -358,14 +359,16 @@ class SocketHttp {
             .get(api)
             .end((err, res) => {
                 const currentModuleStatus = _getResult(err, res)?.data;
-                if (this.moduleSettings !== currentModuleStatus) {
+                if (!isEqual(this.moduleSettings, currentModuleStatus)) {
                     console.log('getEnclosureStatus', this.moduleSettings, currentModuleStatus);
                     this.moduleSettings = currentModuleStatus;
                     this.socket && this.socket.emit('Marlin:settings', {
-                        enclosureDoorDetection: currentModuleStatus?.isDoorEnabled,
-                        enclosureOnline: currentModuleStatus?.isReady,
-                        enclosureFan: currentModuleStatus?.fan,
-                        enclosureLight: currentModuleStatus?.led,
+                        settings: {
+                            enclosureDoorDetection: currentModuleStatus?.isDoorEnabled,
+                            enclosureOnline: currentModuleStatus?.isReady,
+                            enclosureFan: currentModuleStatus?.fan,
+                            enclosureLight: currentModuleStatus?.led,
+                        }
                     });
                 }
             });
@@ -398,6 +401,7 @@ class SocketHttp {
    setDoorDetection = (options) => {
        const { eventName, enable } = options;
        const api = `${this.host}/api/v1/enclosure`;
+       console.log('setDoorDetection', eventName, enable);
        request
            .post(api)
            .send(`token=${this.token}`)

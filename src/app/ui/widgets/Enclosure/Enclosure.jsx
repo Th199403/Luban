@@ -26,11 +26,8 @@ function Enclosure() {
             setIsLedReady(false);
             controller.emitEvent(CONNECTION_ENCLOSURE_LIGHT, {
                 value: _led
-            }).once(({ msg }) => {
-                setIsFanReady(true);
-                if (msg) {
-                    log.error(msg);
-                }
+            }).once(CONNECTION_ENCLOSURE_LIGHT, () => {
+                setIsLedReady(true);
             });
         },
         onHandleCoolingFans: async () => {
@@ -38,17 +35,15 @@ function Enclosure() {
             setIsFanReady(false);
             controller.emitEvent(CONNECTION_ENCLOSURE_FAN, {
                 value: _fan
-            }).once(({ msg }) => {
+            }).once(CONNECTION_ENCLOSURE_FAN, () => {
                 setIsFanReady(true);
-                if (msg) {
-                    log.error(msg);
-                }
             });
         },
         onHandleDoorEnabled: () => {
             controller.emitEvent(CONNECTION_DOOR_DETECTION, {
                 enable: !isDoorEnabled
-            }).once(({ msg, data }) => {
+            }).once(CONNECTION_DOOR_DETECTION, ({ msg, data }) => {
+                console.log('data', data);
                 if (msg) {
                     log.error(msg);
                     return;

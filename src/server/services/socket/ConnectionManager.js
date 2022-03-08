@@ -319,11 +319,12 @@ class ConnectionManager {
         if (this.connectionType === CONNECTION_TYPE_WIFI) {
             this.socket.setEnclosureLight(options);
         } else {
-            const { value } = options;
+            const { value, eventName } = options;
             this.executeGcode(
                 this.socket,
                 { gcode: `M1010 S3 P${value};` }
             );
+            socket && socket.emit(eventName);
         }
     };
 
@@ -331,11 +332,13 @@ class ConnectionManager {
         if (this.connectionType === CONNECTION_TYPE_WIFI) {
             this.socket.setEnclosureFan(options);
         } else {
-            const { value } = options;
+            const { value, eventName } = options;
             this.executeGcode(
                 this.socket,
                 { gcode: `M1010 S4 P${value};` }
             );
+            console.log('value, eventName', value, eventName, socket);
+            socket && socket.emit(eventName);
         }
     };
 
