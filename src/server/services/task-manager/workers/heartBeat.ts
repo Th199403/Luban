@@ -16,7 +16,6 @@ const stopBeat = (msg?: string) => {
 const heartBeat = (param: IParam) => {
     return new Promise((resolve) => {
         const { token, host, stop } = param;
-        console.log("heartBeat param", param)
         if (stop && intervalHandle) {
             resolve(stopBeat());
             return;

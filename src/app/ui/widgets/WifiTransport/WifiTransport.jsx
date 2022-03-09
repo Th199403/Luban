@@ -367,7 +367,6 @@ function WifiTransport({ widgetActions, controlActions }) {
                 const blob = new Blob([gcode], { type: 'text/plain' });
                 const file = new File([blob], find.name);
                 file.renderGcodeFileName = find.renderGcodeFileName;
-                console.log('file', file, find.name);
                 controller.emitEvent(CONNECTION_UPLOAD_FILE, { filename: find.name, file: file })
                     .once(CONNECTION_UPLOAD_FILE, ({ err, text }) => {
                         isSendingFile.current.removeContainer();

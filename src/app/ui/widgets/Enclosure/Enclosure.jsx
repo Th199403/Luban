@@ -14,8 +14,6 @@ import {
 
 function Enclosure() {
     const { isConnected, headType, connectionType, enclosureLight, enclosureFan } = useSelector(state => state.machine, shallowEqual);
-    // const [led, setLed] = useState(0);
-    // const [fan, setFan] = useState(0);
     const [isLedReady, setIsLedReady] = useState(true);
     const [isFanReady, setIsFanReady] = useState(true);
     const [isDoorEnabled, setIsDoorEnabled] = useState(true);
@@ -26,8 +24,6 @@ function Enclosure() {
             setIsLedReady(false);
             controller.emitEvent(CONNECTION_ENCLOSURE_LIGHT, {
                 value: _led
-            }).once(CONNECTION_ENCLOSURE_LIGHT, () => {
-                setIsLedReady(true);
             });
         },
         onHandleCoolingFans: async () => {
@@ -36,9 +32,6 @@ function Enclosure() {
             controller.emitEvent(CONNECTION_ENCLOSURE_FAN, {
                 value: _fan
             });
-            // .once(CONNECTION_ENCLOSURE_FAN, () => {
-            //     setIsFanReady(true);
-            // });
         },
         onHandleDoorEnabled: () => {
             controller.emitEvent(CONNECTION_DOOR_DETECTION, {

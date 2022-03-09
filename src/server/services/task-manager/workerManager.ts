@@ -8,9 +8,9 @@ export enum WorkerMethods {
     generateGcode = 'generateGcode',
     generateToolPath = 'generateToolPath',
     generateViewPath = 'generateViewPath',
+    heartBeat = 'heartBeat',
     loadSize = 'loadSize',
-    processImage = 'processImage',
-    heartBeat = 'heartBeat'
+    processImage = 'processImage'
     // LUBAN worker methods END
 }
 

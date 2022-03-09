@@ -229,7 +229,6 @@ class SerialPortClient {
 
     emitEvent(eventName, options = {}) {
         socketController.emit(eventName, { ...options, eventName });
-        console.log('eventName', eventName);
         return socketController;
     }
 
