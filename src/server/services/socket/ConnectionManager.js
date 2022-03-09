@@ -35,8 +35,8 @@ class ConnectionManager {
         log.debug(`connectionOpen connectionType=${connectionType} this.socket=${this.socket}`);
     };
 
-    connectionClose = (socket) => {
-        this.socket.connectionClose(socket);
+    connectionClose = (socket, options) => {
+        this.socket.connectionClose(socket, options);
     };
 
     startGcode = (socket, options) => {
@@ -96,7 +96,7 @@ class ConnectionManager {
                             if (msg) {
                                 return;
                             }
-                            this.socket.startGcode();
+                            this.socket.startGcode(options);
                         });
                     });
             });
@@ -126,7 +126,7 @@ class ConnectionManager {
 
     resumeGcode = (socket, options) => {
         if (this.connectionType === CONNECTION_TYPE_WIFI) {
-            this.socket.resumeGcode();
+            this.socket.resumeGcode(options);
         } else {
             const { headType, pause3dpStatus, pauseStatus } = options;
             if (headType === HEAD_PRINTING) {
@@ -178,9 +178,9 @@ class ConnectionManager {
         }
     };
 
-    pauseGcode = () => {
+    pauseGcode = (socket, options) => {
         if (this.connectionType === CONNECTION_TYPE_WIFI) {
-            this.socket.pauseGcode();
+            this.socket.pauseGcode(options);
         } else {
             this.socket.command(this.socket, {
                 cmd: 'gcode:pause',
@@ -188,9 +188,9 @@ class ConnectionManager {
         }
     };
 
-    stopGcode = () => {
+    stopGcode = (socket, options) => {
         if (this.connectionType === CONNECTION_TYPE_WIFI) {
-            this.socket.stopGcode();
+            this.socket.stopGcode(options);
         } else {
             this.socket.command(this.socket, {
                 cmd: 'gcode:stop',
@@ -337,7 +337,6 @@ class ConnectionManager {
                 this.socket,
                 { gcode: `M1010 S4 P${value};` }
             );
-            console.log('value, eventName', value, eventName, socket);
             socket && socket.emit(eventName);
         }
     };
@@ -377,12 +376,12 @@ class ConnectionManager {
         this.socket.startHeartbeat(options);
     };
 
-    getGcodeFile = () => {
-        this.socket.getGcodeFile();
+    getGcodeFile = (socket, options) => {
+        this.socket.getGcodeFile(options);
     };
 
-    uploadFile = () => {
-        this.socket.uploadFile();
+    uploadFile = (socket, options) => {
+        this.socket.uploadFile(options);
     };
 
     updateZOffset = (socket, options) => {

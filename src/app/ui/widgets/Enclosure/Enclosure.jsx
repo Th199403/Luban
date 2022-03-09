@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 // import PropTypes from 'prop-types';
 import { shallowEqual, useSelector } from 'react-redux';
 import TipTrigger from '../../components/TipTrigger';
@@ -35,15 +35,15 @@ function Enclosure() {
             setIsFanReady(false);
             controller.emitEvent(CONNECTION_ENCLOSURE_FAN, {
                 value: _fan
-            }).once(CONNECTION_ENCLOSURE_FAN, () => {
-                setIsFanReady(true);
             });
+            // .once(CONNECTION_ENCLOSURE_FAN, () => {
+            //     setIsFanReady(true);
+            // });
         },
         onHandleDoorEnabled: () => {
             controller.emitEvent(CONNECTION_DOOR_DETECTION, {
                 enable: !isDoorEnabled
             }).once(CONNECTION_DOOR_DETECTION, ({ msg, data }) => {
-                console.log('data', data);
                 if (msg) {
                     log.error(msg);
                     return;
@@ -54,6 +54,14 @@ function Enclosure() {
             });
         }
     };
+
+    useEffect(() => {
+        setIsLedReady(true);
+    }, [enclosureLight]);
+
+    useEffect(() => {
+        setIsFanReady(true);
+    }, [enclosureFan]);
 
     return (
         <div>

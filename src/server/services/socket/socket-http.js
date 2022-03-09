@@ -103,14 +103,15 @@ class SocketHttp {
             });
     };
 
-    connectionClose = () => {
+    connectionClose = (socket, options) => {
+        const { eventName } = options;
         const api = `${this.host}/api/v1/disconnect`;
         request
             .post(api)
             .timeout(3000)
             .send(`token=${this.token}`)
             .end((err, res) => {
-                this.socket && this.socket.emit('connection:close', _getResult(err, res));
+                this.socket && this.socket.emit(eventName, _getResult(err, res));
             });
         this.host = '';
         this.token = '';
@@ -118,47 +119,51 @@ class SocketHttp {
         clearInterval(intervalHandle);
     };
 
-    startGcode = () => {
+    startGcode = (options) => {
+        const { eventName } = options;
         const api = `${this.host}/api/v1/start_print`;
         request
             .post(api)
             .timeout(120000)
             .send(`token=${this.token}`)
             .end((err, res) => {
-                this.socket && this.socket.emit('connection:startGcode', _getResult(err, res));
+                this.socket && this.socket.emit(eventName, _getResult(err, res));
             });
     }
 
-    resumeGcode = () => {
+    resumeGcode = (options) => {
+        const { eventName } = options;
         const api = `${this.host}/api/v1/resume_print`;
         request
             .post(api)
             .timeout(120000)
             .send(`token=${this.token}`)
             .end((err, res) => {
-                this.socket && this.socket.emit('connection:resumeGcode', _getResult(err, res));
+                this.socket && this.socket.emit(eventName, _getResult(err, res));
             });
     };
 
-    pauseGcode = () => {
+    pauseGcode = (options) => {
+        const { eventName } = options;
         const api = `${this.host}/api/v1/pause_print`;
         request
             .post(api)
             .timeout(120000)
             .send(`token=${this.token}`)
             .end((err, res) => {
-                this.socket && this.socket.emit('connection:pauseGcode', _getResult(err, res));
+                this.socket && this.socket.emit(eventName, _getResult(err, res));
             });
     };
 
-    stopGcode = () => {
+    stopGcode = (options) => {
+        const { eventName } = options;
         const api = `${this.host}/api/v1/stop_print`;
         request
             .post(api)
             .timeout(120000)
             .send(`token=${this.token}`)
             .end((err, res) => {
-                this.socket && this.socket.emit('connection:stopGcode', _getResult(err, res));
+                this.socket && this.socket.emit(eventName, _getResult(err, res));
             });
     };
 
@@ -240,26 +245,28 @@ class SocketHttp {
     };
 
     getLaserMaterialThickness = (options) => {
-        const { x, y, feedRate } = options;
+        const { x, y, feedRate, eventName } = options;
         const api = `${this.host}/api/request_Laser_Material_Thickness?token=${this.token}&x=${x}&y=${y}&feedRate=${feedRate}`;
         request
             .get(api)
             .end((err, res) => {
-                this.socket && this.socket.emit('connection:materialThickness', _getResult(err, res));
+                this.socket && this.socket.emit(eventName, _getResult(err, res));
             });
     };
 
-    getGcodeFile = () => {
+    getGcodeFile = (options) => {
+        const { eventName } = options;
         const api = `${this.host}/api/v1/print_file?token=${this.token}`;
         request
             .get(api)
             .end((err, res) => {
-                this.socket && this.socket.emit('connection:getGcodeFile', _getResult(err, res));
+                this.socket && this.socket.emit(eventName, _getResult(err, res));
             });
     };
 
     uploadFile = (options) => {
-        const { filename, file } = options;
+        const { filename, file, eventName } = options;
+        console.log('uploadFile', filename, file);
         const api = `${this.host}/api/v1/upload`;
         request
             .post(api)
@@ -267,7 +274,7 @@ class SocketHttp {
             .field('token', this.token)
             .attach('file', file, filename)
             .end((err, res) => {
-                this.socket && this.socket.emit('connection:uploadFile', _getResult(err, res));
+                this.socket && this.socket.emit(eventName, _getResult(err, res));
             });
     };
 
@@ -360,7 +367,6 @@ class SocketHttp {
             .end((err, res) => {
                 const currentModuleStatus = _getResult(err, res)?.data;
                 if (!isEqual(this.moduleSettings, currentModuleStatus)) {
-                    console.log('getEnclosureStatus', this.moduleSettings, currentModuleStatus);
                     this.moduleSettings = currentModuleStatus;
                     this.socket && this.socket.emit('Marlin:settings', {
                         settings: {
@@ -401,7 +407,6 @@ class SocketHttp {
    setDoorDetection = (options) => {
        const { eventName, enable } = options;
        const api = `${this.host}/api/v1/enclosure`;
-       console.log('setDoorDetection', eventName, enable);
        request
            .post(api)
            .send(`token=${this.token}`)
