@@ -1,3 +1,4 @@
+import { isInside } from 'overlap-area';
 import { DATA_PREFIX } from '../constants';
 import { coordGmSvgToModel, getBBox } from '../ui/SVGEditor/element-utils';
 
@@ -50,17 +51,27 @@ function genModelConfig(elem, size, materials = {}) {
         }
         coord.positionX = 0;
     }
+
     if (elem.nodeName === 'path') {
-        coord.positionX = +elem.getAttribute('x') + coord.width / 2 * coord.scaleX - size.x;
-        coord.positionY = size.y - (+elem.getAttribute('y')) - coord.height / 2 * coord.scaleY;
-        deltaLeftX = 0.5;
-        deltaRightX = 1;
-        deltaTopY = 0.5;
-        deltaBottomY = 1;
+        const isDraw = elem.getAttribute('id')?.includes('graph');
+        if (!isDraw) {
+            coord.positionX = +elem.getAttribute('x') + coord.width / 2 * coord.scaleX - size.x;
+            coord.positionY = size.y - (+elem.getAttribute('y')) - coord.height / 2 * coord.scaleY;
+            deltaLeftX = 0.5;
+            deltaRightX = 1;
+            deltaTopY = 0.5;
+            deltaBottomY = 1;
+        }
     }
 
     // eslint-disable-next-line prefer-const
     let { x, y, width, height, positionX, positionY, scaleX, scaleY } = coord;
+    if (!width) {
+        width = 1;
+    }
+    if (!height) {
+        height = 1;
+    }
     // leave a little space for line width
     let vx = (x - deltaLeftX) * scaleX;
     let vy = (y - deltaTopY) * scaleY;
@@ -136,6 +147,8 @@ function transformBox(x, y, w, h, m) {
 
 class SVGActionsFactory {
     selectedSvgModels = [];
+
+    drawModel = null;
 
     selectedElementsTransformation = {
         x: 0,
@@ -231,8 +244,8 @@ class SVGActionsFactory {
         this.svgContentGroup.deleteElements(selectedElements);
     }
 
-    bringElementToFront() {
-        const selected = this.svgContentGroup.getSelected();
+    bringElementToFront(model) {
+        const selected = model || this.svgContentGroup.getSelected();
         if (!selected) {
             return;
         }
@@ -636,6 +649,7 @@ class SVGActionsFactory {
             const INDEXMARGIN = 0.02;
             svgModel.elem.id = svgModel.modelID;
             svgModel.setParent(this.svgContentGroup.group);
+            svgModel.setPreSelection(this.svgContentGroup.preSelectionGroup);
             svgModel.modelName = this.modelGroup._createNewModelName(svgModel);
             this.modelGroup.resetModelsPositionZByOrder();
             svgModel.transformation.positionZ = (this.modelGroup.models.length + 1) * INDEXMARGIN;
@@ -725,6 +739,7 @@ class SVGActionsFactory {
 
             const svgModel = this.modelGroup.addModel(options);
             svgModel.setParent(this.svgContentGroup.group);
+            svgModel.setPreSelection(this.svgContentGroup.preSelectionGroup);
             return svgModel;
         } catch (e) {
             console.error(e);
@@ -836,6 +851,22 @@ class SVGActionsFactory {
             };
         }
         return this.selectedElementsTransformation;
+    }
+
+    isPointInSelectArea(point) {
+        if (this.selectedSvgModels.length === 0) {
+            return false;
+        }
+        return this.selectedSvgModels.some((model) => {
+            const { x, y, width, height } = model.elem.getBBox();
+            const modelBoxPoints = [
+                [x + width, y + height],
+                [x, y + height],
+                [x, y],
+                [x + width, y]
+            ];
+            return isInside(point, modelBoxPoints);
+        });
     }
 
     /**

@@ -21,8 +21,10 @@ import RotationAnalysisOverlay from './Overlay/RotationAnalysisOverlay';
 import EditSupportOverlay from './Overlay/EditSupportOverlay';
 import SupportOverlay from './Overlay/SupportOverlay';
 import TranslateOverlay from './Overlay/TranslationOverlay';
-import { DUAL_EXTRUDER_TOOLHEAD_FOR_SM2, HEAD_PRINTING,
-    EPSILON, BOTH_EXTRUDER_MAP_NUMBER, LEFT_EXTRUDER_MAP_NUMBER } from '../../../constants';
+import {
+    DUAL_EXTRUDER_TOOLHEAD_FOR_SM2, HEAD_PRINTING,
+    EPSILON, BOTH_EXTRUDER_MAP_NUMBER, LEFT_EXTRUDER_MAP_NUMBER
+} from '../../../constants';
 import { machineStore } from '../../../store/local-storage';
 import PrimeTowerModel from '../../../models/PrimeTowerModel';
 

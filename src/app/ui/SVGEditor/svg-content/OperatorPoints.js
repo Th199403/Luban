@@ -1,3 +1,4 @@
+import svgPath from 'svgpath';
 import { createSVGElement, getBBox } from '../element-utils';
 import { transformBox, transformListToTransform, getTransformList, getRotationAngle, transformPoint } from '../element-transform';
 import SvgModel from '../../../models/SvgModel';
@@ -243,6 +244,21 @@ class OperatorPoints {
         };
     }
 
+    isStraightLine(elem) {
+        if (elem instanceof SVGPathElement) {
+            const d = elem.getAttribute('d');
+            const flag = ['M', 'L', 'Z'];
+            let res = true;
+            svgPath(d).iterate((segment, index) => {
+                if (segment[0] !== flag[index]) {
+                    res = false;
+                }
+            });
+            return res;
+        }
+        return false;
+    }
+
     /**
      * TODO: Refactor this method
      */
@@ -355,8 +371,12 @@ class OperatorPoints {
             L${minX},${maxY} z`;
         rect.setAttribute('d', dstr);
         // todo it will be rotated after resize
-        const xform = angle ? `rotate(${[angle, cx, cy].join(',')})` : '';
-        this.operatorPointsGroup.setAttribute('transform', xform);
+        if (elements.length === 1) {
+            const xform = angle ? `rotate(${[angle, cx, cy].join(',')})` : '';
+            this.operatorPointsGroup.setAttribute('transform', xform);
+        } else {
+            this.resetTransformList();
+        }
 
         // recalculate grip coordinates
         this.operatorGripCoords = {
@@ -375,7 +395,7 @@ class OperatorPoints {
                 const grip = this.operatorGrips[dir];
                 grip.setAttribute('cx', coords[0]);
                 grip.setAttribute('cy', coords[1]);
-                grip.setAttribute('display', ((elements.length === 1) ? 'inline' : 'none'));
+                grip.setAttribute('display', ((elements.length === 1 && !this.isStraightLine(elements[0])) ? 'inline' : 'none'));
             });
         }
 
