@@ -1701,8 +1701,9 @@ export const actions = {
     },
 
     displayModel: () => (dispatch, getState) => {
-        const { gcodeLineGroup } = getState().printing;
+        const { gcodeLineGroup, modelGroup } = getState().printing;
         // modelGroup.object.visible = true;
+        modelGroup.setDisplayType('model');
         gcodeLineGroup.visible = false;
         dispatch(actions.updateState({
             displayedType: 'model'
@@ -2396,8 +2397,9 @@ export const actions = {
     },
 
     displayGcode: () => (dispatch, getState) => {
-        const { gcodeLineGroup } = getState().printing;
+        const { gcodeLineGroup, modelGroup } = getState().printing;
         // modelGroup.object.visible = false;
+        modelGroup.setDisplayType('gcode');
         gcodeLineGroup.visible = true;
         dispatch(actions.updateState({
             displayedType: 'gcode'
