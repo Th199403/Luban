@@ -1,4 +1,7 @@
 import * as THREE from 'three';
+import { GCodeParser } from 'gcode-viewer/dist/parser';
+// import { LineTubeGeometry } from 'gcode-viewer/dist/LineTubeGeometry';
+// import { LinePoint } from 'gcode-viewer/dist/LinePoint';
 import { acceleratedRaycast, computeBoundsTree, disposeBoundsTree } from 'three-mesh-bvh';
 import path from 'path';
 import { cloneDeep, isNil, filter, find as lodashFind } from 'lodash';
@@ -59,6 +62,7 @@ import DeleteSupportsOperation3D from '../operation-history/DeleteSupportsOperat
 import AddSupportsOperation3D from '../operation-history/AddSupportsOperation3D';
 import ArrangeOperation3D from '../operation-history/ArrangeOperation3D';
 import PrimeTowerModel from '../../models/PrimeTowerModel';
+import TextSprite from '../../three-extensions/TextSprite';
 
 // register methods for three-mesh-bvh
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
@@ -664,7 +668,37 @@ export const actions = {
                 const object3D = gcodeBufferGeometryToObj3d('3DP', bufferGeometry);
 
                 dispatch(actions.destroyGcodeLine());
-                gcodeLineGroup.add(object3D);
+                // gcodeLineGroup.add(object3D);
+                console.log('object3D', object3D);
+                // const testObj = new LineTubeGeometry(8);
+                // const p1 = new LinePoint(new THREE.Vector3(100, 100, 0), 20, new THREE.Color('29BEB0'));
+                // const p2 = new LinePoint(new THREE.Vector3(50, 50, 0), 20, new THREE.Color('29BEB0'));
+                // testObj.add(p1);
+                // testObj.add(p2);
+                // testObj.finish();
+                // testObj.slice(0, 1);
+                // gcodeLineGroup.add(testObj);
+
+                const testObj2 = new TextSprite({
+                    x: 50,
+                    y: 50,
+                    z: 20,
+                    size: 20,
+                    text: 'TEST',
+                    textAlign: 'center',
+                    textBaseline: 'bottom',
+                    color: 0x85888c,
+                    opacity: 0.5
+                });
+                gcodeLineGroup.add(testObj2);
+
+                const gcode = value.gcode;
+                const ps = new GCodeParser(gcode);
+                ps.parse();
+                ps.slice();
+                gcodeLineGroup.add(ps.getGeometries()[0]);
+                console.log('ps', ps.getGeometries());
+
                 object3D.position.copy(new THREE.Vector3());
                 dispatch(actions.updateState({
                     layerCount,
@@ -1596,6 +1630,7 @@ export const actions = {
     updateGcodePreviewMode: (mode) => (dispatch, getState) => {
         const { gcodeLine, layerRangeDisplayed, layerCount } = getState().printing;
         const uniforms = gcodeLine.material.uniforms;
+        console.log('uniforms', uniforms, gcodeLine.material);
 
         if (mode === 'GrayUnderTheTopFloor') {
             uniforms.u_middle_layer_set_gray.value = 1;
