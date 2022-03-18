@@ -926,11 +926,8 @@
     "key-Progress/3DP-Ordinary": "",
     "key-Progress/3DP-Previewed G-code successfully.": "Previewed G-code successfully.",
     "key-Progress/3DP-Previewing G-code...{{progress}}%": "Previewing G-code...{{progress}}%",
-<<<<<<< HEAD
     "key-Progress/3DP-Scale to fit...{{progress}}%": "Scale to fit...{{progress}}%",
-=======
     "key-Progress/3DP-SingleLayer": "",
->>>>>>> 7423993a (Improvement: Improvement gcode preview)
     "key-Progress/Laser-Failed to load model.": "Failed to load model",
     "key-Progress/Laser-Loaded model successfully.": "Loaded model successfully.",
     "key-Progress/Laser-Loading model...": "Loading model...",
