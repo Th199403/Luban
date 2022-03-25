@@ -41,7 +41,7 @@ import discoverActions from './action-discover';
 import connectActions from './action-connect';
 
 const INITIAL_STATE = {
-    // region server discover
+    // region server disover
     // HTTP connection
     //  - servers: HTTP servers on Snapmaker 2.0
     //  - serverDiscovering: discover state
@@ -394,7 +394,6 @@ export const actions = {
                         workflowStatus: status,
                         laserCamera
                     }));
-                    console.log('ddd', machineState.server.getGcodePrintingInfo(state));
                     dispatch(baseActions.updateState({
                         gcodePrintingInfo: machineState.server.getGcodePrintingInfo(state)
                     }));
@@ -782,9 +781,9 @@ export const actions = {
     },
 
     executeGcodeAutoHome: (homingModal = false) => (dispatch, getState) => {
-        const { series, headType } = getState().workspace;
+        const { series, headType, connectionType } = getState().workspace;
         dispatch(actions.executeGcode('G53'));
-        if (homingModal) {
+        if (homingModal && connectionType === CONNECTION_TYPE_WIFI) {
             dispatch(baseActions.updateState({
                 homingModal
             }));
