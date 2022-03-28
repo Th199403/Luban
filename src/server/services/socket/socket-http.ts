@@ -314,35 +314,35 @@ class SocketHttp {
             host: this.host,
             token: this.token
         }], (result: any) => {
-            let state = result.state;
             if (result.status === 'offline') {
                 this.socket && this.socket.emit('connection:close');
                 return;
             }
-
-            if (Object.keys(state).length === 0) {
+            const { data, code } = _getResult(null, result.res);
+            console.log('code', code)
+            // No Content
+            if (Object.keys(data).length === 0 || code === 204) {
                 return;
-            } else {
-                state = {
-                    ...state,
-                    ...this.state,
-                    isHomed: state?.homed,
-                    status: state.status.toLowerCase(),
-                    airPurifier: !isNil(state.airPurifierSwitch),
-                    pos: {
-                        x: state.x,
-                        y: state.y,
-                        z: state.z,
-                        b: state.b,
-                        isFourAxis: !isNil(state.b)
-                    },
-                    originOffset: {
-                        x: state.offsetX,
-                        y: state.offsetY,
-                        z: state.offsetZ,
-                    }
-                };
             }
+            const state = {
+                ...data,
+                ...this.state,
+                isHomed: data?.homed,
+                status: data.status.toLowerCase(),
+                airPurifier: !isNil(data.airPurifierSwitch),
+                pos: {
+                    x: data.x,
+                    y: data.y,
+                    z: data.z,
+                    b: data.b,
+                    isFourAxis: !isNil(data.b)
+                },
+                originOffset: {
+                    x: data.offsetX,
+                    y: data.offsetY,
+                    z: data.offsetZ,
+                }
+            };
 
             if (waitConfirm) {
                 waitConfirm = false;
@@ -400,7 +400,7 @@ class SocketHttp {
         request
             .get(api)
             .end((err, res) => {
-                console.log('res', res.text, _getResult(err, res));
+                console.log('res', res, _getResult(err, res));
                 this.socket && this.socket.emit(eventName, {
                     msg: err?.message,
                     text: res.text
