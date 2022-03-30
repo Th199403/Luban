@@ -338,7 +338,7 @@ class OperationGroup {
 
             const rx = elem.getAttribute('rx');
             const ry = elem.getAttribute('ry');
-            if (rx && ry) {
+            if (rx !== '0' && ry !== '0') {
                 elem.setAttribute('rx', `${pointRadius / this.scale}`);
                 elem.setAttribute('ry', `${pointRadius / this.scale}`);
             }

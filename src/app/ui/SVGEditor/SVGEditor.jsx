@@ -35,6 +35,7 @@ const SVGEditor = forwardRef((props, ref) => {
                 }
             },
             [shortcutActions.SELECTALL]: () => {
+                console.log('SELECTALL,', props.menuDisabledCount);
                 if (!(props.menuDisabledCount > 0)) {
                     props.editorActions.selectAll();
                 }
@@ -45,6 +46,7 @@ const SVGEditor = forwardRef((props, ref) => {
                 }
             },
             [shortcutActions.DELETE]: () => {
+                console.log('DELETE,', props.menuDisabledCount);
                 if (!(props.menuDisabledCount > 0)) {
                     props.editorActions.deleteSelectedModel(extRef.current.elem ? 'draw' : props.SVGCanvasMode);
                 }

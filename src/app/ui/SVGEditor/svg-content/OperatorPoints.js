@@ -151,7 +151,6 @@ class OperatorPoints {
     }
 
     showOperator(show) {
-        this.operatorPointsGroup.setAttribute('display', show ? 'inline' : 'none');
         this.showResizeGrips(show);
         this.showRotateGrips(show);
         this.showBox(show);

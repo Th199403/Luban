@@ -444,11 +444,15 @@ class SVGCanvas extends PureComponent {
             if (extShape.elem) {
                 this.editingElem = extShape.elem;
                 this.svgContentGroup.drawGroup.stopDraw();
-                // this.setMode('draw');
                 const svgModel = this.props.SVGActions.getSVGModelByElement(this.editingElem);
-                this.svgContentGroup.drawGroup.startDraw(mode, this.editingElem, svgModel.transformation);
+                if (svgModel) {
+                    this.svgContentGroup.drawGroup.startDraw(mode, this.editingElem, svgModel.transformation);
+                } else {
+                    this.editingElem = null;
+                    this.extShape.elem = null;
+                    this.svgContentGroup.drawGroup.startDraw(mode);
+                }
             } else {
-                // this.setMode('draw');
                 this.svgContentGroup.drawGroup.startDraw(mode);
                 this.svgContentGroup.drawGroup.startDraw(mode);
             }
@@ -804,6 +808,10 @@ class SVGCanvas extends PureComponent {
         }
     };
 
+    triggerDrawMove = (event, a, b) => {
+        this.svgContentGroup.drawGroup.onMouseMove(event, a, b);
+    };
+
     onMouseMove = (event) => {
         const draw = this.currentDrawing;
         const matrix = this.svgContentGroup.getScreenCTM().inverse();
@@ -948,7 +956,7 @@ class SVGCanvas extends PureComponent {
                 if (dx === 0 && dy === 0) {
                     break;
                 }
-                this.svgContentGroup.drawGroup.onMouseMove(event, [x, y], [dx, dy]);
+                this.triggerDrawMove(event, [x, y], [dx, dy]);
                 return;
             }
             default:
@@ -963,7 +971,7 @@ class SVGCanvas extends PureComponent {
                     if (dx === 0 && dy === 0) {
                         break;
                     }
-                    this.svgContentGroup.drawGroup.onMouseMove(event, [x, y], [dx, dy]);
+                    this.triggerDrawMove(event, [x, y], [dx, dy]);
                 }
                 // TODO select with drawing box
                 // const { startX, startY } = draw;

@@ -86,6 +86,8 @@ class DrawGroup {
 
     private latestDrawingCompleted: boolean = false;
 
+    private isAttached: boolean
+
     constructor(contentGroup: SVGGElement, scale: number) {
         this.scale = scale;
         this.init();
@@ -164,8 +166,6 @@ class DrawGroup {
     }
 
     private setMode(mode: Mode) {
-        console.log('---------------', mode);
-
         this.mode = mode;
         if (mode !== Mode.NONE) {
             this.onDrawStart && this.onDrawStart(this.originGraph);
@@ -421,10 +421,10 @@ class DrawGroup {
             if (this.cursorGroup.isAttached() && this.operationGroup.controlsArray.length > 0) {
                 const success = this.operationGroup.setEndPoint(x, y);
                 if (success) {
-                    this.operationGroup.controlsArray = [];
-                    this.operationGroup.lastControlsArray = [];
+                    this.isAttached = true;
                 }
             } else {
+                this.isAttached = false;
                 this.operationGroup.setEndPoint(x, y);
             }
             this.cursorGroup.keyDown();
@@ -497,6 +497,11 @@ class DrawGroup {
             return;
         }
         if (this.mode === Mode.DRAW) {
+            this.operationGroup.lastControlsArray = [];
+            if (this.isAttached) {
+                // this.operationGroup.controlsArray = [];
+                this.operationGroup.clearOperation();
+            }
             const { x, y, attached } = this.attachCursor(cx, cy);
             if (attached) {
                 this.cursorGroup.setAttachPoint(x, y);
@@ -562,7 +567,6 @@ class DrawGroup {
 
     private attachCursor(x: number, y: number): { x: number, y: number, attached: boolean } {
         this.setGuideLineVisibility(false);
-
         let min: number = this.attachSpace;
         let attachPosition: TCoordinate;
         let guideX: TCoordinate;
@@ -593,8 +597,13 @@ class DrawGroup {
         if (this.mode === Mode.DRAW) {
             const controlPoints = this.operationGroup.controlPoints.querySelectorAll('[visibility="visible"]');
             const length = controlPoints.length;
-            Array.from(controlPoints).forEach((elem, index) => {
-                if (index !== length - 1) {
+            if (length > 1) {
+                Array.from(controlPoints).forEach((elem, index) => {
+                    if (length === 2 && (index === 1 || elem.getAttribute('rx') === '0')) {
+                        return;
+                    } else if (length === 3 && index !== 1) {
+                        return;
+                    }
                     const cx = Number(elem.getAttribute('x')) + pointRadius / this.scale;
                     const cy = Number(elem.getAttribute('y')) + pointRadius / this.scale;
                     if (Math.abs(x - cx) <= this.attachSpace) {
@@ -609,8 +618,8 @@ class DrawGroup {
                             min = Math.min(Math.abs(x - cx), Math.abs(y - cy));
                         }
                     }
-                }
-            });
+                });
+            }
         }
 
         if (attachPosition) {
@@ -797,6 +806,8 @@ class DrawGroup {
         } else {
             this.cursorGroup.setAttachPoint();
         }
+        // const x = cx;
+        // const y = cy;
         this.cursorPosition = [x, y];
 
         if (this.mode === Mode.DRAW) {
