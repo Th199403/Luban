@@ -192,7 +192,7 @@ const INITIAL_STATE = {
     materialManagerDirection: LEFT_EXTRUDER,
 
     // others
-    transformMode: '', // translate/scale/rotate/draw
+    transformMode: '', // translate/scale/rotate
     isGcodeOverstepped: false,
     displayedType: 'model', // model/gcode
 

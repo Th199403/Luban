@@ -200,7 +200,7 @@ const SVGLeftBar = forwardRef((props, ref) => {
                             className="position-ab width-152 margin-left-72 margin-top-64 border-default-grey-1 border-radius-8 background-color-white"
                         >
                             <div className="border-bottom-normal padding-vertical-10 padding-horizontal-16 height-40">
-                                绘制路径
+                                {i18n._('key-Laser/LeftBar-Draw Path')}
                             </div>
                             <div className={classNames(styles['center-pen'], 'width-152')}>
                                 <Anchor
@@ -211,7 +211,7 @@ const SVGLeftBar = forwardRef((props, ref) => {
                                     <div
                                         className={classNames('width-120', styles['center-pen-done'])}
                                     >
-                                        <span>Done</span>
+                                        <span>{i18n._('key-Laser/LeftBar-Draw Path Done')}</span>
                                     </div>
                                 </Anchor>
                             </div>
@@ -224,7 +224,7 @@ const SVGLeftBar = forwardRef((props, ref) => {
                             className="position-ab width-152 margin-left-72 margin-top-112 border-default-grey-1 border-radius-8 background-color-white"
                         >
                             <div className="border-bottom-normal padding-vertical-10 padding-horizontal-16 height-40">
-                                Pen
+                                {i18n._('key-Laser/LeftBar-Draw')}
                             </div>
                             <div className={classNames(styles['center-pen'], 'width-152')}>
                                 <Anchor
@@ -235,7 +235,7 @@ const SVGLeftBar = forwardRef((props, ref) => {
                                     <div
                                         className={classNames('width-120', styles['center-pen-done'])}
                                     >
-                                        <span>Done</span>
+                                        <span>{i18n._('key-Laser/LeftBar-Draw Done')}</span>
                                     </div>
                                 </Anchor>
                             </div>

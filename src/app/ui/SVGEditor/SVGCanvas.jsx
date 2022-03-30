@@ -1128,7 +1128,6 @@ class SVGCanvas extends PureComponent {
     }, 300);
 
     onMouseUp = (event) => {
-        console.log('--onMouseUp mode=', this.mode);
         if (this.mode === 'select' && event.which === 1 && !this.editingElem) {
             this.svgSelector.setVisible(false);
         }

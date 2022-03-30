@@ -1198,7 +1198,7 @@ export const actions = {
 
     bringSelectedModelToFront: (headType, svgModel) => (dispatch, getState) => {
         const { modelGroup, SVGActions } = getState()[headType];
-        SVGActions.bringElementToFront(svgModel.elem);
+        SVGActions.bringElementToFront(svgModel?.elem);
         modelGroup.bringSelectedModelToFront(svgModel);
     },
 
