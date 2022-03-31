@@ -183,6 +183,8 @@ class SvgModel extends BaseModel {
 
     pathPreSelectionArea = null;
 
+    vertexPoints = []
+
     constructor(modelInfo, modelGroup) {
         super(modelInfo, modelGroup);
         const { elem, size } = modelInfo;
@@ -1113,6 +1115,24 @@ class SvgModel extends BaseModel {
         );
     }
 
+    computevertexPoints() {
+        const { width, height, rotationZ } = this.transformation;
+        const { logicalX: x, logicalY: y } = this;
+        const modelBoxPoints = [
+            [x - width / 2, y + height / 2],
+            [x - width / 2, y - height / 2],
+            [x + width / 2, y - height / 2],
+            [x + width / 2, y + height / 2]
+        ];
+
+        this.vertexPoints = modelBoxPoints.map(([x1, y1]) => {
+            return [
+                (x1 - x) * Math.cos(rotationZ) - (y1 - y) * Math.sin(rotationZ) + x,
+                (x1 - x) * Math.sin(rotationZ) + (y1 - y) * Math.cos(rotationZ) + y
+            ];
+        });
+    }
+
     getTaskInfo() {
         const taskInfo = {
             modelID: this.modelID,
@@ -1173,6 +1193,7 @@ class SvgModel extends BaseModel {
         if (isDraw) {
             this.config.d = this.elem.getAttribute('d');
         }
+        this.computevertexPoints();
     }
 
     async updateAndRefresh({ transformation, config, ...others } = {}) {

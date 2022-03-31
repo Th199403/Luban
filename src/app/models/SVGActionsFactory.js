@@ -607,6 +607,13 @@ class SVGActionsFactory {
         this._setSelectedElementsTransformation(t);
     }
 
+    setSelectedSvgModelsByModels(models) {
+        this.modelGroup.selectedModelArray = models;
+        this.selectedSvgModels = models;
+        const elems = models.map(model => model.elem);
+        this.svgContentGroup.setSelection(elems);
+    }
+
     resetSelection() {
         const transformation = this.modelGroup.getSelectedModelTransformation();
 
@@ -858,14 +865,7 @@ class SVGActionsFactory {
             return false;
         }
         return this.selectedSvgModels.some((model) => {
-            const { x, y, width, height } = model.elem.getBBox();
-            const modelBoxPoints = [
-                [x + width, y + height],
-                [x, y + height],
-                [x, y],
-                [x + width, y]
-            ];
-            return isInside(point, modelBoxPoints);
+            return isInside(point, model.vertexPoints);
         });
     }
 

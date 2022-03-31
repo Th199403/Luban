@@ -1198,7 +1198,7 @@ export const actions = {
 
     bringSelectedModelToFront: (headType, svgModel) => (dispatch, getState) => {
         const { modelGroup, SVGActions } = getState()[headType];
-        SVGActions.bringElementToFront(svgModel?.elem);
+        SVGActions.bringElementToFront(svgModel.elem);
         modelGroup.bringSelectedModelToFront(svgModel);
     },
 
@@ -2223,25 +2223,28 @@ export const actions = {
 
     boxSelect: (headType, bbox, onlyContainSelect) => async (dispatch, getState) => {
         const { modelGroup, SVGActions } = getState()[headType];
+        const { size } = getState().machine;
+
         const models = modelGroup.models;
         workerManager.boxSelect([
             bbox,
             models.map((model) => {
-                const { x, y, width, height } = model.elem.getBBox();
-                return { x, y, width, height };
+                const { width, height } = model.transformation;
+                return { width, height, vertexPoints: model.vertexPoints };
             }),
-            onlyContainSelect
+            onlyContainSelect,
+            size
         ], (indexs) => {
-            SVGActions.clearSelection();
-
             if (indexs.length > 0) {
+                let selectedEles = [];
                 const selectedModels = indexs.map(index => {
+                    selectedEles = [...selectedEles, models[index].elem];
                     return models[index];
                 });
-                selectedModels.forEach(model => {
-                    dispatch(actions.bringSelectedModelToFront(headType, model));
-                });
-                SVGActions.addSelectedSvgModelsByModels(selectedModels);
+
+                SVGActions.setSelectedSvgModelsByModels(selectedModels);
+            } else {
+                dispatch(actions.clearSelection(headType));
             }
         });
         dispatch(baseActions.render(headType));

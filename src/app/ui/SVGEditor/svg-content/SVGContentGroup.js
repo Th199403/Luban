@@ -279,6 +279,13 @@ class SVGContentGroup {
         return posAndsize;
     }
 
+    setSelection(elements) {
+        this.selectedElements = elements;
+        const posAndsize = this.operatorPoints.resizeGrips(this.selectedElements);
+        this.showSelectorGrips(true);
+        return posAndsize;
+    }
+
     /**
      * Reset selection.
      *

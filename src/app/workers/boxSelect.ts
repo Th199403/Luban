@@ -5,14 +5,17 @@ type TBbox = {
     x: number,
     y: number,
     width: number,
-    height: number
+    height: number,
+    vertexPoints?: Array<([number, number])>
 }
 
-const boxSelect = (bbox: TBbox, modelsBbox: TBbox[], onlyContainSelect: boolean) => {
+const boxSelect = (bbox: TBbox, modelsBbox: TBbox[], onlyContainSelect: boolean, size: { x: number, y: number }) => {
+    bbox.x -= size.x;
+    bbox.y = size.y - bbox.y;
     const selectBoxPoints = [
-        [bbox.x + bbox.width, bbox.y + bbox.height],
-        [bbox.x, bbox.y + bbox.height],
         [bbox.x, bbox.y],
+        [bbox.x, bbox.y - bbox.height],
+        [bbox.x + bbox.width, bbox.y - bbox.height],
         [bbox.x + bbox.width, bbox.y]
     ];
 
@@ -21,24 +24,18 @@ const boxSelect = (bbox: TBbox, modelsBbox: TBbox[], onlyContainSelect: boolean)
         return { ...model, index };
     }).sort((a, b) => {
         return b.width + b.height - a.width - a.height;
-    }).forEach(({ x, y, width, height, index }) => {
+    }).forEach(({ vertexPoints, width, height, index }) => {
         if (width === 0) { width = 1; }
         if (height === 0) { height = 1; }
-        const modelBoxPoints = [
-            [x + width, y + height],
-            [x, y + height],
-            [x, y],
-            [x + width, y]
-        ];
         if (onlyContainSelect) {
-            const res = modelBoxPoints.every(point => {
+            const res = vertexPoints.every(point => {
                 return isInside(point, selectBoxPoints);
             });
             if (res) {
                 selectedIndex.push(index);
             }
         } else {
-            const overlapSize = getOverlapSize(selectBoxPoints, modelBoxPoints);
+            const overlapSize = getOverlapSize(selectBoxPoints, vertexPoints);
             if (overlapSize) {
                 selectedIndex.push(index);
             }

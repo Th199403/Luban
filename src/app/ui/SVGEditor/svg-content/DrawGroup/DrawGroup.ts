@@ -541,7 +541,6 @@ class DrawGroup {
                     this.selected.point = anotherEndpoint;
                     const x = Number(anotherEndpoint.getAttribute('cx'));
                     const y = Number(anotherEndpoint.getAttribute('cy'));
-                    anotherEndpoint.parentNode.appendChild(anotherEndpoint);
                     this.transformOperatingPoint([x + manualEndOffset, y + manualEndOffset]);
                 }
                 this.updateAllLinePosition();

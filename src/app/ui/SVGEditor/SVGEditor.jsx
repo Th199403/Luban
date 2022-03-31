@@ -14,6 +14,9 @@ const SVGEditor = forwardRef((props, ref) => {
     const extRef = useRef(props.SVGCanvasExt);
     extRef.current = props.SVGCanvasExt;
 
+    const menuDisabledCountRef = useRef(props.menuDisabledCount);
+    menuDisabledCountRef.current = props.menuDisabledCount;
+
     const onStopDraw = (exitCompletely) => {
         canvas.current.stopDraw(exitCompletely);
     };
@@ -25,49 +28,47 @@ const SVGEditor = forwardRef((props, ref) => {
         priority: priorities.VIEW,
         shortcuts: {
             [shortcutActions.UNDO]: () => {
-                if (!(props.menuDisabledCount > 0)) {
+                if (!(menuDisabledCountRef.current > 0)) {
                     props.editorActions.undo();
                 }
             },
             [shortcutActions.REDO]: () => {
-                if (!(props.menuDisabledCount > 0)) {
+                if (!(menuDisabledCountRef.current > 0)) {
                     props.editorActions.redo();
                 }
             },
             [shortcutActions.SELECTALL]: () => {
-                console.log('SELECTALL,', props.menuDisabledCount);
-                if (!(props.menuDisabledCount > 0)) {
+                if (!(menuDisabledCountRef.current > 0)) {
                     props.editorActions.selectAll();
                 }
             },
             [shortcutActions.UNSELECT]: () => {
-                if (!(props.menuDisabledCount > 0)) {
+                if (!(menuDisabledCountRef.current > 0)) {
                     props.editorActions.unselectAll();
                 }
             },
             [shortcutActions.DELETE]: () => {
-                console.log('DELETE,', props.menuDisabledCount);
-                if (!(props.menuDisabledCount > 0)) {
+                if (!(menuDisabledCountRef.current > 0)) {
                     props.editorActions.deleteSelectedModel(extRef.current.elem ? 'draw' : props.SVGCanvasMode);
                 }
             },
             [shortcutActions.COPY]: () => {
-                if (!(props.menuDisabledCount > 0)) {
+                if (!(menuDisabledCountRef.current > 0)) {
                     props.editorActions.copy();
                 }
             },
             [shortcutActions.PASTE]: () => {
-                if (!(props.menuDisabledCount > 0)) {
+                if (!(menuDisabledCountRef.current > 0)) {
                     props.editorActions.paste();
                 }
             },
             [shortcutActions.DUPLICATE]: () => {
-                if (!(props.menuDisabledCount > 0)) {
+                if (!(menuDisabledCountRef.current > 0)) {
                     props.editorActions.duplicateSelectedModel();
                 }
             },
             [shortcutActions.CUT]: () => {
-                if (!(props.menuDisabledCount > 0)) {
+                if (!(menuDisabledCountRef.current > 0)) {
                     props.editorActions.cut();
                 }
             },
