@@ -2228,9 +2228,9 @@ export const actions = {
                 let selectedEles = [];
                 const selectedModels = indexs.map(index => {
                     selectedEles = [...selectedEles, models[index].elem];
+                    dispatch(actions.bringSelectedModelToFront(headType, models[index]));
                     return models[index];
                 });
-
                 SVGActions.setSelectedSvgModelsByModels(selectedModels);
             } else {
                 dispatch(actions.clearSelection(headType));

@@ -43,9 +43,8 @@ const SVGLeftBar = forwardRef((props, ref) => {
                 showExtShape: false,
                 extShape: ext ?? extShape
             });
-            await actions.exitDraw(mode);
-
-            if (mode !== 'select' || !props.selectEditing) {
+            const elem = await actions.exitDraw(mode);
+            if (!(mode === 'select' && elem)) {
                 props.setMode(mode, ext || {});
             }
         },

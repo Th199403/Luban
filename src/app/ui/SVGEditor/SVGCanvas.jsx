@@ -365,7 +365,6 @@ class SVGCanvas extends PureComponent {
         };
         this.svgContentGroup.onExitModelEditing = (exitCompletely) => {
             return this.stopDraw(exitCompletely);
-            // this.setMode('select');
         };
     }
 
@@ -448,7 +447,6 @@ class SVGCanvas extends PureComponent {
             if (extShape.elem) {
                 this.editingElem = extShape.elem;
                 this.svgContentGroup.drawGroup.stopDraw();
-                // this.setMode('draw');
                 const svgModel = this.props.SVGActions.getSVGModelByElement(this.editingElem);
                 this.svgContentGroup.drawGroup.startDraw(mode, this.editingElem, svgModel.transformation);
             } else {
@@ -1441,15 +1439,20 @@ class SVGCanvas extends PureComponent {
                         clearInterval(loop);
                         if (exitCompletely) {
                             this.editingElem = null;
-                            this.setMode(nextMode || 'select');
-                            !nextMode && this.addToSelection([elem]);
-                            resolve();
+                            if (nextMode) {
+                                this.setMode(nextMode);
+                                resolve();
+                            } else {
+                                this.setMode('select');
+                                this.addToSelection([elem]);
+                                resolve(elem);
+                            }
                         } else {
                             this.editingElem = elem;
                             this.setMode('select', { elem });
                             this.addToSelection([elem]);
                             this.svgContentGroup.drawGroup.startDraw(this.mode, elem, svgModel.transformation);
-                            resolve();
+                            resolve(elem);
                         }
                     }
                 }, 100);

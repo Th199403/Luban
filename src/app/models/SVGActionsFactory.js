@@ -1,4 +1,6 @@
 import { isInside } from 'overlap-area';
+import svgPath from 'svgpath';
+import { cloneDeep } from 'lodash';
 import { DATA_PREFIX } from '../constants';
 import { coordGmSvgToModel, getBBox } from '../ui/SVGEditor/element-utils';
 
@@ -84,14 +86,32 @@ function genModelConfig(elem, size, materials = {}) {
     let modelContent = '';
     if (elem instanceof SVGPathElement && isDraw) {
         const path = elem.getAttribute('d');
-        const paths = path.split('M').filter(item => item).map(item => {
+        const paths = [];
+        svgPath(path).iterate((segment) => {
+            const arr = cloneDeep(segment);
+            const mark = arr.shift();
+            const latestPath = paths[paths.length - 1];
+            const str = arr.join(' ');
+            if (!latestPath) {
+                paths.push(`M ${str}`);
+                return;
+            }
+            if (mark === 'M') {
+                if (latestPath.lastIndexOf(str) === -1) {
+                    paths.push(`M ${str}`);
+                }
+            } else if (mark !== 'Z') {
+                paths[paths.length - 1] = `${latestPath} ${mark} ${str}`;
+            }
+        });
+        const segments = paths.map(item => {
             const clone = elem.cloneNode(true);
-            clone.setAttribute('d', `M ${item}`);
+            clone.setAttribute('d', item);
             clone.setAttribute('transform', 'scale(1 1)');
             clone.setAttribute('font-size', clone.getAttribute('font-size'));
             return new XMLSerializer().serializeToString(clone);
         });
-        modelContent = paths.join('');
+        modelContent = segments.join('');
     } else {
         const clone = elem.cloneNode(true);
         clone.setAttribute('transform', `scale(${scaleX} ${scaleY})`);

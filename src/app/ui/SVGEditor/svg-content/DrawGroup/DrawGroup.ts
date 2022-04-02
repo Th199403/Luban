@@ -200,8 +200,6 @@ class DrawGroup {
                 this.originGraph.setAttribute('visibility', 'hidden');
 
                 this.originTransformation = { ...transformation };
-                console.log('---- rotationZ = ', transformation.rotationZ);
-
                 this.generatelines();
             } else {
                 this.originGraph = null;
@@ -211,8 +209,6 @@ class DrawGroup {
             this.originGraphPath = this.originGraph.getAttribute('d');
             this.originGraph.setAttribute('visibility', 'hidden');
             this.originTransformation = { ...transformation };
-            console.log('---- rotationZ = ', transformation.rotationZ);
-
             this.generatelines();
         }
     }
@@ -258,8 +254,6 @@ class DrawGroup {
                 .translate(cx, cy);
         } else {
             const transform = this.originGraph.getAttribute('transform');
-            console.log('---- transform = ', transform);
-
             return svgPath(d).transform(transform);
         }
     }
@@ -977,6 +971,9 @@ class DrawGroup {
     }
 
     public stopDraw(forcedStop = false) {
+        if (this.mode === Mode.NONE) {
+            return null;
+        }
         this.cursorGroup.toogleVisible(false);
         this.setGuideLineVisibility(false);
         this.operationGroup.clearOperation();
@@ -985,9 +982,7 @@ class DrawGroup {
         this.clearAllEndPoint();
 
         if (forcedStop) {
-            if (this.mode === Mode.SELECT) {
-                this.originGraph.setAttribute('visibility', 'visible');
-            }
+            this.originGraph.setAttribute('visibility', 'visible');
             this.mode = Mode.NONE;
             this.clearAllEndPoint();
             this.originGraph = null;
