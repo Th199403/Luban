@@ -17,8 +17,8 @@ const SVGEditor = forwardRef((props, ref) => {
     const menuDisabledCountRef = useRef(props.menuDisabledCount);
     menuDisabledCountRef.current = props.menuDisabledCount;
 
-    const onStopDraw = (exitCompletely) => {
-        canvas.current.stopDraw(exitCompletely);
+    const onStopDraw = (exitCompletely, nextMode) => {
+        return canvas.current.stopDraw(exitCompletely, nextMode);
     };
 
     const shortcutHandler = {
@@ -232,7 +232,7 @@ const SVGEditor = forwardRef((props, ref) => {
                         editable={props.editable}
                         headType={props.headType}
                         onStartDraw={() => onStartDraw()}
-                        onStopDraw={(exitCompletely) => onStopDraw(exitCompletely)}
+                        onStopDraw={(exitCompletely, nextMode) => onStopDraw(exitCompletely, nextMode)}
                     />
                 </div>
             </div>

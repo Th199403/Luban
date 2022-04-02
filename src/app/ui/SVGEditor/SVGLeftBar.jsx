@@ -15,34 +15,44 @@ const SVGLeftBar = forwardRef((props, ref) => {
     });
 
     const actions = {
-        onClickInsertText: () => {
+        onClickInsertText: async () => {
             if (props.mode === 'draw') {
-                props.onStopDraw(true);
+                await props.onStopDraw(true);
             } else if (props.mode === 'select' && props.selectEditing) {
-                props.onStopDraw(true);
+                await props.onStopDraw(true);
             }
             props.insertDefaultTextVector();
         },
 
-        setMode: (mode, ext) => {
+        exitDraw: (mode) => {
             if (props.mode === 'draw') {
                 if (mode === 'select') {
-                    props.onStopDraw();
+                    return props.onStopDraw();
                 } else {
-                    props.onStopDraw(true);
+                    return props.onStopDraw(true, mode);
                 }
             }
             if (props.mode === 'select' && props.selectEditing) {
-                props.onStopDraw(true);
+                return props.onStopDraw(true, mode);
             }
+            return Promise.resolve();
+        },
+
+        setMode: async (mode, ext) => {
             setExtShape({
                 showExtShape: false,
                 extShape: ext ?? extShape
             });
-            props.setMode(mode, ext || {});
+            await actions.exitDraw(mode);
+
+            if (mode !== 'select' || !props.selectEditing) {
+                props.setMode(mode, ext || {});
+            }
         },
 
-        showExt: () => {
+        showExt: async () => {
+            await actions.exitDraw('ext');
+
             const selectedShape = extShape ?? library.use[0];
             setExtShape({
                 showExtShape: true,

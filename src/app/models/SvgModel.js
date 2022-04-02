@@ -329,14 +329,26 @@ class SvgModel extends BaseModel {
         const coord = coordGmSvgToModel(this.size, elem);
 
         const { x, y, width, height, positionX, positionY } = coord;
-        const clone = elem.cloneNode(true);
-        clone.setAttribute('transform', 'scale(1 1)');
-        clone.setAttribute('font-size', clone.getAttribute('font-size'));
+        let modelContent = '';
+        if (elem instanceof SVGPathElement) {
+            const path = elem.getAttribute('d');
+            const paths = path.split('M').filter(item => item).map(item => {
+                const clone = elem.cloneNode(true);
+                clone.setAttribute('d', `M ${item}`);
+                return new XMLSerializer().serializeToString(clone);
+            });
+            modelContent = paths.join('');
+        } else {
+            const clone = elem.cloneNode(true);
+            clone.setAttribute('transform', 'scale(1 1)');
+            clone.setAttribute('font-size', clone.getAttribute('font-size'));
+            modelContent = new XMLSerializer().serializeToString(clone);
+        }
 
         // Todo: need to optimize
         const content = `<svg x="0" y="0" width="${width}mm" height="${height}mm" `
             + `viewBox="${x} ${y} ${width} ${height}" `
-            + `xmlns="http://www.w3.org/2000/svg">${new XMLSerializer().serializeToString(clone)}</svg>`;
+            + `xmlns="http://www.w3.org/2000/svg">${modelContent}</svg>`;
         const model = {
             modelID: elem.getAttribute('id'),
             content: content,

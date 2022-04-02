@@ -200,6 +200,8 @@ class DrawGroup {
                 this.originGraph.setAttribute('visibility', 'hidden');
 
                 this.originTransformation = { ...transformation };
+                console.log('---- rotationZ = ', transformation.rotationZ);
+
                 this.generatelines();
             } else {
                 this.originGraph = null;
@@ -209,6 +211,8 @@ class DrawGroup {
             this.originGraphPath = this.originGraph.getAttribute('d');
             this.originGraph.setAttribute('visibility', 'hidden');
             this.originTransformation = { ...transformation };
+            console.log('---- rotationZ = ', transformation.rotationZ);
+
             this.generatelines();
         }
     }
@@ -254,6 +258,8 @@ class DrawGroup {
                 .translate(cx, cy);
         } else {
             const transform = this.originGraph.getAttribute('transform');
+            console.log('---- transform = ', transform);
+
             return svgPath(d).transform(transform);
         }
     }

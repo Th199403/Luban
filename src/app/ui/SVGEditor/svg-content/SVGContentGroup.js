@@ -86,8 +86,8 @@ class SVGContentGroup {
         };
     }
 
-    exitModelEditing() {
-        this.onExitModelEditing();
+    exitModelEditing(exitCompletely) {
+        return this.onExitModelEditing(exitCompletely);
     }
 
     // construct filter used in toolPath
@@ -281,9 +281,8 @@ class SVGContentGroup {
 
     setSelection(elements) {
         this.selectedElements = elements;
-        const posAndsize = this.operatorPoints.resizeGrips(this.selectedElements);
+        this.resetSelector(elements);
         this.showSelectorGrips(true);
-        return posAndsize;
     }
 
     /**

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import path from 'path';
 import { v4 as uuid } from 'uuid';
-import _, { includes } from 'lodash';
+import { includes } from 'lodash';
 /* eslint-disable-next-line import/no-cycle */
 import { actions as projectActions } from '../project';
 import api from '../../api';
@@ -31,7 +31,7 @@ import { processActions } from './actions-process';
 import workerManager from '../../lib/manager/workerManager';
 
 import { controller } from '../../lib/controller';
-import { isEqual, round } from '../../../shared/lib/utils';
+import { isEqual, round, whetherTransformed } from '../../../shared/lib/utils';
 
 import { PROCESS_STAGE, STEP_STAGE } from '../../lib/manager/ProgressManager';
 import VisibleOperation2D from '../operation-history/VisibleOperation2D';
@@ -177,7 +177,7 @@ function recordScaleActionsToHistory(scaleActionsFn, elements, SVGActions, headT
                         SVGActions._setSelectedElementsTransformation(_t);
 
                         element.onload = null;
-                        if (!_.isEqual(tmpTransformationState[element.id], svgModel.transformation)) {
+                        if (whetherTransformed(tmpTransformationState[element.id], svgModel.transformation)) {
                             const operation = new ScaleOperation2D({
                                 target: svgModel,
                                 svgActions: SVGActions,
@@ -199,7 +199,7 @@ function recordScaleActionsToHistory(scaleActionsFn, elements, SVGActions, headT
             } else {
                 // <rect> and <ellipse> elements go here, others go above
                 return new Promise((resolve) => {
-                    if (!_.isEqual(tmpTransformationState[element.id], svgModel.transformation)) {
+                    if (whetherTransformed(tmpTransformationState[element.id], svgModel.transformation)) {
                         const operation = new ScaleOperation2D({
                             target: svgModel,
                             svgActions: SVGActions,
@@ -1328,25 +1328,13 @@ export const actions = {
         dispatch(actions.resetProcessState(headType));
     },
 
-    selectAllElements: (headType) => (dispatch, getState) => {
+    selectAllElements: (headType) => async (dispatch, getState) => {
         const { SVGActions, SVGCanvasMode, SVGCanvasExt } = getState()[headType];
         if (SVGCanvasMode === 'draw' || SVGCanvasExt.elem) {
-            const elem = SVGActions.svgContentGroup.drawGroup.stopDraw();
-            if (elem && SVGCanvasMode === 'draw') {
-                const loop = setInterval(() => {
-                    const svgModel = SVGActions.getSVGModelByElement(elem);
-                    if (svgModel) {
-                        clearInterval(loop);
-                        dispatch(actions.setCanvasMode(headType, 'select'));
-                        SVGActions.selectAllElements();
-                        dispatch(baseActions.render(headType));
-                    }
-                }, 100);
-            } else {
-                dispatch(actions.setCanvasMode(headType, 'select'));
-                SVGActions.selectAllElements();
-                dispatch(baseActions.render(headType));
-            }
+            await SVGActions.svgContentGroup.exitModelEditing(true);
+            dispatch(actions.selectAllElements(headType));
+            // SVGActions.selectAllElements();
+            // dispatch(baseActions.render(headType));
         } else {
             SVGActions.selectAllElements();
             dispatch(baseActions.render(headType));
@@ -1405,11 +1393,12 @@ export const actions = {
     clearSelection: (headType) => (dispatch, getState) => {
         const { SVGActions } = getState()[headType];
 
-        SVGActions.clearSelection();
         if (SVGActions.svgContentGroup.drawGroup.mode) {
-            SVGActions.svgContentGroup.exitModelEditing();
-            SVGActions.svgContentGroup.drawGroup.stopDraw();
+            SVGActions.svgContentGroup.exitModelEditing(true);
+            // SVGActions.svgContentGroup.stopDraw();
+            return;
         }
+        SVGActions.clearSelection();
         dispatch(baseActions.render(headType));
     },
 
@@ -1449,7 +1438,7 @@ export const actions = {
         const operations = new Operations();
         for (const element of elements) {
             const svgModel = SVGActions.getSVGModelByElement(element);
-            if (!_.isEqual(tmpTransformationState[element.id], svgModel.transformation)) {
+            if (whetherTransformed(tmpTransformationState[element.id], svgModel.transformation)) {
                 const operation = new MoveOperation2D({
                     target: svgModel,
                     svgActions: SVGActions,
@@ -1484,7 +1473,7 @@ export const actions = {
         const operations = new Operations();
         for (const element of elements) {
             const svgModel = SVGActions.getSVGModelByElement(element);
-            if (!_.isEqual(tmpTransformationState[element.id], svgModel.transformation)) {
+            if (whetherTransformed(tmpTransformationState[element.id], svgModel.transformation)) {
                 const operation = new MoveOperation2D({
                     target: svgModel,
                     svgActions: SVGActions,
@@ -1725,7 +1714,7 @@ export const actions = {
         const operations = new Operations();
         for (const element of elements) {
             const svgModel = SVGActions.getSVGModelByElement(element);
-            if (!_.isEqual(tmpTransformationState[element.id], svgModel.transformation)) {
+            if (whetherTransformed(tmpTransformationState[element.id], svgModel.transformation)) {
                 const operation = new RotateOperation2D({
                     target: svgModel,
                     svgActions: SVGActions,
@@ -1760,7 +1749,7 @@ export const actions = {
         const operations = new Operations();
         for (const element of elements) {
             const svgModel = SVGActions.getSVGModelByElement(element);
-            if (!_.isEqual(tmpTransformationState[element.id], svgModel.transformation)) {
+            if (whetherTransformed(tmpTransformationState[element.id], svgModel.transformation)) {
                 const operation = new RotateOperation2D({
                     target: svgModel,
                     svgActions: SVGActions,
@@ -2256,12 +2245,17 @@ export const actions = {
         return SVGActions.isPointInSelectArea([x, y]);
     },
 
-    setCanvasMode: (headType, mode, ext) => (dispatch) => {
+    setCanvasMode: (headType, mode, ext) => (dispatch, getState) => {
+        const { SVGActions } = getState()[headType];
         if (!ext) {
             ext = {};
         }
-        if (mode === 'draw' || ext.elem) {
+        if (mode === 'draw' || ext?.elem) {
             dispatch(actions.resetProcessState(headType));
+            SVGActions.svgContentGroup.operatorPoints.showOperator(false);
+        } else {
+            SVGActions.svgContentGroup.operatorPoints.showOperator(true);
+            SVGActions.clearSelection();
         }
         dispatch(baseActions.updateState(headType, {
             SVGCanvasMode: mode,

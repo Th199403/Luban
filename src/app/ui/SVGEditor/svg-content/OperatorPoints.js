@@ -151,6 +151,7 @@ class OperatorPoints {
     }
 
     showOperator(show) {
+        this.operatorPointsGroup.setAttribute('display', show ? 'inline' : 'none');
         this.showResizeGrips(show);
         this.showRotateGrips(show);
         this.showBox(show);
@@ -370,12 +371,8 @@ class OperatorPoints {
             L${minX},${maxY} z`;
         rect.setAttribute('d', dstr);
         // todo it will be rotated after resize
-        if (elements.length === 1) {
-            const xform = angle ? `rotate(${[angle, cx, cy].join(',')})` : '';
-            this.operatorPointsGroup.setAttribute('transform', xform);
-        } else {
-            this.resetTransformList();
-        }
+        const xform = angle ? `rotate(${[angle, cx, cy].join(',')})` : '';
+        this.operatorPointsGroup.setAttribute('transform', xform);
 
         // recalculate grip coordinates
         this.operatorGripCoords = {

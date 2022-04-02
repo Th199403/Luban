@@ -6,6 +6,7 @@ export const IMPERIAL_UNITS = 'in';
 export const METRIC_UNITS = 'mm';
 
 export const EPSILON = 1e-6;
+export const JudgeMoveMiniDistance = 1e-4;
 
 // Controller
 export const MARLIN = 'Marlin';
