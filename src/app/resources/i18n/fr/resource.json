@@ -854,6 +854,7 @@
     "key-Printing/Preview-Helper": "Assistant",
     "key-Printing/Preview-Inner Wall": "Paroi intérieure",
     "key-Printing/Preview-Line Type": "Type de ligne",
+    "key-Printing/Preview-Model View": "",
     "key-Printing/Preview-Outer Wall": "Paroi extérieure",
     "key-Printing/Preview-Skin": "Habillage",
     "key-Printing/Preview-Tool0": "",
@@ -926,11 +927,8 @@
     "key-Progress/3DP-Ordinary": "",
     "key-Progress/3DP-Previewed G-code successfully.": "code G prévisualisé avec succès.",
     "key-Progress/3DP-Previewing G-code...{{progress}}%": "Prévisualisation du code G...{{progression}}%",
-<<<<<<< HEAD
     "key-Progress/3DP-Scale to fit...{{progress}}%": "Scale to fit...{{progress}}%",
-=======
     "key-Progress/3DP-SingleLayer": "",
->>>>>>> 7423993a (Improvement: Improvement gcode preview)
     "key-Progress/Laser-Failed to load model.": "Échec de chargement du modèle",
     "key-Progress/Laser-Loaded model successfully.": "Modèle chargé avec succès.",
     "key-Progress/Laser-Loading model...": "Chargement du modèle...",
@@ -988,7 +986,6 @@
     "key-Workspace/Connection-Laser Height": "Hauteur du laser",
     "key-Workspace/Connection-Laser camera": "Caméra laser",
     "key-Workspace/Connection-Manual Connection": "Connexion manuelle",
-    "key-Workspace/Connection-Manufacturer: {{manufacturer}}": "Fabricant : {{fabricant}}",
     "key-Workspace/Connection-No machines detected.": "Aucune machine détectée.",
     "key-Workspace/Connection-No ports available.": "Aucun port disponible.",
     "key-Workspace/Connection-Nozzle Temp.": "Température de la buse",
@@ -1347,7 +1344,6 @@
     "key-unused-Work Speed": "Vitesse de travail",
     "key-unused-Z Offset": "Décalage Z",
     "key-unused-{{pageLength}} per page": "{{pageLength}} par page",
-    "key-workspace_open_port-Can not close this port": "Vous ne pouvez pas fermer ce port.",
     "key-workspace_open_port-Can not open this port": "Vous ne pouvez pas ouvrir ce port.",
     "key-workspace_open_port-The machine is not ready": "La machine n’est pas prête.",
     "key_menu_About": "Environ",

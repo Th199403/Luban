@@ -854,6 +854,7 @@
     "key-Printing/Preview-Helper": "Helfer",
     "key-Printing/Preview-Inner Wall": "Innenwand",
     "key-Printing/Preview-Line Type": "Linientyp",
+    "key-Printing/Preview-Model View": "",
     "key-Printing/Preview-Outer Wall": "Außenwand",
     "key-Printing/Preview-Skin": "Haut",
     "key-Printing/Preview-Tool0": "",
@@ -926,11 +927,8 @@
     "key-Progress/3DP-Ordinary": "",
     "key-Progress/3DP-Previewed G-code successfully.": "Die Vorschau des G-Code war erfolgreich.",
     "key-Progress/3DP-Previewing G-code...{{progress}}%": "Vorschau des G-Code...{{progress}}%",
-<<<<<<< HEAD
     "key-Progress/3DP-Scale to fit...{{progress}}%": "Scale to fit...{{progress}}%",
-=======
     "key-Progress/3DP-SingleLayer": "",
->>>>>>> 7423993a (Improvement: Improvement gcode preview)
     "key-Progress/Laser-Failed to load model.": "Laden des Modells fehlgeschlagen",
     "key-Progress/Laser-Loaded model successfully.": "Das Modell wurde erfolgreich geladen.",
     "key-Progress/Laser-Loading model...": "Modell wird geladen...",
@@ -988,7 +986,6 @@
     "key-Workspace/Connection-Laser Height": "Laserhöhe",
     "key-Workspace/Connection-Laser camera": "Laser-Kamera",
     "key-Workspace/Connection-Manual Connection": "Manuelle Verbindung",
-    "key-Workspace/Connection-Manufacturer: {{manufacturer}}": "Hersteller: {{manufacturer}}",
     "key-Workspace/Connection-No machines detected.": "Kein Gerät entdeckt.",
     "key-Workspace/Connection-No ports available.": "Keine Anschlüsse verfügbar.",
     "key-Workspace/Connection-Nozzle Temp.": "Düsen-Temp.",
@@ -1347,7 +1344,6 @@
     "key-unused-Work Speed": "Arbeitstempo",
     "key-unused-Z Offset": "Z-Versatz",
     "key-unused-{{pageLength}} per page": "{{pageLength}} pro Seite",
-    "key-workspace_open_port-Can not close this port": "Dieser Anschluss kann nicht geschlossen werden.",
     "key-workspace_open_port-Can not open this port": "Dieser Anschluss kann nicht geöffnet werden.",
     "key-workspace_open_port-The machine is not ready": "Das Gerät ist nicht bereit.",
     "key_menu_About": "Über",

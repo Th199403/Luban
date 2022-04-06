@@ -854,6 +854,7 @@
     "key-Printing/Preview-Helper": "",
     "key-Printing/Preview-Inner Wall": "",
     "key-Printing/Preview-Line Type": "",
+    "key-Printing/Preview-Model View": "",
     "key-Printing/Preview-Outer Wall": "",
     "key-Printing/Preview-Skin": "",
     "key-Printing/Preview-Tool0": "",
@@ -926,11 +927,8 @@
     "key-Progress/3DP-Ordinary": "",
     "key-Progress/3DP-Previewed G-code successfully.": "",
     "key-Progress/3DP-Previewing G-code...{{progress}}%": "",
-<<<<<<< HEAD
     "key-Progress/3DP-Scale to fit...{{progress}}%": "",
-=======
     "key-Progress/3DP-SingleLayer": "",
->>>>>>> 7423993a (Improvement: Improvement gcode preview)
     "key-Progress/Laser-Failed to load model.": "",
     "key-Progress/Laser-Loaded model successfully.": "",
     "key-Progress/Laser-Loading model...": "",
@@ -988,7 +986,6 @@
     "key-Workspace/Connection-Laser Height": "",
     "key-Workspace/Connection-Laser camera": "",
     "key-Workspace/Connection-Manual Connection": "",
-    "key-Workspace/Connection-Manufacturer: {{manufacturer}}": "",
     "key-Workspace/Connection-No machines detected.": "",
     "key-Workspace/Connection-No ports available.": "",
     "key-Workspace/Connection-Nozzle Temp.": "",
@@ -1347,7 +1344,6 @@
     "key-unused-Work Speed": "",
     "key-unused-Z Offset": "",
     "key-unused-{{pageLength}} per page": "",
-    "key-workspace_open_port-Can not close this port": "",
     "key-workspace_open_port-Can not open this port": "",
     "key-workspace_open_port-The machine is not ready": "",
     "key_menu_About": "",

@@ -854,6 +854,7 @@
     "key-Printing/Preview-Helper": "Asistente",
     "key-Printing/Preview-Inner Wall": "Pared interna",
     "key-Printing/Preview-Line Type": "Tipo de línea",
+    "key-Printing/Preview-Model View": "",
     "key-Printing/Preview-Outer Wall": "Pared externa",
     "key-Printing/Preview-Skin": "Revestimiento",
     "key-Printing/Preview-Tool0": "",
@@ -926,11 +927,8 @@
     "key-Progress/3DP-Ordinary": "",
     "key-Progress/3DP-Previewed G-code successfully.": "Código G previsualizado con éxito.",
     "key-Progress/3DP-Previewing G-code...{{progress}}%": "Previsualizando código G...{{progress}}%",
-<<<<<<< HEAD
     "key-Progress/3DP-Scale to fit...{{progress}}%": "Scale to fit...{{progress}}%",
-=======
     "key-Progress/3DP-SingleLayer": "",
->>>>>>> 7423993a (Improvement: Improvement gcode preview)
     "key-Progress/Laser-Failed to load model.": "Fallo al cargar modelo",
     "key-Progress/Laser-Loaded model successfully.": "Modelo cargado con éxito.",
     "key-Progress/Laser-Loading model...": "Cargando modelo...",
@@ -988,7 +986,6 @@
     "key-Workspace/Connection-Laser Height": "Altura del láser",
     "key-Workspace/Connection-Laser camera": "Cámara láser",
     "key-Workspace/Connection-Manual Connection": "Conexión manual",
-    "key-Workspace/Connection-Manufacturer: {{manufacturer}}": "Fabricante: {{manufacturer}}",
     "key-Workspace/Connection-No machines detected.": "No se detectaron máquinas.",
     "key-Workspace/Connection-No ports available.": "No hay puertos disponibles.",
     "key-Workspace/Connection-Nozzle Temp.": "Temperatura de boquilla",
@@ -1347,7 +1344,6 @@
     "key-unused-Work Speed": "Velocidad de trabajo",
     "key-unused-Z Offset": "Compensación del eje Z",
     "key-unused-{{pageLength}} per page": "{{pageLength}} por página",
-    "key-workspace_open_port-Can not close this port": "No puede cerrar este puerto.",
     "key-workspace_open_port-Can not open this port": "No puede abrir este puerto.",
     "key-workspace_open_port-The machine is not ready": "La máquina no está lista.",
     "key_menu_About": "Acerca de",
