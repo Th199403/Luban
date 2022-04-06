@@ -937,12 +937,16 @@ export const actions = {
     },
 
     removeSelectedModelsByCallback: (headType, mode) => (dispatch) => {
-        dispatch(actions.updateState(headType, {
-            removingModelsWarningCallback: () => {
-                dispatch(actions.removeSelectedModel(headType, mode));
-            }
-        }));
-        dispatch(actions.checkToRemoveSelectedModels(headType));
+        if (mode === 'draw') {
+            dispatch(actions.drawDelete(headType));
+        } else {
+            dispatch(actions.updateState(headType, {
+                removingModelsWarningCallback: () => {
+                    dispatch(actions.removeSelectedModel(headType, mode));
+                }
+            }));
+            dispatch(actions.checkToRemoveSelectedModels(headType));
+        }
     },
 
     checkToRemoveSelectedModels: (headType) => (dispatch, getState) => {
@@ -971,11 +975,7 @@ export const actions = {
         }));
     },
 
-    removeSelectedModel: (headType, mode) => (dispatch, getState) => {
-        if (mode === 'draw') {
-            dispatch(actions.drawDelete(headType));
-            return;
-        }
+    removeSelectedModel: (headType) => (dispatch, getState) => {
         const { modelGroup, SVGActions, toolPathGroup } = getState()[headType];
         const operations = new Operations();
         for (const svgModel of modelGroup.getSelectedModelArray()) {
@@ -1395,7 +1395,6 @@ export const actions = {
 
         if (SVGActions.svgContentGroup.drawGroup.mode) {
             SVGActions.svgContentGroup.exitModelEditing(true);
-            // SVGActions.svgContentGroup.stopDraw();
             return;
         }
         SVGActions.clearSelection();
@@ -2178,6 +2177,7 @@ export const actions = {
             dispatch(actions.updateState(headType, {
                 history
             }));
+            dispatch(actions.resetProcessState(headType));
             dispatch(projectActions.autoSaveEnvironment(headType));
         }
     },
@@ -2207,6 +2207,7 @@ export const actions = {
                 history
             }));
             dispatch(actions.createModelFromElement(headType, elem, true));
+            dispatch(actions.resetProcessState(headType));
         }
     },
 
@@ -2251,7 +2252,6 @@ export const actions = {
             ext = {};
         }
         if (mode === 'draw' || ext?.elem) {
-            dispatch(actions.resetProcessState(headType));
             SVGActions.svgContentGroup.operatorPoints.showOperator(false);
         } else {
             SVGActions.svgContentGroup.operatorPoints.showOperator(true);

@@ -479,21 +479,21 @@ class SVGCanvas extends PureComponent {
         if (jQuery(target).closest('#selector-parent-group').length) {
             return this.svgContentGroup.selectorParentGroup;
         }
-        if ((this.mode === 'select' || this.mode === 'move') && target.parentElement === this.preSelectionGroup) {
+
+        if (this.mode === 'draw' || (this.mode === 'select' && this.editingElem)) {
+            return target;
+        } else if ((this.mode === 'select' || this.mode === 'move') && target.parentElement === this.preSelectionGroup) {
             const targetId = target.getAttribute('target-id');
             const path = document.querySelector(`path[id="${targetId}"]`);
             if (path) {
                 return path;
             }
         }
-        if (this.mode === 'draw' || (this.mode === 'select' && this.editingElem)) {
-            return target;
-        } else {
-            while (target && target.parentNode && target.parentNode !== this.svgContentGroup.group && target.parentNode.nodeName !== 'svg') {
-                target = target.parentNode;
-            }
-            return target;
+
+        while (target && target.parentNode && target.parentNode !== this.svgContentGroup.group && target.parentNode.nodeName !== 'svg') {
+            target = target.parentNode;
         }
+        return target;
     };
 
     onMouseDown = (event) => {
@@ -525,11 +525,9 @@ class SVGCanvas extends PureComponent {
             }
         }
 
-        if (this.mode === 'select' && (
+        if (this.mode === 'select' && !this.editingElem && (
             this.svgContentGroup.selectedElements.includes(mouseTarget)
-            || (
-                !this.editingElem
-                && this.props.elementActions.isPointInSelectArea(x - this.props.size.x, this.props.size.y - y))
+            || this.props.elementActions.isPointInSelectArea(x - this.props.size.x, this.props.size.y - y)
         )) {
             this.mode = 'move';
         }

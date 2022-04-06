@@ -73,7 +73,9 @@ const SVGEditor = forwardRef((props, ref) => {
                 }
             },
             [shortcutActions.ENTER]: () => {
-                onStopDraw(true);
+                if (!(menuDisabledCountRef.current > 0)) {
+                    onStopDraw(true);
+                }
             },
             // optimize: accelerate when continuous click
             'MOVE-UP': {
