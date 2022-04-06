@@ -1,10 +1,15 @@
 import {
     Vector3,
-    LineCurve3, Color,
+    Color,
 } from 'three';
 import { LineTubeGeometry } from './LineTubeGeometry';
 import { LinePoint } from './LinePoint';
 import { SegmentColorizer, SimpleColorizer } from './SegmentColorizer';
+
+function getLength(lastPoint: Vector3, newPoint: Vector3) {
+    const distant = (lastPoint.x - newPoint.x) ** 2 + (lastPoint.y - newPoint.y) ** 2 + (lastPoint.z - newPoint.z) ** 2;
+    return distant ** 0.5;
+}
 
 export class GCodeParser {
     private combinedLines: LineTubeGeometry[] = []
@@ -354,8 +359,7 @@ export class GCodeParser {
 
                 const newPoint = new Vector3(x, y, z);
 
-                const curve = new LineCurve3(lastPoint, newPoint);
-                const length = curve.getLength();
+                const length = getLength(lastPoint, newPoint);
 
                 if (length !== 0) {
                     let radius = (e - lastE) / length * 10;

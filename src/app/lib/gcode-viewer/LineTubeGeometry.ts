@@ -285,19 +285,15 @@ export class LineTubeGeometry extends BufferGeometry {
 
         // Save everything into the buffers.
         segmentsPoints.forEach((p) => {
-            const normals = p.reduce((prev, cur) => [...prev, ...cur.normals], [] as number[]);
-            this.normals.push(...normals);
-            const colors = p.reduce((prev, cur) => [...prev, ...cur.colors], [] as number[]);
-            this.colors.push(...colors);
-            const vertices = p.reduce((prev, cur) => [...prev, ...cur.vertices], [] as number[]);
-            this.vertices.push(...vertices);
-            const lineTypes = p.reduce((prev, cur) => [...prev, cur.lineType], [] as number[]);
-            this.lineTypes.push(...lineTypes);
-            const extruders = p.reduce((prev, cur) => [...prev, cur.extruder], [] as number[]);
-            this.extruders.push(...extruders);
+            p.forEach((pp) => {
+                pp.normals && this.normals.push(...pp.normals);
+                pp.vertices && this.vertices.push(...pp.vertices);
+                pp.colors && this.colors.push(...pp.colors);
+                this.lineTypes.push(pp.lineType);
+                this.extruders.push(pp.extruder);
+            });
             this.segmentsRadialNumbers.push(...p.map((cur) => cur.radialNr));
         });
-
         if (this.pointsBuffer.length >= 4) {
             // delete the first point. It's not needed anymore.
             this.pointsBuffer = this.pointsBuffer.slice(1);
