@@ -20,9 +20,6 @@ export class GCodeParser {
 
     public endLayer: number | undefined = undefined
 
-    public showTypes: boolean[] = [true, true, true, true, true, true, false, true,
-        true, true, true, true, true, true, false, true];
-
     public min?: Vector3
 
     public max?: Vector3
@@ -95,7 +92,7 @@ export class GCodeParser {
         this.gCode = gCode;
 
         // Pre-calculate some min max values, needed for colorizing.
-        this.calcMinMaxMetadata();
+        // this.calcMinMaxMetadata();
     }
 
     /**
@@ -160,42 +157,42 @@ export class GCodeParser {
     /**
      * Pre-calculates the min max metadata which may be needed for the colorizers.
      */
-    private calcMinMaxMetadata() {
-        this.gCode.split('\n').forEach((line) => {
-            if (line === undefined || line[0] === ';') {
-                return;
-            }
-
-            const cmd = line.split(' ');
-            if (cmd[0] === 'G0' || cmd[0] === 'G1') {
-                // Feed rate -> speed
-                const f = this.parseValue(cmd.find((v) => v[0] === 'F'));
-
-                if (f === undefined) {
-                    return;
-                }
-
-                if (f > this.maxSpeed) {
-                    this.maxSpeed = f;
-                }
-                if (this.minSpeed === undefined || f < this.minSpeed) {
-                    this.minSpeed = f;
-                }
-            } else if (cmd[0] === 'M104' || cmd[0] === 'M109') {
-                // hot end temperature
-                // M104 S205 ; set hot end temp
-                // M109 S205 ; wait for hot end temp
-                const hotendTemp = this.parseValue(cmd.find((v) => v[0] === 'S')) || 0;
-
-                if (hotendTemp > this.maxTemp) {
-                    this.maxTemp = hotendTemp;
-                }
-                if (this.minTemp === undefined || hotendTemp < this.minTemp) {
-                    this.minTemp = hotendTemp;
-                }
-            }
-        });
-    }
+    // private calcMinMaxMetadata() {
+    //     this.gCode.split('\n').forEach((line) => {
+    //         if (line === undefined || line[0] === ';') {
+    //             return;
+    //         }
+    //
+    //         const cmd = line.split(' ');
+    //         if (cmd[0] === 'G0' || cmd[0] === 'G1') {
+    //             // Feed rate -> speed
+    //             const f = this.parseValue(cmd.find((v) => v[0] === 'F'));
+    //
+    //             if (f === undefined) {
+    //                 return;
+    //             }
+    //
+    //             if (f > this.maxSpeed) {
+    //                 this.maxSpeed = f;
+    //             }
+    //             if (this.minSpeed === undefined || f < this.minSpeed) {
+    //                 this.minSpeed = f;
+    //             }
+    //         } else if (cmd[0] === 'M104' || cmd[0] === 'M109') {
+    //             // hot end temperature
+    //             // M104 S205 ; set hot end temp
+    //             // M109 S205 ; wait for hot end temp
+    //             const hotendTemp = this.parseValue(cmd.find((v) => v[0] === 'S')) || 0;
+    //
+    //             if (hotendTemp > this.maxTemp) {
+    //                 this.maxTemp = hotendTemp;
+    //             }
+    //             if (this.minTemp === undefined || hotendTemp < this.minTemp) {
+    //                 this.minTemp = hotendTemp;
+    //             }
+    //         }
+    //     });
+    // }
 
     /**
      * Set the lines colors type
@@ -271,11 +268,8 @@ export class GCodeParser {
         let layer = 0;
 
         let currentLayer = 0;
-        let lastAddedLinePoint: LinePoint | undefined;
+        // let lastAddedLinePoint: LinePoint | undefined;
         const addLine = (newLine: LinePoint) => {
-            if (newLine.lineType === 1) {
-                console.log('newLine', newLine.lineType);
-            }
             if (newLine.layer > currentLayer) {
                 // end the old geometry and increase the counter
                 for (let i = 0; i < 16; i++) {
@@ -289,15 +283,14 @@ export class GCodeParser {
                     this.combinedLines.push(new LineTubeGeometry(this.radialSegments));
                 }
             }
-
-            if (lastAddedLinePoint !== undefined) {
-                // const startPoint = lastAddedLinePoint;
-                const startPoint = new LinePoint(newLine.point, 0);
-                this.combinedLines[currentLayer * 16 + newLine.extruder * 8 + (newLine.lineType - 1)].add(startPoint);
+            for (let i = 0; i < 16; i++) {
+                if (newLine.extruder * 8 + (newLine.lineType - 1) === i) {
+                    this.combinedLines[currentLayer * 16 + i].add(newLine);
+                } else {
+                    this.combinedLines[currentLayer * 16 + i].add(new LinePoint(newLine.point.clone(), 0));
+                }
             }
-            this.combinedLines[currentLayer * 16 + newLine.extruder * 8 + (newLine.lineType - 1)].add(newLine);
-
-            lastAddedLinePoint = newLine;
+            // lastAddedLinePoint = newLine;
         };
 
         lines.forEach((line, i) => {

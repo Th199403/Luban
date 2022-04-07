@@ -125,9 +125,6 @@ function VisualizerPreviewControl() {
         return (event) => {
             allShowTypes[direction][showType] = event.target.checked;
             setAllShowTypes(allShowTypes);
-            dispatch(printingActions.render({
-                gcodeTypeInitialVisibility: allShowTypes
-            }));
             dispatch(printingActions.setGcodeVisibilityByTypeAndDirection(showType, direction, event.target.checked));
         };
     }

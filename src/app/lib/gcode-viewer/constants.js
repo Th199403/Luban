@@ -14,11 +14,11 @@ export const TYPE_SETTINGS = {
         color: '#FFFF00',
         typeCode: 3
     },
-    'SKIRT': {
-        rgb: [250, 140, 53],
-        color: '#FA8C35',
-        typeCode: 4
-    },
+    // 'SKIRT': {
+    //     rgb: [250, 140, 53],
+    //     color: '#FA8C35',
+    //     typeCode: 4
+    // },
     'SUPPORT': {
         rgb: [75, 0, 130],
         color: '#4B0082',
