@@ -2157,7 +2157,7 @@ export const actions = {
                 // delete model
                 SVGActions.clearSelection();
                 SVGActions.addSelectedSvgModelsByModels([model]);
-                dispatch(actions.removeSelectedModel(headType));
+                dispatch(actions.removeSelectedModelsByCallback(headType, 'select'));
                 return;
             }
             const operations = new Operations();

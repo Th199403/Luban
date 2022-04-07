@@ -14,6 +14,7 @@ import api from '../api';
 import { checkIsImageSuffix } from '../../shared/lib/utils';
 import BaseModel from './BaseModel';
 import Resource from './Resource';
+import { JudgeMoveMiniDistance } from '../constants';
 // import { DEFAULT_FILL_COLOR } from '../ui/SVGEditor/constants';
 
 const EVENTS = {
@@ -325,6 +326,130 @@ class SvgModel extends BaseModel {
         }
     }
 
+    calculationPath(path) {
+        const allPoints = [];
+        svgPath(path).iterate((segment, __, x, y) => {
+            const arr = cloneDeep(segment);
+            const mark = arr.shift();
+
+            if (mark !== 'M' && mark !== 'Z') {
+                const points = [];
+                points.push([x, y]);
+                for (let index = 0; index < arr.length; index += 2) {
+                    points.push([
+                        Number(arr[index]),
+                        Number(arr[index + 1])
+                    ]);
+                }
+                allPoints.push(points);
+            }
+        });
+
+        const sorted = [];
+        const findConnect = (arr) => {
+            const latest = sorted[sorted.length - 1];
+            const latestPoints = latest.item;
+
+            return [arr[0], arr[arr.length - 1]].some((i) => {
+                return (!latest.connected ? [latestPoints[0], latestPoints[latestPoints.length - 1]] : [latestPoints[latestPoints.length - 1]]).some((j) => {
+                    return Math.abs(i[0] - j[0]) <= JudgeMoveMiniDistance && Math.abs(i[1] - j[1]) <= JudgeMoveMiniDistance;
+                });
+            });
+        };
+        const setSort = (item, connected) => {
+            const latest = sorted[sorted.length - 1];
+            if (connected && latest) {
+                if (Math.abs(latest.item[latest.item.length - 1][0] - item[0][0]) <= JudgeMoveMiniDistance && Math.abs(latest.item[latest.item.length - 1][1] - item[0][1]) <= JudgeMoveMiniDistance) {
+                    sorted.push({ item, connected: true });
+                } else {
+                    item.reverse();
+                    sorted.push({ item, connected: true });
+                }
+            } else {
+                sorted.push({ item, connected: false });
+            }
+        };
+
+        const setupConnection = () => {
+            let flag = true;
+            while (flag) {
+                const connected = allPoints.map((i, _index) => {
+                    return {
+                        arr: i,
+                        _index
+                    };
+                }).filter(p => p.arr && findConnect(p.arr));
+                const latest = sorted[sorted.length - 1];
+                const latestPoints = latest.item;
+
+                if (connected.length > 0) {
+                    const c = allPoints[connected[0]._index];
+                    // flip first point
+                    if (!latest.connected) {
+                        if (!(
+                            Math.abs(latestPoints[latestPoints.length - 1][0] - c[0][0]) <= JudgeMoveMiniDistance
+                            && Math.abs(latestPoints[latestPoints.length - 1][1] - c[0][1]) <= JudgeMoveMiniDistance)
+                        ) {
+                            const arr = latestPoints;
+                            const a = arr.pop();
+                            const b = arr.shift();
+                            arr.push(b);
+                            arr.unshift(a);
+                            sorted[sorted.length - 1] = {
+                                item: arr,
+                                connected: false
+                            };
+                        }
+                    }
+                    setSort(c, true);
+                    allPoints[connected[0]._index] = null;
+                    flag = true;
+                } else {
+                    flag = false;
+                }
+            }
+        };
+
+        for (let index = 0; index < allPoints.length; index++) {
+            if (sorted.length === 0) {
+                setSort(allPoints[index], false);
+                allPoints[index] = null;
+                setupConnection();
+            }
+            if (allPoints[index]) {
+                // TODO: Judge whether the new point is connected to the head of the latest clip. Flip the latest clip
+                setSort(allPoints[index], false);
+                setupConnection();
+            }
+        }
+
+        const mark = (length) => {
+            switch (length) {
+                case 1:
+                    return 'L';
+                case 2:
+                    return 'Q';
+                case 3:
+                    return 'C';
+                default:
+                    return '';
+            }
+        };
+
+        const paths = sorted.reduce((p, c) => {
+            const arr = c.item;
+            if (c.connected) {
+                arr.shift();
+                p[p.length - 1] += ` ${mark(arr.length)} ${arr.map(item => item.join(' ')).join(' ')}`;
+            } else {
+                p.push(`M ${arr.shift().join(' ')} ${mark(arr.length)} ${arr.map(item => item.join(' ')).join(' ')}`);
+            }
+            return p;
+        }, []);
+
+        return paths;
+    }
+
     genModelConfig() {
         const elem = this.elem;
         const coord = coordGmSvgToModel(this.size, elem);
@@ -335,24 +460,7 @@ class SvgModel extends BaseModel {
 
         if (elem instanceof SVGPathElement && isDraw) {
             const path = elem.getAttribute('d');
-            const paths = [];
-            svgPath(path).iterate((segment) => {
-                const arr = cloneDeep(segment);
-                const mark = arr.shift();
-                const latestPath = paths[paths.length - 1];
-                const str = arr.join(' ');
-                if (!latestPath) {
-                    paths.push(`M ${str}`);
-                    return;
-                }
-                if (mark === 'M') {
-                    if (latestPath.lastIndexOf(str) === -1) {
-                        paths.push(`M ${str}`);
-                    }
-                } else if (mark !== 'Z') {
-                    paths[paths.length - 1] = `${latestPath} ${mark} ${str}`;
-                }
-            });
+            const paths = this.calculationPath(path);
             const segments = paths.map(item => {
                 const clone = elem.cloneNode(true);
                 clone.setAttribute('d', item);
