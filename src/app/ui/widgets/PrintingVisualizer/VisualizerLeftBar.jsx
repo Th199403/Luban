@@ -21,8 +21,10 @@ import RotationAnalysisOverlay from './Overlay/RotationAnalysisOverlay';
 import EditSupportOverlay from './Overlay/EditSupportOverlay';
 import SupportOverlay from './Overlay/SupportOverlay';
 import TranslateOverlay from './Overlay/TranslationOverlay';
-import { DUAL_EXTRUDER_TOOLHEAD_FOR_SM2, HEAD_PRINTING,
-    EPSILON, BOTH_EXTRUDER_MAP_NUMBER, LEFT_EXTRUDER_MAP_NUMBER } from '../../../constants';
+import {
+    DUAL_EXTRUDER_TOOLHEAD_FOR_SM2, HEAD_PRINTING,
+    EPSILON, BOTH_EXTRUDER_MAP_NUMBER, LEFT_EXTRUDER_MAP_NUMBER
+} from '../../../constants';
 import { machineStore } from '../../../store/local-storage';
 import PrimeTowerModel from '../../../models/PrimeTowerModel';
 
@@ -132,9 +134,9 @@ function VisualizerLeftBar({ setTransformMode, supportActions, updateBoundingBox
             fileInput.current.click();
         },
         onChangeFile: async (event) => {
-            const file = event.target.files[0];
+            const files = event.target.files;
             try {
-                await dispatch(printingActions.uploadModel(file));
+                await dispatch(printingActions.uploadModel(files));
             } catch (e) {
                 modal({
                     title: i18n._('key-Printing/LeftBar-Failed to upload model.'),
@@ -264,7 +266,7 @@ function VisualizerLeftBar({ setTransformMode, supportActions, updateBoundingBox
             if (fileObj) {
                 actions.onChangeFile({
                     target: {
-                        files: [fileObj]
+                        files: Array.isArray(fileObj) ? fileObj : [fileObj]
                     }
                 });
             } else {
@@ -595,7 +597,7 @@ function VisualizerLeftBar({ setTransformMode, supportActions, updateBoundingBox
                     type="file"
                     accept=".stl, .obj"
                     className="display-none"
-                    multiple={false}
+                    multiple
                     onChange={actions.onChangeFile}
                 />
                 <div className="position-ab height-percent-100 border-radius-8 background-color-white width-56 box-shadow-module">
