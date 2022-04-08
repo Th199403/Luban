@@ -2261,6 +2261,14 @@ export const actions = {
             SVGCanvasMode: mode,
             SVGCanvasExt: ext
         }));
+    },
+
+    onRouterWillLeave: (headType) => async (dispatch, getState) => {
+        const { SVGActions, SVGCanvasMode, SVGCanvasExt } = getState()[headType];
+
+        if (SVGCanvasMode === 'draw' || SVGCanvasExt.elem) {
+            await SVGActions.svgContentGroup.exitModelEditing(true);
+        }
     }
 };
 
