@@ -69,9 +69,6 @@ class ThreeModel extends BaseModel {
 
             this.modelModeMaterial = material;
             this.gcodeModeMaterial = new MeshLambertMaterial({
-                // opacity: 0.2,
-                // transparent: true,
-                // shininess: 1,
                 color: '#2a2c2e',
                 side: DoubleSide,
                 depthWrite: true,
@@ -268,13 +265,6 @@ class ThreeModel extends BaseModel {
         // attention: do not use Object3D.applyMatrix(matrix : Matrix4)
         // because applyMatrix is accumulated
         // anther way: decompose Matrix and reset position/rotation/scale
-        // let position = new THREE.Vector3();
-        // let quaternion = new THREE.Quaternion();
-        // let scale = new THREE.Vector3();
-        // matrix.decompose(position, quaternion, scale);
-        // this.position.copy(position);
-        // this.quaternion.copy(quaternion);
-        // this.scale.copy(scale);
     }
 
     setOversteppedAndSelected(overstepped, isSelected) {

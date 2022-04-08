@@ -1,6 +1,5 @@
 import {
     Vector3,
-    Color,
 } from 'three';
 import { LineTubeGeometry } from './LineTubeGeometry';
 import { LinePoint } from './LinePoint';
@@ -10,7 +9,6 @@ function getLength(lastPoint: Vector3, newPoint: Vector3) {
     const distant = (lastPoint.x - newPoint.x) ** 2 + (lastPoint.y - newPoint.y) ** 2 + (lastPoint.z - newPoint.z) ** 2;
     return distant ** 0.5;
 }
-
 export class GCodeParser {
     private combinedLines: LineTubeGeometry[] = []
 
@@ -24,7 +22,7 @@ export class GCodeParser {
 
     public max?: Vector3
 
-    public extruderColors: string[] = ['#FFFFFF', '#404040']
+    public extruderColors: { toolColor0: string, toolColor1: string } = { toolColor0: '#FFFFFF', toolColor1: '#404040' }
 
     private minTemp: number | undefined = undefined
 
@@ -90,7 +88,6 @@ export class GCodeParser {
      */
     constructor(gCode: string) {
         this.gCode = gCode;
-
         // Pre-calculate some min max values, needed for colorizing.
         // this.calcMinMaxMetadata();
     }
@@ -268,29 +265,23 @@ export class GCodeParser {
         let layer = 0;
 
         let currentLayer = 0;
-        // let lastAddedLinePoint: LinePoint | undefined;
+        // const lastAddedLinePointArray: LinePoint[] | undefined = [];
+        // let addedLinePoint: LinePoint | undefined;
         const addLine = (newLine: LinePoint) => {
             if (newLine.layer > currentLayer) {
                 // end the old geometry and increase the counter
-                for (let i = 0; i < 16; i++) {
-                    this.combinedLines[currentLayer * 16 + i] && this.combinedLines[currentLayer * 16 + i].finish();
-                }
+                this.combinedLines[currentLayer] && this.combinedLines[currentLayer].finish();
                 currentLayer = newLine.layer;
             }
 
-            if (this.combinedLines[currentLayer * 16] === undefined) {
-                for (let i = 0; i < 16; i++) {
-                    this.combinedLines.push(new LineTubeGeometry(this.radialSegments));
-                }
+            if (this.combinedLines[currentLayer] === undefined) {
+                this.combinedLines.push(new LineTubeGeometry(this.radialSegments, newLine.layer));
             }
-            for (let i = 0; i < 16; i++) {
-                if (newLine.extruder * 8 + (newLine.lineType - 1) === i) {
-                    this.combinedLines[currentLayer * 16 + i].add(newLine);
-                } else {
-                    this.combinedLines[currentLayer * 16 + i].add(new LinePoint(newLine.point.clone(), 0));
-                }
-            }
-            // lastAddedLinePoint = newLine;
+
+            this.combinedLines[currentLayer].add(newLine);
+
+            // addedLinePoint = newLine;
+            // lastAddedLinePointArray[newLine.extruder * 8 + (newLine.lineType - 1)] = newLine;
         };
 
         lines.forEach((line, i) => {
@@ -372,17 +363,15 @@ export class GCodeParser {
                     //     speed: f,
                     //     temp: hotendTemp
                     // });
-                    const color = new Color('#FFFFFF');
-
                     // Insert the last point with the current radius.
                     // As the GCode contains the extrusion for the 'current' line,
                     // but the LinePoint contains the radius for the 'next' line
                     // we need to combine the last point with the current radius.
                     if (cmd[0] === 'G0') {
-                        addLine(new LinePoint(lastPoint.clone(), radius, color, extruder, 'TRAVEL', this.isGrayMode, this.isDual, this.extruderColors, layer));
+                        addLine(new LinePoint(lastPoint.clone(), radius, extruder, 'TRAVEL', this.isGrayMode, this.extruderColors, layer));
                     }
                     if (cmd[0] === 'G1') {
-                        addLine(new LinePoint(lastPoint.clone(), radius, color, extruder, type, this.isGrayMode, this.isDual, this.extruderColors, layer));
+                        addLine(new LinePoint(lastPoint.clone(), radius, extruder, type, this.isGrayMode, this.extruderColors, layer));
                     }
                 }
 
@@ -425,11 +414,7 @@ export class GCodeParser {
         });
 
         // Finish last object
-        for (let i = 0; i < 16; i++) {
-            if (this.combinedLines[currentLayer * 16 + i]) {
-                this.combinedLines[currentLayer * 16 + i].finish();
-            }
-        }
+        this.combinedLines[currentLayer].finish();
     }
 
     /**

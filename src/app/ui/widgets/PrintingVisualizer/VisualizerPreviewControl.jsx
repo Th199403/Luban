@@ -39,11 +39,11 @@ function useShowToggleBtn() {
     };
 }
 
-const MIN = 30;
 const MAX = 288;
+const MIN = 30;
 
 function GcodeLayout() {
-    const layerCount = useSelector(state => state?.printing?.layerCount, shallowEqual);
+    const layerCount = useSelector(state => state?.printing?.layerCount - 1, shallowEqual);
     // const gcodePreviewMode = useSelector(state => state?.printing?.gcodePreviewMode, shallowEqual);
     const layerRangeDisplayed = useSelector(state => state?.printing?.layerRangeDisplayed, shallowEqual);
     const dispatch = useDispatch();
@@ -55,6 +55,9 @@ function GcodeLayout() {
 
     const [value, setValue] = useState([]);
     useEffect(() => {
+        console.log('layerRangeDisplayed v', layerRangeDisplayed[0], layerRangeDisplayed[1], value[0] * x,
+            (value[1] - MIN) * x, layerRangeDisplayed[0] / x,
+            layerRangeDisplayed[1] / x + MIN);
         setValue([
             layerRangeDisplayed[0] / x,
             layerRangeDisplayed[1] / x + MIN
@@ -63,6 +66,7 @@ function GcodeLayout() {
 
 
     const onChangeShowLayer = throttle((v) => {
+        console.log('v', v);
         dispatch(printingActions.showGcodeLayers([
             v[0] * x,
             (v[1] - MIN) * x
@@ -83,7 +87,7 @@ function GcodeLayout() {
                     vertical
                     min={0}
                     max={MAX}
-                    step={1 * MAX / layerCount}
+                    step={(MAX - MIN) / layerCount}
                     range={{ draggableTrack: true }}
                     value={value}
                     onChange={(v) => {
