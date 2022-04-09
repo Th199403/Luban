@@ -25,12 +25,16 @@ import VisualizerBottomLeft from './VisualizerBottomLeft';
 import VisualizerInfo from './VisualizerInfo';
 import PrintableCube from './PrintableCube';
 import styles from './styles.styl';
+import { loadModelFailPopup, scaletoFitPopup } from './VisualizerPopup';
+
+import { STEP_STAGE } from '../../../lib/manager/ProgressManager';
 
 class Visualizer extends PureComponent {
     static propTypes = {
         isActive: PropTypes.bool.isRequired,
         size: PropTypes.object.isRequired,
         stage: PropTypes.number.isRequired,
+        promptTasks: PropTypes.array.isRequired,
         selectedModelArray: PropTypes.array,
         transformation: PropTypes.object,
         modelGroup: PropTypes.object.isRequired,
@@ -303,7 +307,7 @@ class Visualizer extends PureComponent {
     }
 
     componentDidUpdate(prevProps) {
-        const { size, stopArea, transformMode, selectedModelArray, renderingTimestamp, modelGroup, primeTowerHeight, enablePrimeTower, printingToolhead } = this.props;
+        const { size, stopArea, transformMode, selectedModelArray, renderingTimestamp, modelGroup, stage, primeTowerHeight, enablePrimeTower, printingToolhead, promptTasks } = this.props;
         if (transformMode !== prevProps.transformMode) {
             this.canvas.current.setTransformMode(transformMode);
             if (transformMode === 'rotate-placement') {
@@ -350,6 +354,20 @@ class Visualizer extends PureComponent {
 
         if (renderingTimestamp !== prevProps.renderingTimestamp) {
             this.canvas.current.renderScene();
+        }
+
+        if (stage !== prevProps.stage && stage === STEP_STAGE.PRINTING_LOAD_MODEL_COMPLETE) {
+            if (promptTasks.length > 0) {
+                promptTasks.filter(item => item.status === 'fail').forEach(item => {
+                    loadModelFailPopup(item.originalName);
+                });
+                promptTasks.filter(item => item.status === 'needScaletoFit').forEach(item => {
+                    scaletoFitPopup(item.model).then(() => {
+                        modelGroup.selectModelById(item.model.modelID);
+                        this.actions.scaleToFitSelectedModel([item.model]);
+                    });
+                });
+            }
         }
 
         if (enablePrimeTower !== prevProps.enablePrimeTower && printingToolhead === DUAL_EXTRUDER_TOOLHEAD_FOR_SM2) {
@@ -540,6 +558,7 @@ const mapStateToProps = (state, ownProps) => {
     const {
         progressStatesManager,
         stage,
+        promptTasks,
         modelGroup,
         hasModel,
         gcodeLineGroup,
@@ -573,6 +592,7 @@ const mapStateToProps = (state, ownProps) => {
         leftBarOverlayVisible,
         isActive,
         stage,
+        promptTasks,
         size,
         selectedModelArray: modelGroup.selectedModelArray,
         transformation: modelGroup.getSelectedModelTransformationForPrinting(),
