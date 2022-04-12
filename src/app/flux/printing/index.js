@@ -90,7 +90,9 @@ const getGcodeRenderValue = (object, index) => {
         return Object.values(object[RIGHT_EXTRUDER])[index % 8];
     }
 };
-
+function isLarger(a, b) {
+    return (a - b) > EPSILON;
+}
 
 const defaultDefinitionKeys = {
     material: {
@@ -1730,8 +1732,11 @@ export const actions = {
                 if (Math.abs(layerRangeDisplayed[0] - layerRangeDisplayed[1]) === 0) {
                     isRelated = true;
                 }
-                if ((range[0] > layerRangeDisplayed[0] || range[1] > layerRangeDisplayed[1])) {
-                    if (range[0] > layerRangeDisplayed[0] && range[0] > range[1]) {
+                if (isLarger(range[0], layerRangeDisplayed[0]) || isLarger(range[1], layerRangeDisplayed[1])) {
+                    if (isRelated && isLarger(range[0], layerRangeDisplayed[0])) {
+                        range[1] = range[0];
+                    }
+                    if (isLarger(range[0], layerRangeDisplayed[0]) && isLarger(range[0], range[1])) {
                         const tmp = range[1];
                         range[1] = range[0];
                         range[0] = tmp;
@@ -1739,20 +1744,19 @@ export const actions = {
                     isUp = true;
                     range[1] = Math.min(layerCount, range[1]);
                     range[0] = Math.min(layerCount, range[0]);
-                    // if (isRelated && range[1] > layerRangeDisplayed[1]) range[0] = range[1];
-                    if (isRelated && range[0] - layerRangeDisplayed[0] > EPSILON) range[1] = range[0];
                 }
-                if ((range[0] < layerRangeDisplayed[0] || range[1] < layerRangeDisplayed[1])) {
+                if (isLarger(layerRangeDisplayed[0], range[0]) || isLarger(layerRangeDisplayed[1], range[1])) {
+                    if (isRelated && isLarger(layerRangeDisplayed[1], range[1])) {
+                        range[0] = range[1];
+                    }
                     // TODO: ?
                     if (range[1] < layerRangeDisplayed[0] && range[0] > range[1]) {
                         const tmp = range[1];
                         range[1] = range[0];
                         range[0] = tmp;
                     }
-                    range[1] = range[1] || 0;
-                    range[0] = range[0] || 0;
-                    if (isRelated && layerRangeDisplayed[1] - range[1] > EPSILON) range[0] = range[1];
-                    // if (isRelated && range[0] < layerRangeDisplayed[0]) range[1] = range[0];
+                    range[1] = range[1] < 0 ? 0 : range[1];
+                    range[0] = range[0] < 0 ? 0 : range[0];
                 }
             }
             const prevRange = [...range];
@@ -2988,7 +2992,7 @@ export const actions = {
                 isNewUser
             }));
         }).catch((err) => {
-            console.log({ err });
+            console.error({ err });
             dispatch(actions.updateState({
                 isNewUser: true
             }));
