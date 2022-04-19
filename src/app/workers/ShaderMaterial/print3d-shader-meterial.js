@@ -31,6 +31,7 @@ export const PRINT3D_UNIFORMS = {
 
 };
 export const PRINT3D_VERT_SHADER = [
+    'precision mediump float',
     'const float c_wall_inner_code = 1.0;',
     'const float c_wall_outer_code = 2.0;',
     'const float c_skin_code = 3.0;',
@@ -87,7 +88,7 @@ export const PRINT3D_VERT_SHADER = [
     '}'
 ].join('');
 export const PRINT3D_FRAG_SHADER = [
-
+    '#define LINE',
     'uniform float u_visible_layer_range_start;',
     'uniform float u_visible_layer_range_end;',
 
@@ -110,6 +111,36 @@ export const PRINT3D_FRAG_SHADER = [
     'uniform int u_r_fill_visible;',
     'uniform int u_r_travel_visible;',
     'uniform int u_r_unknown_visible;',
+    'uniform vec3 diffuse;',
+    'uniform vec3 emissive;',
+    'uniform vec3 specular;',
+    'uniform float shininess;',
+    'uniform float opacity;',
+    '#include <common>',
+    '#include <packing>',
+    '#include <dithering_pars_fragment>',
+    '#include <color_pars_fragment>',
+    '#include <uv_pars_fragment>',
+    '#include <uv2_pars_fragment>',
+    '#include <map_pars_fragment>',
+    '#include <alphamap_pars_fragment>',
+    '#include <aomap_pars_fragment>',
+    '#include <lightmap_pars_fragment>',
+    '#include <emissivemap_pars_fragment>',
+    '#include <envmap_common_pars_fragment>',
+    '#include <envmap_pars_fragment>',
+    '#include <cube_uv_reflection_fragment>',
+    '#include <fog_pars_fragment>',
+    '#include <bsdfs>',
+    '#include <lights_pars_begin>',
+    '#include <lights_phong_pars_fragment>',
+    '#include <shadowmap_pars_fragment>',
+    '#include <bumpmap_pars_fragment>',
+    '#include <normalmap_pars_fragment>',
+    '#include <specularmap_pars_fragment>',
+    '#include <logdepthbuf_pars_fragment>',
+    '#include <clipping_planes_pars_fragment>',
+    'varying float alpha;',
 
     'varying vec3 v_color0;',
     'varying vec3 v_color1;',
@@ -118,8 +149,11 @@ export const PRINT3D_FRAG_SHADER = [
     'varying float v_tool_code;',
 
     'void main(){',
+    '    #include <clipping_planes_fragment>',
+    '    vec4 diffuseColor = vec4( diffuse, opacity );',
+    '    ReflectedLight reflectedLight = ReflectedLight( vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ) );',
+    '    vec3 totalEmissiveRadiance = emissive;',
     '    if(v_layer_index > u_visible_layer_range_end){',
-    // '        gl_FragColor = vec4(0.87, 0.87, 0.87, 0.75);',
     '        return;',
     '    }',
 
@@ -127,7 +161,6 @@ export const PRINT3D_FRAG_SHADER = [
     // '        gl_FragColor = vec4(0.87, 0.87, 0.87, 0.75);',
     '        return;',
     '    }',
-
     '    if(u_l_wall_inner_visible == 0 && 0.5 < v_type_code && v_type_code < 1.5 && v_tool_code < 0.5){',
     '        discard;',
     '    }',
@@ -203,5 +236,27 @@ export const PRINT3D_FRAG_SHADER = [
     '    if(u_color_type == 1 && !(6.5 < v_type_code && v_type_code < 7.5)){',
     '        gl_FragColor = vec4(v_color1.xyz, 1.0);',
     '    }',
+    '    #include <logdepthbuf_fragment>',
+    '    #include <map_fragment>',
+    '    #include <color_fragment>',
+    '    #include <alphamap_fragment>',
+    '    #include <alphatest_fragment>',
+    '    #include <specularmap_fragment>',
+    '    #include <normal_fragment_begin>',
+    '    #include <normal_fragment_maps>',
+    '    #include <emissivemap_fragment>',
+    '    #include <lights_phong_fragment>',
+    '    #include <lights_fragment_begin>',
+    '    #include <lights_fragment_maps>',
+    '    #include <lights_fragment_end>',
+    '    #include <aomap_fragment>',
+    '    vec3 outgoingLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + reflectedLight.directSpecular + reflectedLight.indirectSpecular + totalEmissiveRadiance;',
+    '    #include <envmap_fragment>',
+    '    gl_FragColor = vec4( outgoingLight, diffuseColor.a );',
+    '    #include <tonemapping_fragment>',
+    '    #include <encodings_fragment>',
+    '    #include <fog_fragment>',
+    '    #include <premultiplied_alpha_fragment>',
+    '    #include <dithering_fragment>',
     '}'
 ].join('');

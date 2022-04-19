@@ -83,13 +83,13 @@ const getRealSeries = (series) => {
     }
     return series;
 };
-const getGcodeRenderValue = (object, index) => {
-    if (index / 8 >= 1) {
-        return Object.values(object[LEFT_EXTRUDER])[index % 8];
-    } else {
-        return Object.values(object[RIGHT_EXTRUDER])[index % 8];
-    }
-};
+// const getGcodeRenderValue = (object, index) => {
+//     if (index / 8 >= 1) {
+//         return Object.values(object[LEFT_EXTRUDER])[index % 8];
+//     } else {
+//         return Object.values(object[RIGHT_EXTRUDER])[index % 8];
+//     }
+// };
 function isLarger(a, b) {
     return (a - b) > EPSILON;
 }
@@ -665,14 +665,13 @@ export const actions = {
                 const layerIndexAttribute = new THREE.Float32BufferAttribute(layerIndices, 1);
                 const typeCodeAttribute = new THREE.Float32BufferAttribute(typeCodes, 1);
                 const toolCodeAttribute = new THREE.Float32BufferAttribute(toolCodes, 1);
-
                 bufferGeometry.setAttribute('position', positionAttribute);
                 bufferGeometry.setAttribute('a_color', colorAttribute);
                 bufferGeometry.setAttribute('a_color1', color1Attribute);
                 bufferGeometry.setAttribute('a_layer_index', layerIndexAttribute);
                 bufferGeometry.setAttribute('a_type_code', typeCodeAttribute);
                 bufferGeometry.setAttribute('a_tool_code', toolCodeAttribute);
-
+                console.log('position', positionAttribute);
 
                 dispatch(actions.destroyGcodeLine());
 
@@ -681,7 +680,7 @@ export const actions = {
                 });
                 gcodeParser && gcodeParser.dispose();
                 const object3D = gcodeBufferGeometryToObj3d('3DP', bufferGeometry);
-                gcodeLineGroup.add(object3D);
+                // gcodeLineGroup.add(object3D);
 
                 const gcode = value.gcode;
                 const parser = new GCodeParser(gcode, extruderColors);
@@ -691,8 +690,10 @@ export const actions = {
                 parser.slice();
                 const newGcodeLineObjects = [];
 
-                parser.getGeometries().forEach((geometry) => {
+                parser.getGeometries().forEach((geometry, index) => {
                     const newGcodeLineObject = gcodeBufferGeometryToObj3d('3DP', geometry, 'mesh');
+                    gcodeLineGroup.add(newGcodeLineObject);
+                    index === 0 && console.log('newGcodeLineObject', geometry);
                     newGcodeLineObjects.push(newGcodeLineObject);
                 });
 
@@ -1556,6 +1557,7 @@ export const actions = {
         }
         dispatch(actions.updateState({ gcodeTypeInitialVisibility }));
         dispatch(actions.renderShowGcodeLines());
+        console.log('gcodeLineObjects', gcodeLineObjects, type);
         if (gcodeLineObjects) {
             gcodeLineObjects.forEach((gcodeLine) => {
                 const uniforms = gcodeLine.material.uniforms;
@@ -1590,6 +1592,7 @@ export const actions = {
                 } else {
                     switch (type) {
                         case 'WALL-INNER':
+                            console.log('type', type);
                             uniforms.u_r_wall_inner_visible.value = value;
                             break;
                         case 'WALL-OUTER':
@@ -1672,10 +1675,10 @@ export const actions = {
     },
 
     renderShowGcodeLines: () => (dispatch, getState) => {
-        const { gcodeParser, gcodeLineObjects, gcodeTypeInitialVisibility } = getState().printing;
+        const { gcodeParser, gcodeLineObjects } = getState().printing;
         const { startLayer, endLayer } = gcodeParser;
         gcodeLineObjects.forEach((mesh, i) => {
-            if (i < (startLayer ?? 0) || i > (endLayer ?? 0) || !getGcodeRenderValue(gcodeTypeInitialVisibility, i)) {
+            if (i < (startLayer ?? 0) || i > (endLayer ?? 0)) {
                 mesh.visible = false;
             } else {
                 mesh.visible = true;

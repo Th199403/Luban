@@ -1,4 +1,15 @@
 import * as THREE from 'three';
+import {
+    // RawShaderMaterial,
+    // ShaderMaterial,
+    // TangentSpaceNormalMap,
+    // Vector2,
+    // MultiplyOperation,
+    UniformsUtils,
+    ShaderLib,
+    Color,
+    NormalBlending,
+} from 'three';
 // import { Line2 } from 'three/examples/jsm/lines/Line2';
 import { PRINT3D_UNIFORMS, PRINT3D_VERT_SHADER, PRINT3D_FRAG_SHADER } from '../ShaderMaterial/print3d-shader-meterial';
 import { WORKSPACE_UNIFORMS, WORKSPACE_FRAG_SHADER, WORKSPACE_VERT_SHADER } from '../ShaderMaterial/workspace-shader-meterial';
@@ -11,13 +22,17 @@ const gcodeBufferGeometryToObj3d = (func, bufferGeometry, renderMethod) => {
                 obj3d = new THREE.Mesh(
                     bufferGeometry,
                     new THREE.ShaderMaterial({
-                        uniforms: PRINT3D_UNIFORMS,
+                        uniforms: UniformsUtils.merge([
+                            ShaderLib.phong.uniforms,
+                            { diffuse: { value: new Color('#ffffff') } },
+                            { time: { value: 0.0 } },
+                            PRINT3D_UNIFORMS
+                        ]),
                         vertexShader: PRINT3D_VERT_SHADER,
                         fragmentShader: PRINT3D_FRAG_SHADER,
-                        side: THREE.DoubleSide,
-                        transparent: true,
-                        linewidth: 10,
-                        wireframeLinewidth: 5
+                        lights: true,
+                        vertexColors: true,
+                        blending: NormalBlending,
                         // wireframe: true
                     })
                 );

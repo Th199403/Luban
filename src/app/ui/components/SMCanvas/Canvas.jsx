@@ -252,7 +252,7 @@ class Canvas extends PureComponent {
             this.camera.up = this.props.cameraUp;
         }
 
-        this.renderer = new WebGLRendererWrapper({ antialias: true });
+        this.renderer = new WebGLRendererWrapper({ antialias: true, alpha: true });
         this.renderer.setSize(width, height);
 
         this.scene = new Scene();
