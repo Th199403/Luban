@@ -5,6 +5,7 @@ import {
     // TangentSpaceNormalMap,
     // Vector2,
     // MultiplyOperation,
+    // mergeUniforms,
     UniformsUtils,
     ShaderLib,
     Color,
@@ -12,6 +13,7 @@ import {
 } from 'three';
 // import { Line2 } from 'three/examples/jsm/lines/Line2';
 import { PRINT3D_UNIFORMS, PRINT3D_VERT_SHADER, PRINT3D_FRAG_SHADER } from '../ShaderMaterial/print3d-shader-meterial';
+import { lineMaterialUniforms, lineMaterialFragmentShader, lineMaterialVertexShader } from '../ShaderMaterial/meshphong.glsl';
 import { WORKSPACE_UNIFORMS, WORKSPACE_FRAG_SHADER, WORKSPACE_VERT_SHADER } from '../ShaderMaterial/workspace-shader-meterial';
 
 const gcodeBufferGeometryToObj3d = (func, bufferGeometry, renderMethod) => {
@@ -19,22 +21,26 @@ const gcodeBufferGeometryToObj3d = (func, bufferGeometry, renderMethod) => {
     switch (func) {
         case '3DP':
             if (renderMethod === 'mesh') {
+                const shader = new THREE.ShaderMaterial({
+                    // uniforms: lineMaterialUniforms,
+                    vertexShader: lineMaterialVertexShader,
+                    fragmentShader: lineMaterialFragmentShader,
+                    lights: true,
+                    vertexColors: true,
+                    blending: NormalBlending,
+                });
+                shader.setValues({
+                    uniforms: UniformsUtils.merge([
+                        { ...ShaderLib.phong.uniforms, ...lineMaterialUniforms },
+                        // mergeUniforms([ShaderLib.phong.uniforms, lineMaterialUniforms]),
+                        { diffuse: { value: new Color('#ffffff') } },
+                        { time: { value: 0.0 } },
+                    ]),
+                });
+                console.log('ShaderLib.phong.uniforms', ShaderLib.phong.uniforms, shader);
                 obj3d = new THREE.Mesh(
                     bufferGeometry,
-                    new THREE.ShaderMaterial({
-                        uniforms: UniformsUtils.merge([
-                            ShaderLib.phong.uniforms,
-                            { diffuse: { value: new Color('#ffffff') } },
-                            { time: { value: 0.0 } },
-                            PRINT3D_UNIFORMS
-                        ]),
-                        vertexShader: PRINT3D_VERT_SHADER,
-                        fragmentShader: PRINT3D_FRAG_SHADER,
-                        lights: true,
-                        vertexColors: true,
-                        blending: NormalBlending,
-                        // wireframe: true
-                    })
+                    shader
                 );
             } else {
                 obj3d = new THREE.Line(

@@ -268,7 +268,7 @@ export class GCodeParser {
         // const lastAddedLinePointArray: LinePoint[] | undefined = [];
         // let addedLinePoint: LinePoint | undefined;
         const addLine = (newLine: LinePoint) => {
-            if (newLine.layer > currentLayer) {
+            if (newLine.layer > this.pointsPerObject) {
                 // end the old geometry and increase the counter
                 this.combinedLines[currentLayer] && this.combinedLines[currentLayer].finish();
                 currentLayer = newLine.layer;

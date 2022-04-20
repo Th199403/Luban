@@ -141,6 +141,7 @@ export class LineTubeGeometry extends BufferGeometry {
         this.setIndex(this.indices);
 
         this.generateUVs();
+        console.log('this.uvs', this.uvs);
         this.setAttribute('uv', new Float32BufferAttribute(this.uvs, 2));
 
         // not needed anymore

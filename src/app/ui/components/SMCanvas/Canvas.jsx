@@ -8,7 +8,7 @@
 import noop from 'lodash/noop';
 import React, { PureComponent } from 'react';
 import { isNil, throttle } from 'lodash';
-import { Vector3, PerspectiveCamera, Scene, Group, AmbientLight, PointLight,
+import { Vector3, PerspectiveCamera, Scene, Group, AmbientLight, PointLight, SpotLight,
     HemisphereLight, DirectionalLight } from 'three';
 import PropTypes from 'prop-types';
 import TWEEN from '@tweenjs/tween.js';
@@ -266,6 +266,15 @@ class Canvas extends PureComponent {
         if (this.transformSourceType === '3D') {
             const lightTop = new HemisphereLight(0xA3A3A3, 0x545454, 0.5);
             const lightInside = new AmbientLight(0x666666);
+            const spotLight = new SpotLight(0xffffff, 0.9);
+            spotLight.position.set(200, 400, 300);
+            spotLight.lookAt(new Vector3(0, 0, 0));
+
+            const spotLight2 = new SpotLight(0xffffff, 0.9);
+            spotLight2.position.set(-200, -400, -300);
+            spotLight2.lookAt(new Vector3(0, 0, 0));
+            this.scene.add(spotLight);
+            this.scene.add(spotLight2);
             lightTop.position.copy(new Vector3(0, 0, -49000));
             lightInside.position.copy(new Vector3(0, 0, 0));
             this.scene.add(lightTop);
