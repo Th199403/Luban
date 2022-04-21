@@ -117,7 +117,7 @@ export class LineTubeGeometry extends BufferGeometry {
         }
 
         // this.setAttribute('position', new Float32BufferAttribute(this.vertices, 3));
-        // this.setAttribute('normal', new Float32BufferAttribute(this.normals, 3));
+        this.setAttribute('normal', new Float32BufferAttribute(this.normals, 3));
         // this.setAttribute('color', new Float32BufferAttribute(this.colors, 3));
 
         const positionAttribute = new Float32BufferAttribute(this.vertices, 3);
@@ -131,6 +131,7 @@ export class LineTubeGeometry extends BufferGeometry {
 
         this.setAttribute('position', positionAttribute);
         this.setAttribute('a_color', colorAttribute);
+        // this.setAttribute('color', colorAttribute);
         this.setAttribute('a_color1', color1Attribute);
         this.setAttribute('a_layer_index', layerIndexAttribute);
         this.setAttribute('a_type_code', typeCodeAttribute);
@@ -141,7 +142,6 @@ export class LineTubeGeometry extends BufferGeometry {
         this.setIndex(this.indices);
 
         this.generateUVs();
-        console.log('this.uvs', this.uvs);
         this.setAttribute('uv', new Float32BufferAttribute(this.uvs, 2));
 
         // not needed anymore

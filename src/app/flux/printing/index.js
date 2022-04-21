@@ -685,7 +685,7 @@ export const actions = {
                 const gcode = value.gcode;
                 const parser = new GCodeParser(gcode, extruderColors);
                 parser.travelWidth = 0.1;
-                parser.radialSegments = 3;
+                parser.radialSegments = 8;
                 parser.parse();
                 parser.slice();
                 const newGcodeLineObjects = [];

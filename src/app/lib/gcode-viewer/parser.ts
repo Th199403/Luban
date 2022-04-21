@@ -275,6 +275,7 @@ export class GCodeParser {
             }
 
             if (this.combinedLines[currentLayer] === undefined) {
+                console.log('this.radialSegments', this.radialSegments);
                 this.combinedLines.push(new LineTubeGeometry(this.radialSegments, newLine.layer));
             }
 

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { Vector3 } from 'three';
 import { DEFAULT_LUBAN_HOST } from '../../constants';
 
 export const lineMaterialUniforms = {
@@ -24,6 +25,8 @@ export const lineMaterialUniforms = {
     u_r_fill_visible: { value: 1 },
     u_r_travel_visible: { value: 0 },
     u_r_unknown_visible: { value: 1 },
+    u_lightColor: { value: new Vector3(1.0, 1.0, 1.0) },
+    u_lightDirection: { value: new Vector3(1 / Math.sqrt(15), 2 / Math.sqrt(15), 3 / Math.sqrt(15)) },
     texture_test: {
         type: 't',
         value: new THREE.TextureLoader().load(`${DEFAULT_LUBAN_HOST}/resources/images/wood.png`)
@@ -62,6 +65,8 @@ uniform int u_r_support_visible;
 uniform int u_r_fill_visible;
 uniform int u_r_travel_visible;
 uniform int u_r_unknown_visible;
+uniform vec3 u_lightDirection;   //平行光方向
+uniform vec3 u_lightColor;   //平行光方向
 
 #include <common>
 #include <packing>
@@ -94,6 +99,8 @@ varying vec3 v_color1;
 varying float v_layer_index;
 varying float v_type_code;
 varying float v_tool_code;
+varying vec4 actual_color;
+varying vec3 v_normal;
 
 precision highp float;
 uniform sampler2D texture_test; // identify the texture as a uniform argument
@@ -198,21 +205,26 @@ void main() {
     }
     if(u_middle_layer_set_gray == 1){
         if(v_layer_index == u_visible_layer_range_end){
-           gl_FragColor = vec4(v_color0.xyz, diffuseColor.a);
+           gl_FragColor = vec4(v_color0.xyz, 1.0);
         } else {
-           gl_FragColor = vec4(0.6, 0.6, 0.6, diffuseColor.a * 0.75);
+           gl_FragColor = vec4(0.6, 0.6, 0.6, 1.0 * 0.75);
         }
         return;
     }
-    // gl_FragColor = texture2D(texture_test, vUv);
-    gl_FragColor = vec4(v_color0.xyz, diffuseColor.a);
+
+    float dot = max(dot(u_lightDirection, v_normal), 0.0);
+    // 计算平行光方向向量和顶点法向量的点积
+    vec3 u_reflectedLight = u_lightColor * v_color0.rgb * dot;
+
     if(u_color_type == 1 && !(6.5 < v_type_code && v_type_code < 7.5)){
-        gl_FragColor = vec4(v_color1.xyz, diffuseColor.a);
+        vec3 u_reflectedLight = u_lightColor * v_color1.rgb * dot;
     }
+    //颜色插值计算
+    gl_FragColor =  vec4(u_reflectedLight, 1.0);
 
 	#include <envmap_fragment>
 
-	// gl_FragColor = vec4( 1.0, 0, 0, diffuseColor.a );
+    // gl_FragColor =  vec4(outgoingLight, 1.0);
 
 	#include <tonemapping_fragment>
 	#include <encodings_fragment>
@@ -276,12 +288,14 @@ varying vec3 v_color1;
 varying float v_layer_index;
 varying float v_type_code;
 varying float v_tool_code;
+varying vec3 v_normal;
 
 attribute float a_layer_index;
 attribute float a_type_code;
 attribute float a_tool_code;
 attribute vec3 a_color;
 attribute vec3 a_color1;
+// attribute vec3 normal;
 
 
 void main() {
@@ -299,6 +313,7 @@ void main() {
     v_tool_code = a_tool_code;
     v_color0 = a_color;
     v_color1 = a_color1;
+    v_normal = normal;
 #ifndef FLAT_SHADED // Normal computed with derivatives when FLAT_SHADED
 
 	vNormal = normalize( transformedNormal );
