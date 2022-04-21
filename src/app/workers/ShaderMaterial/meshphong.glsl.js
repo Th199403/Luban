@@ -102,135 +102,134 @@ varying float v_tool_code;
 varying vec4 actual_color;
 varying vec3 v_normal;
 
-precision highp float;
 uniform sampler2D texture_test; // identify the texture as a uniform argument
 varying vec2 vUv; // identify the uv values as a varying attribute
 
 void main() {
 
-	#include <clipping_planes_fragment>
-	vec4 diffuseColor = vec4( diffuse, opacity );
-	ReflectedLight reflectedLight = ReflectedLight( vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ) );
-	vec3 totalEmissiveRadiance = emissive;
+#include <clipping_planes_fragment>
+vec4 diffuseColor = vec4( diffuse, opacity );
+ReflectedLight reflectedLight = ReflectedLight( vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ) );
+vec3 totalEmissiveRadiance = emissive;
 
-	#include <logdepthbuf_fragment>
-	#include <map_fragment>
-	#include <color_fragment>
-	#include <alphamap_fragment>
-	#include <alphatest_fragment>
-	#include <specularmap_fragment>
-	#include <normal_fragment_begin>
-	#include <normal_fragment_maps>
-	#include <emissivemap_fragment>
+#include <logdepthbuf_fragment>
+#include <map_fragment>
+#include <color_fragment>
+#include <alphamap_fragment>
+#include <alphatest_fragment>
+#include <specularmap_fragment>
+#include <normal_fragment_begin>
+#include <normal_fragment_maps>
+#include <emissivemap_fragment>
 
-	// accumulation
-	#include <lights_phong_fragment>
-	#include <lights_fragment_begin>
-	#include <lights_fragment_maps>
-	#include <lights_fragment_end>
+// accumulation
+#include <lights_phong_fragment>
+#include <lights_fragment_begin>
+#include <lights_fragment_maps>
+#include <lights_fragment_end>
 
-	// modulation
-	#include <aomap_fragment>
+// modulation
+#include <aomap_fragment>
 
-	vec3 outgoingLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + reflectedLight.directSpecular + reflectedLight.indirectSpecular + totalEmissiveRadiance;
+vec3 outgoingLight = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse + reflectedLight.directSpecular + reflectedLight.indirectSpecular + totalEmissiveRadiance;
 
-    if(v_layer_index > u_visible_layer_range_end){
-        return;
+if(v_layer_index > u_visible_layer_range_end){
+    return;
+}
+if(v_layer_index < u_visible_layer_range_start){
+    return;
+}
+if(u_l_wall_inner_visible == 0 && 0.5 < v_type_code && v_type_code < 1.5 && v_tool_code < 0.5){
+    discard;
+}
+
+if(u_l_wall_outer_visible == 0 && 1.5 < v_type_code && v_type_code < 2.5 && v_tool_code < 0.5){
+    discard;
+}
+
+if(u_l_skin_visible == 0 && 2.5 < v_type_code && v_type_code < 3.5 && v_tool_code < 0.5){
+    discard;
+}
+
+if(u_l_skirt_visible == 0 && 3.5 < v_type_code && v_type_code < 4.5 && v_tool_code < 0.5){
+    discard;
+}
+
+if(u_l_support_visible == 0 && 4.5 < v_type_code && v_type_code < 5.5 && v_tool_code < 0.5){
+    discard;
+}
+
+if(u_l_fill_visible == 0 && 5.5 < v_type_code && v_type_code < 6.5 && v_tool_code < 0.5){
+    discard;
+}
+
+if(u_l_travel_visible == 0 && 6.5 < v_type_code && v_type_code < 7.5 && v_tool_code < 0.5){
+    discard;
+}
+
+if(u_l_unknown_visible == 0 && 7.5 < v_type_code && v_type_code < 8.5 && v_tool_code < 0.5){
+    discard;
+}
+
+if(u_r_wall_inner_visible == 0 && 0.5 < v_type_code && v_type_code < 1.5 && v_tool_code > 0.5){
+    discard;
+}
+
+if(u_r_wall_outer_visible == 0 && 1.5 < v_type_code && v_type_code < 2.5 && v_tool_code > 0.5){
+    discard;
+}
+
+if(u_r_skin_visible == 0 && 2.5 < v_type_code && v_type_code < 3.5 && v_tool_code > 0.5){
+    discard;
+}
+
+if(u_r_skirt_visible == 0 && 3.5 < v_type_code && v_type_code < 4.5 && v_tool_code > 0.5){
+    discard;
+}
+
+if(u_r_support_visible == 0 && 4.5 < v_type_code && v_type_code < 5.5 && v_tool_code > 0.5){
+    discard;
+}
+
+if(u_r_fill_visible == 0 && 5.5 < v_type_code && v_type_code < 6.5 && v_tool_code > 0.5){
+    discard;
+}
+
+if(u_r_travel_visible == 0 && 6.5 < v_type_code && v_type_code < 7.5 && v_tool_code > 0.5){
+    discard;
+}
+
+if(u_r_unknown_visible == 0 && 7.5 < v_type_code && v_type_code < 8.5 && v_tool_code > 0.5){
+    discard;
+}
+if(u_middle_layer_set_gray == 1){
+    if(v_layer_index == u_visible_layer_range_end){
+       gl_FragColor = vec4(v_color0.xyz, 1.0);
+    } else {
+       gl_FragColor = vec4(0.6, 0.6, 0.6, 1.0 * 0.75);
     }
-    if(v_layer_index < u_visible_layer_range_start){
-        return;
-    }
-    if(u_l_wall_inner_visible == 0 && 0.5 < v_type_code && v_type_code < 1.5 && v_tool_code < 0.5){
-        discard;
-    }
+    return;
+}
 
-    if(u_l_wall_outer_visible == 0 && 1.5 < v_type_code && v_type_code < 2.5 && v_tool_code < 0.5){
-        discard;
-    }
+float dot = max(dot(u_lightDirection, v_normal), 0.0);
+// 计算平行光方向向量和顶点法向量的点积
+vec3 u_reflectedLight = u_lightColor * v_color0.rgb * dot;
 
-    if(u_l_skin_visible == 0 && 2.5 < v_type_code && v_type_code < 3.5 && v_tool_code < 0.5){
-        discard;
-    }
+if(u_color_type == 1 && !(6.5 < v_type_code && v_type_code < 7.5)){
+    vec3 u_reflectedLight = u_lightColor * v_color1.rgb * dot;
+}
+//颜色插值计算
+gl_FragColor =  vec4(u_reflectedLight, 1.0);
 
-    if(u_l_skirt_visible == 0 && 3.5 < v_type_code && v_type_code < 4.5 && v_tool_code < 0.5){
-        discard;
-    }
+#include <envmap_fragment>
 
-    if(u_l_support_visible == 0 && 4.5 < v_type_code && v_type_code < 5.5 && v_tool_code < 0.5){
-        discard;
-    }
+// gl_FragColor =  vec4(outgoingLight, 1.0);
 
-    if(u_l_fill_visible == 0 && 5.5 < v_type_code && v_type_code < 6.5 && v_tool_code < 0.5){
-        discard;
-    }
-
-    if(u_l_travel_visible == 0 && 6.5 < v_type_code && v_type_code < 7.5 && v_tool_code < 0.5){
-        discard;
-    }
-
-    if(u_l_unknown_visible == 0 && 7.5 < v_type_code && v_type_code < 8.5 && v_tool_code < 0.5){
-        discard;
-    }
-
-    if(u_r_wall_inner_visible == 0 && 0.5 < v_type_code && v_type_code < 1.5 && v_tool_code > 0.5){
-        discard;
-    }
-
-    if(u_r_wall_outer_visible == 0 && 1.5 < v_type_code && v_type_code < 2.5 && v_tool_code > 0.5){
-        discard;
-    }
-
-    if(u_r_skin_visible == 0 && 2.5 < v_type_code && v_type_code < 3.5 && v_tool_code > 0.5){
-        discard;
-    }
-
-    if(u_r_skirt_visible == 0 && 3.5 < v_type_code && v_type_code < 4.5 && v_tool_code > 0.5){
-        discard;
-    }
-
-    if(u_r_support_visible == 0 && 4.5 < v_type_code && v_type_code < 5.5 && v_tool_code > 0.5){
-        discard;
-    }
-
-    if(u_r_fill_visible == 0 && 5.5 < v_type_code && v_type_code < 6.5 && v_tool_code > 0.5){
-        discard;
-    }
-
-    if(u_r_travel_visible == 0 && 6.5 < v_type_code && v_type_code < 7.5 && v_tool_code > 0.5){
-        discard;
-    }
-
-    if(u_r_unknown_visible == 0 && 7.5 < v_type_code && v_type_code < 8.5 && v_tool_code > 0.5){
-        discard;
-    }
-    if(u_middle_layer_set_gray == 1){
-        if(v_layer_index == u_visible_layer_range_end){
-           gl_FragColor = vec4(v_color0.xyz, 1.0);
-        } else {
-           gl_FragColor = vec4(0.6, 0.6, 0.6, 1.0 * 0.75);
-        }
-        return;
-    }
-
-    float dot = max(dot(u_lightDirection, v_normal), 0.0);
-    // 计算平行光方向向量和顶点法向量的点积
-    vec3 u_reflectedLight = u_lightColor * v_color0.rgb * dot;
-
-    if(u_color_type == 1 && !(6.5 < v_type_code && v_type_code < 7.5)){
-        vec3 u_reflectedLight = u_lightColor * v_color1.rgb * dot;
-    }
-    //颜色插值计算
-    gl_FragColor =  vec4(u_reflectedLight, 1.0);
-
-	#include <envmap_fragment>
-
-    // gl_FragColor =  vec4(outgoingLight, 1.0);
-
-	#include <tonemapping_fragment>
-	#include <encodings_fragment>
-	#include <fog_fragment>
-	#include <premultiplied_alpha_fragment>
-	#include <dithering_fragment>
+#include <tonemapping_fragment>
+#include <encodings_fragment>
+#include <fog_fragment>
+#include <premultiplied_alpha_fragment>
+#include <dithering_fragment>
 }
 `;
 
@@ -242,7 +241,7 @@ varying vec2 vUv;
 
 #ifndef FLAT_SHADED
 
-	varying vec3 vNormal;
+varying vec3 vNormal;
 
 #endif
 
@@ -299,42 +298,42 @@ attribute vec3 a_color1;
 
 
 void main() {
-	#include <uv_vertex>
-	#include <uv2_vertex>
-	#include <color_vertex>
+#include <uv_vertex>
+#include <uv2_vertex>
+#include <color_vertex>
 
-	#include <beginnormal_vertex>
-	#include <morphnormal_vertex>
-	#include <skinbase_vertex>
-	#include <skinnormal_vertex>
-	#include <defaultnormal_vertex>
-    v_layer_index = a_layer_index;
-    v_type_code = a_type_code;
-    v_tool_code = a_tool_code;
-    v_color0 = a_color;
-    v_color1 = a_color1;
-    v_normal = normal;
+#include <beginnormal_vertex>
+#include <morphnormal_vertex>
+#include <skinbase_vertex>
+#include <skinnormal_vertex>
+#include <defaultnormal_vertex>
+v_layer_index = a_layer_index;
+v_type_code = a_type_code;
+v_tool_code = a_tool_code;
+v_color0 = a_color;
+v_color1 = a_color1;
+v_normal = normal;
 #ifndef FLAT_SHADED // Normal computed with derivatives when FLAT_SHADED
 
-	vNormal = normalize( transformedNormal );
+vNormal = normalize( transformedNormal );
 
 #endif
 
-	#include <begin_vertex>
-	#include <morphtarget_vertex>
-	#include <skinning_vertex>
-	#include <displacementmap_vertex>
-	#include <project_vertex>
-	#include <logdepthbuf_vertex>
-	#include <clipping_planes_vertex>
-    vUv = uv;
-	vViewPosition = - mvPosition.xyz;
-    // gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+#include <begin_vertex>
+#include <morphtarget_vertex>
+#include <skinning_vertex>
+#include <displacementmap_vertex>
+#include <project_vertex>
+#include <logdepthbuf_vertex>
+#include <clipping_planes_vertex>
+vUv = uv;
+vViewPosition = - mvPosition.xyz;
+// gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
 
-	#include <worldpos_vertex>
-	#include <envmap_vertex>
-	#include <shadowmap_vertex>
-	#include <fog_vertex>
+#include <worldpos_vertex>
+#include <envmap_vertex>
+#include <shadowmap_vertex>
+#include <fog_vertex>
 
 }
 `;
