@@ -36,6 +36,7 @@ class PrimeTowerModel extends ThreeModel {
 
         super(modelInfo, modelGroup);
         this.canAttachSupport = false;
+        console.trace('modelGroup._bbox', transformation, modelGroup._bbox);
 
         const positionX = transformation?.positionX || Math.max(modelGroup._bbox.max.x - 50, modelGroup._bbox.min.x - 50);
         const positionY = transformation?.positionY || Math.max(modelGroup._bbox.max.y - 50, modelGroup._bbox.min.y - 50);

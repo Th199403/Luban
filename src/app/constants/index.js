@@ -519,6 +519,7 @@ export const PRINTING_QUALITY_CONFIG_INDEX = {
 };
 export const PRINTING_MANAGER_TYPE_MATERIAL = 'material';
 export const PRINTING_MANAGER_TYPE_QUALITY = 'quality';
+export const PRINTING_MANAGER_TYPE_EXTRUDER = 'extruder';
 
 export const DEFAULT_CNC_CONFIG_IDS = [
     'tool.default_CVbit',

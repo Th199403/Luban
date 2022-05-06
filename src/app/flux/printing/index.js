@@ -109,6 +109,18 @@ const defaultDefinitionKeys = {
     quality: {
         definitions: 'qualityDefinitions',
         id: 'defaultQualityId'
+    },
+};
+const definitionKeysWithDirection = {
+    left: {
+        material: 'materialDefinitions',
+        quality: 'qualityDefinitions',
+        extruder: 'extruderLDefinition',
+    },
+    right: {
+        material: 'materialDefinitions',
+        quality: 'qualityDefinitions',
+        extruder: 'extruderRDefinition',
     }
 };
 const CONFIG_ID = {
@@ -358,7 +370,6 @@ export const actions = {
         // await dispatch(machineActions.updateMachineToolHead(toolHead, series, CONFIG_HEADTYPE));
         const currentMachine = getMachineSeriesWithToolhead(series, toolHead);
         await definitionManager.init(CONFIG_HEADTYPE, currentMachine.configPathname[CONFIG_HEADTYPE]);
-
         dispatch(actions.updateState({
             activeDefinition: definitionManager.activeDefinition,
             materialDefinitions: await definitionManager.getDefinitionsByPrefixName('material'),
@@ -428,9 +439,10 @@ export const actions = {
     },
 
     updateBoundingBox: () => (dispatch, getState) => {
-        const { modelGroup, activeDefinition, extruderLDefinition, extruderRDefinition, helpersExtruderConfig } = getState().printing;
+        const { modelGroup, defaultQualityId, qualityDefinitions, extruderLDefinition, extruderRDefinition, helpersExtruderConfig } = getState().printing;
         const extruderLDefinitionSettings = extruderLDefinition.settings;
         const extruderRDefinitionSettings = extruderRDefinition.settings;
+        const activeQualityDefinition = lodashFind(qualityDefinitions, { definitionId: defaultQualityId });
         const { size, toolHead: { printingToolhead } } = getState().machine;
         // TODO
         let useLeft = false;
@@ -466,12 +478,12 @@ export const actions = {
         const leftExtruderBorder = ((useRight && printingToolhead === DUAL_EXTRUDER_TOOLHEAD_FOR_SM2) ? DUAL_EXTRUDER_LIMIT_WIDTH_L : 0);
         const rightExtruderBorder = ((useLeft && printingToolhead === DUAL_EXTRUDER_TOOLHEAD_FOR_SM2) ? DUAL_EXTRUDER_LIMIT_WIDTH_R : 0);
 
-        const adhesionType = activeDefinition?.settings?.adhesion_type?.default_value;
+        const adhesionType = activeQualityDefinition?.settings?.adhesion_type?.default_value;
         let border = 0;
         let supportLineWidth = 0;
         switch (adhesionType) {
             case 'skirt': {
-                const skirtLineCount = activeDefinition?.settings?.skirt_line_count?.default_value;
+                const skirtLineCount = activeQualityDefinition?.settings?.skirt_line_count?.default_value;
                 supportLineWidth = extruderLDefinitionSettings?.machine_nozzle_size?.default_value ?? 0;
                 if (helpersExtruderConfig.adhesion === RIGHT_EXTRUDER_MAP_NUMBER) {
                     supportLineWidth = extruderRDefinitionSettings.machine_nozzle_size.default_value;
@@ -481,7 +493,7 @@ export const actions = {
                 break;
             }
             case 'brim': {
-                const brimLineCount = activeDefinition?.settings?.brim_line_count?.default_value;
+                const brimLineCount = activeQualityDefinition?.settings?.brim_line_count?.default_value;
                 supportLineWidth = extruderLDefinitionSettings?.machine_nozzle_size?.default_value ?? 0;
                 if (helpersExtruderConfig.adhesion === RIGHT_EXTRUDER_MAP_NUMBER) {
                     supportLineWidth = extruderRDefinitionSettings.machine_nozzle_size.default_value;
@@ -490,7 +502,7 @@ export const actions = {
                 break;
             }
             case 'raft': {
-                const raftMargin = activeDefinition?.settings?.raft_margin?.default_value;
+                const raftMargin = activeQualityDefinition?.settings?.raft_margin?.default_value;
                 border = raftMargin;
                 break;
             }
@@ -906,7 +918,8 @@ export const actions = {
     },
 
     // Update definition settings and save.
-    updateDefinitionSettings: (definition, settings, updateExtruderDefinition = true) => (dispatch, getState) => {
+    // // TODO:  remove this
+    updateDefinitionSettings: (definition, settings, shouldUpdateExtruder = true) => (dispatch, getState) => {
         const { modelGroup, extruderLDefinition, extruderRDefinition, helpersExtruderConfig } = getState().printing;
         const {
             settings: newSettings,
@@ -921,7 +934,7 @@ export const actions = {
             helpersExtruderConfig
         );
         settings = newSettings;
-        if (updateExtruderDefinition) {
+        if (shouldUpdateExtruder) {
             definitionManager.updateDefinition({
                 definitionId: 'snapmaker_extruder_0',
                 settings: extruderLDefinitionSettings
@@ -946,6 +959,7 @@ export const actions = {
         });
     },
 
+    // TODO: remove it
     updateActiveDefinitionMachineSize: (size) => (dispatch) => {
         // Update active definition on dimensions
         const definition = {
@@ -1006,27 +1020,30 @@ export const actions = {
         }
         if (shouldSave) {
             dispatch(actions.updateDefinitionSettings(activeDefinition, activeDefinition.settings));
-        } else {
-            // TODO: Optimize performance
-            const {
-                modelGroup,
-                extruderLDefinition,
-                extruderRDefinition,
-                helpersExtruderConfig
-            } = getState().printing;
-            definitionManager.calculateDependencies(
-                activeDefinition,
-                activeDefinition.settings,
-                modelGroup && modelGroup.hasSupportModel(),
-                extruderLDefinition.settings,
-                extruderRDefinition.settings,
-                helpersExtruderConfig
-            );
         }
 
         // Update activeDefinition to force component re-render
         dispatch(actions.updateState({ activeDefinition }));
         dispatch(actions.updateBoundingBox());
+    },
+
+    updateCurrentDefinition: (definition, type, direction = LEFT_EXTRUDER) => (dispatch, getState) => {
+        definitionManager.updateDefinition(definition);
+        const id = definition?.definitionId;
+        const definitionsKey = definitionKeysWithDirection[direction][type];
+        // Todo
+        if (['snapmaker_extruder_0', 'snapmaker_extruder_1'].includes(id)) {
+            dispatch(actions.updateState({
+                [definitionsKey]: definition
+            }));
+        } else {
+            const definitions = getState().printing[definitionsKey];
+            const index = definitions.findIndex(d => d.definitionId === id);
+            definitions[index] = definition;
+            dispatch(actions.updateState({
+                [definitionsKey]: definitions
+            }));
+        }
     },
 
     /**
@@ -1037,6 +1054,7 @@ export const actions = {
      *      }
      * @param direction
      */
+    // // TODO:  remove this
     updateExtruderDefinition: (definition, direction = LEFT_EXTRUDER) => (dispatch, getState) => {
         const { activeDefinition, extruderLDefinition, extruderRDefinition, helpersExtruderConfig } = getState().printing;
         if (!definition) {
@@ -1077,7 +1095,8 @@ export const actions = {
         const nozzleSize = extruderDef.settings.machine_nozzle_size.default_value;
         const nozzleSizeRelationSettingsKeys = [
             'line_width',
-            'wall_line_width', 'wall_line_width_0', 'wall_line_width_x',
+            'wall_line_width',
+            'wall_line_width_0', 'wall_line_width_x',
             'skin_line_width',
             'infill_line_width',
             'skirt_brim_line_width',
@@ -1520,14 +1539,17 @@ export const actions = {
     },
 
     generateGcode: (thumbnail, isGuideTours = false) => async (dispatch, getState) => {
-        const { hasModel, activeDefinition, modelGroup, progressStatesManager, helpersExtruderConfig, layerCount,
-            extruderLDefinition, extruderRDefinition, defaultMaterialId, defaultMaterialIdRight, materialDefinitions, stopArea: { left, front } } = getState().printing;
-        const { size, toolHead: { printingToolhead }, series } = getState().machine;
-        if (!hasModel) {
+        const { hasModel, modelGroup, progressStatesManager, helpersExtruderConfig,
+            extruderLDefinition, extruderRDefinition, defaultMaterialId, defaultMaterialIdRight,
+            defaultQualityId, qualityDefinitions, materialDefinitions, stopArea: { left, front } } = getState().printing;
+        const { size, toolHead: { printingToolhead } } = getState().machine;
+        const models = modelGroup.getVisibleValidModels();
+        if (!models || models.length === 0 || !hasModel) {
             return;
         }
         // update extruder definitions
-        const hasPrimeTower = (printingToolhead === DUAL_EXTRUDER_TOOLHEAD_FOR_SM2 && activeDefinition.settings.prime_tower_enable.default_value);
+        const activeQualityDefinition = qualityDefinitions.find(d => d.definitionId === defaultQualityId);
+        const hasPrimeTower = (printingToolhead === DUAL_EXTRUDER_TOOLHEAD_FOR_SM2 && activeQualityDefinition.settings.prime_tower_enable.default_value);
         let primeTowerXDefinition = 0;
         let primeTowerYDefinition = 0;
         if (hasPrimeTower) {
@@ -1538,11 +1560,11 @@ export const actions = {
             const primeTowerPositionY = modelGroupBBox.max.y - (primeTowerModel.boundingBox.max.y + primeTowerModel.boundingBox.min.y - primeTowerWidth) / 2;
             primeTowerXDefinition = size.x - primeTowerPositionX - left;
             primeTowerYDefinition = size.y - primeTowerPositionY - front;
-            activeDefinition.settings.prime_tower_position_x.default_value = primeTowerXDefinition;
-            activeDefinition.settings.prime_tower_position_y.default_value = primeTowerYDefinition;
-            activeDefinition.settings.prime_tower_size.default_value = primeTowerWidth;
+            activeQualityDefinition.settings.prime_tower_position_x.default_value = primeTowerXDefinition;
+            activeQualityDefinition.settings.prime_tower_position_y.default_value = primeTowerYDefinition;
+            activeQualityDefinition.settings.prime_tower_size.default_value = primeTowerWidth;
             // activeDefinition.settings.prime_tower_wipe_enabled.default_value = true;
-        }
+
         const indexL = materialDefinitions.findIndex(d => d.definitionId === defaultMaterialId);
         const indexR = materialDefinitions.findIndex(d => d.definitionId === defaultMaterialIdRight);
         const newExtruderLDefinition = definitionManager.finalizeExtruderDefinition({
@@ -1559,10 +1581,14 @@ export const actions = {
             primeTowerXDefinition,
             primeTowerYDefinition
         });
-        dispatch(actions.updateState({
-            extruderLDefinition: newExtruderLDefinition,
-            extruderRDefinition: newExtruderRDefinition
-        }));
+        definitionManager.calculateDependencies(
+            activeQualityDefinition,
+            activeQualityDefinition.settings,
+            modelGroup && modelGroup.hasSupportModel(),
+            newExtruderLDefinition.settings,
+            newExtruderRDefinition.settings,
+            helpersExtruderConfig
+        );
         definitionManager.updateDefinition({
             ...newExtruderLDefinition,
             definitionId: 'snapmaker_extruder_0'
@@ -1571,13 +1597,6 @@ export const actions = {
             ...newExtruderRDefinition,
             definitionId: 'snapmaker_extruder_1'
         });
-
-        const models = filter(modelGroup.getModels(), (modelItem) => {
-            return modelItem.visible && modelItem.type !== 'primeTower';
-        });
-        if (!models || models.length === 0) {
-            return;
-        }
 
         modelGroup.unselectAllModels();
         if (isGuideTours) {
@@ -1596,15 +1615,12 @@ export const actions = {
         const { model, support, definition, originalName } = await dispatch(actions.prepareModel());
         const currentModelName = path.basename(models[0]?.modelName, path.extname(models[0]?.modelName));
         const renderGcodeFileName = `${currentModelName}_${new Date().getTime()}`;
-        // Prepare definition file
-        await dispatch(actions.updateActiveDefinitionMachineSize(size));
 
-        activeDefinition.settings.machine_heated_bed.default_value = extruderLDefinition.settings.machine_heated_bed.default_value;
-        activeDefinition.settings.material_bed_temperature.default_value = extruderLDefinition.settings.material_bed_temperature.default_value;
-        activeDefinition.settings.material_bed_temperature_layer_0.default_value = extruderLDefinition.settings.material_bed_temperature_layer_0.default_value;
+        activeQualityDefinition.settings.machine_heated_bed.default_value = extruderLDefinition.settings.machine_heated_bed.default_value;
+        activeQualityDefinition.settings.material_bed_temperature.default_value = extruderLDefinition.settings.material_bed_temperature.default_value;
+        activeQualityDefinition.settings.material_bed_temperature_layer_0.default_value = extruderLDefinition.settings.material_bed_temperature_layer_0.default_value;
 
-
-        const finalDefinition = definitionManager.finalizeActiveDefinition(activeDefinition, true);
+        const finalDefinition = definitionManager.finalizeActiveDefinition(activeQualityDefinition, size, hasPrimeTower);
         const adhesionExtruder = helpersExtruderConfig.adhesion;
         const supportExtruder = helpersExtruderConfig.support;
         finalDefinition.settings.adhesion_extruder_nr.default_value = adhesionExtruder;
@@ -1615,7 +1631,10 @@ export const actions = {
         finalDefinition.settings.support_roof_extruder_nr.default_value = supportExtruder;
         finalDefinition.settings.support_bottom_extruder_nr.default_value = supportExtruder;
         await definitionManager.createDefinition(finalDefinition);
-
+        console.log('dd', finalDefinition.settings.prime_tower_position_x.default_value,
+            finalDefinition.settings.prime_tower_position_y.default_value,
+            finalDefinition.settings.prime_tower_size.default_value,
+            finalDefinition.settings.prime_tower_wipe_enabled.default_value);
         // slice
         /*
         const params = {
@@ -1644,11 +1663,8 @@ export const actions = {
 
     prepareModel: () => (dispatch, getState) => {
         return new Promise((resolve) => {
-            const { modelGroup, activeDefinition, extruderLDefinition, extruderRDefinition } = getState().printing;
-
-
-            // modelGroup.removeHiddenMeshObjects();
-
+            const { modelGroup, defaultQualityId, qualityDefinitions, extruderLDefinition, extruderRDefinition } = getState().printing;
+            const activeQualityDefinition = lodashFind(qualityDefinitions, { definitionId: defaultQualityId });
             // Use setTimeout to force export executes in next tick, preventing block of updateState()
 
             setTimeout(async () => {
@@ -1662,7 +1678,7 @@ export const actions = {
                 }, []);
                 const ret = { model: [], support: [], definition: [], originalName: null };
                 for (const item of models) {
-                    const modelDefinition = definitionManager.finalizeModelDefinition(activeDefinition, item, extruderLDefinition, extruderRDefinition);
+                    const modelDefinition = definitionManager.finalizeModelDefinition(activeQualityDefinition, item, extruderLDefinition, extruderRDefinition);
 
                     const originalName = item.originalName;
                     const uploadPath = `${DATA_PREFIX}/${originalName}`;
@@ -3498,7 +3514,8 @@ export const actions = {
     },
 
     uploadModelsForSupport: (models, angle) => (dispatch, getState) => {
-        const { activeDefinition } = getState().printing;
+        const { qualityDefinitions, defaultQualityId } = getState().printing;
+        const activeQualityDefinition = lodashFind(qualityDefinitions, { definitionId: defaultQualityId });
         return new Promise((resolve) => {
             // upload model stl
             setTimeout(async () => {
@@ -3550,7 +3567,7 @@ export const actions = {
                         supportStlFilename: uploadResult.body.uploadName.replace(/\.stl$/, `_support_${Date.now()}.stl`),
                         config: {
                             support_angle: angle,
-                            layer_height_0: activeDefinition.settings.layer_height_0.default_value,
+                            layer_height_0: activeQualityDefinition.settings.layer_height_0.default_value,
                             support_mark_area: false // tell engine to use marks in binary STL file
                         }
                     });

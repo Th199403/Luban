@@ -515,6 +515,7 @@ class ModelGroup extends EventEmitter {
     }
 
     updateBoundingBox(bbox) {
+        console.trace('bbox', bbox);
         this._bbox = bbox;
         return this.getState();
     }
@@ -540,6 +541,12 @@ class ModelGroup extends EventEmitter {
             }
         }
         return models;
+    }
+
+    getVisibleValidModels() {
+        return _.filter(this.models, (modelItem) => {
+            return modelItem.visible && modelItem.type !== 'primeTower';
+        });
     }
 
     getVisibleModels() {

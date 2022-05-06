@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { useDispatch, useSelector, shallowEqual } from 'react-redux';
 import classNames from 'classnames';
-import { cloneDeep, includes } from 'lodash';
+import { cloneDeep, includes, isNil } from 'lodash';
 import Select from '../../components/Select';
 import SvgIcon from '../../components/SvgIcon';
 import Modal from '../../components/Modal';
@@ -71,30 +71,16 @@ function Configurations({ widgetActions }) {
             dispatch(printingActions.destroyGcodeLine());
             dispatch(printingActions.displayModel());
         },
-        onChangeDefinition: async (key, value) => {
-            // const {} = this.state;
-            const newDefinitionForManager = cloneDeep(selectedDefinition);
-            newDefinitionForManager.settings[key].default_value = value;
-
-            const newDefinitionSettings = {};
-            newDefinitionSettings[key] = { 'default_value': value };
-
-            await dispatch(printingActions.updateDefinitionSettings(selectedDefinition, newDefinitionSettings));
-            await dispatch(printingActions.updateDefinitionsForManager(selectedDefinition.definitionId, 'quality'));
-
-            actions.onChangeSelectedDefinition(newDefinitionForManager);
-            actions.displayModel();
-        },
-        onResetDefinition: async (definitionKey) => {
-            const value = dispatch(printingActions.getDefaultDefinition(selectedDefinition.definitionId))[definitionKey].default_value;
+        onChangeDefinition: async (definitionKey, value) => {
+            if (isNil(value)) {
+                // if 'value' does't exit, then reset this value
+                value = dispatch(printingActions.getDefaultDefinition(selectedDefinition.definitionId))[definitionKey].default_value;
+            }
             const newDefinitionForManager = cloneDeep(selectedDefinition);
             newDefinitionForManager.settings[definitionKey].default_value = value;
 
-            const newDefinitionSettings = {};
-            newDefinitionSettings[definitionKey] = { 'default_value': value };
-
-            await dispatch(printingActions.updateDefinitionSettings(selectedDefinition, newDefinitionSettings));
-            await dispatch(printingActions.updateDefinitionsForManager(selectedDefinition.definitionId, 'quality'));
+            await dispatch(printingActions.updateCurrentDefinition(newDefinitionForManager, PRINTING_MANAGER_TYPE_QUALITY));
+            await dispatch(printingActions.updateDefinitionsForManager(selectedDefinition.definitionId, PRINTING_MANAGER_TYPE_QUALITY));
 
             actions.onChangeSelectedDefinition(newDefinitionForManager);
             actions.displayModel();
@@ -104,7 +90,7 @@ function Configurations({ widgetActions }) {
             dispatch(printingActions.updateShowPrintingManager(true));
         },
         updateActiveDefinition: (definition) => {
-            dispatch(printingActions.updateActiveDefinition(definition));
+            dispatch(printingActions.updateCurrentDefinition(definition, PRINTING_MANAGER_TYPE_QUALITY));
             dispatch(projectActions.autoSaveEnvironment(HEAD_PRINTING));
         },
         /**
@@ -112,21 +98,15 @@ function Configurations({ widgetActions }) {
          *
          * @param definition
          */
-        onSelectOfficialDefinition: (definition) => {
-            actions.onChangeSelectedDefinition(definition);
+        onSelectDefinition: (definition) => {
             dispatch(printingActions.updateDefaultQualityId(definition.definitionId));
+            actions.onChangeSelectedDefinition(definition);
             actions.updateActiveDefinition(definition);
         },
         onSelectCustomDefinitionById: (definitionId) => {
             const definition = qualityDefinitions.find(d => d.definitionId === definitionId);
-            // has to update defaultQualityId
-            dispatch(printingActions.updateDefaultQualityId(definitionId));
-            actions.onSelectCustomDefinition(definition);
+            actions.onSelectDefinition(definition);
             actions.displayModel();
-        },
-        onSelectCustomDefinition: (definition) => {
-            actions.onChangeSelectedDefinition(definition);
-            actions.updateActiveDefinition(definition);
         }
     };
 
@@ -151,9 +131,9 @@ function Configurations({ widgetActions }) {
             const definition = qualityDefinitions.find(d => d.definitionId === defaultQualityId);
             if (!definition) {
                 // definition no found, select first official definition
-                actions.onSelectOfficialDefinition(qualityDefinitions[0]);
+                actions.onSelectDefinition(qualityDefinitions[0]);
             } else {
-                actions.onSelectCustomDefinition(definition);
+                actions.onSelectDefinition(definition);
             }
         }
     }, [defaultQualityId, qualityDefinitions]);
@@ -252,7 +232,7 @@ function Configurations({ widgetActions }) {
                                 isOfficialDefinition={isOfficialDefinition}
                                 type="checkbox"
                                 onChangeDefinition={onChangeCustomConfig}
-                                onResetDefinition={actions.onResetDefinition}
+                                onResetDefinition={actions.onChangeDefinition}
                                 showMiddle
                             />
                         </div>

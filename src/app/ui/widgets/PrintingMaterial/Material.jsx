@@ -11,7 +11,7 @@ import { actions as printingActions } from '../../../flux/printing';
 import { actions as projectActions } from '../../../flux/project';
 import {
     LEFT_EXTRUDER, PRINTING_MANAGER_TYPE_MATERIAL, HEAD_PRINTING, DUAL_EXTRUDER_TOOLHEAD_FOR_SM2,
-    RIGHT_EXTRUDER, NOZZLE_SIZE_DEFAULT_OPTIONS
+    RIGHT_EXTRUDER, NOZZLE_SIZE_DEFAULT_OPTIONS, PRINTING_MANAGER_TYPE_EXTRUDER
 } from '../../../constants';
 import { getMaterialSelectOptions } from '../../utils/profileManager';
 
@@ -34,9 +34,10 @@ function Material({ widgetActions }) {
         dispatch(printingActions.updateShowPrintingManager(true, direction));
     }
 
-    const updateActiveDefinition = useCallback((definition, shouldSave = false) => {
+    const updateActiveDefinition = useCallback((definition, type, direction) => {
         if (definition) {
-            dispatch(printingActions.updateActiveDefinition(definition, shouldSave));
+            console.log('definition', definition, definition?.definitionId);
+            dispatch(printingActions.updateCurrentDefinition(definition, type, direction));
             dispatch(projectActions.autoSaveEnvironment(HEAD_PRINTING));
         }
     }, [dispatch]);
@@ -47,9 +48,7 @@ function Material({ widgetActions }) {
         if (definition) {
             // update selectedId
             dispatch(printingActions.updateDefaultMaterialId(definition.definitionId, direction));
-            dispatch(printingActions.updateExtruderDefinition(definition, direction));
-            // update active definition
-            updateActiveDefinition(definition);
+            // dispatch(printingActions.updateExtruderDefinition(definition, direction));
 
             // on after changes
             dispatch(printingActions.destroyGcodeLine());
@@ -64,7 +63,7 @@ function Material({ widgetActions }) {
         if (!definition) {
             dispatch(printingActions.updateDefaultMaterialId(plaMaterialId));
         }
-        updateActiveDefinition(definition);
+        updateActiveDefinition(definition, PRINTING_MANAGER_TYPE_MATERIAL);
     }, [defaultMaterialId]);
 
     const materialDefinitionOptions = getMaterialSelectOptions(materialDefinitions);
@@ -80,7 +79,7 @@ function Material({ widgetActions }) {
     function setDiameter(direction, value) {
         const def = (direction === LEFT_EXTRUDER ? extruderLDefinition : extruderRDefinition);
         def.settings.machine_nozzle_size.default_value = value;
-        dispatch(printingActions.updateExtruderDefinition(def, direction));
+        updateActiveDefinition(def, PRINTING_MANAGER_TYPE_EXTRUDER, direction);
         dispatch(projectActions.autoSaveEnvironment(HEAD_PRINTING));
     }
 
