@@ -1177,8 +1177,8 @@ export const actions = {
                     const response = res.body;
                     const definitionId = `${type}.${timestamp()}`;
                     const definition = await definitionManager.uploadDefinition(definitionId, response.uploadName);
-
                     let name = definition.name;
+                    definition.isRecommended = false;
                     const definitionsKey = defaultDefinitionKeys[type].definitions;
                     const definitions = getState().printing[definitionsKey];
                     while (definitions.find(e => e.name === name)) {

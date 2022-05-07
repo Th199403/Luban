@@ -3,6 +3,7 @@
     "version": "4.2.0",
     "inherits": "snapmaker",
     "category": "ABS",
+    "isRecommended": true,
     "i18nName": "key-default_name-ABS_Black",
     "i18nCategory": "key-default_category-ABS",
     "overrides": {

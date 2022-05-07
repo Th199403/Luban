@@ -27,14 +27,14 @@ import styles from './styles.styl';
 import { getSelectOptions } from '../../utils/profileManager';
 
 const newKeys = cloneDeep(PRINTING_QUALITY_CONFIG_INDEX);
-const ALL_DEFAULT_DEFINITION_ID_ARRAY = [
-    'material.pla', 'material.abs', 'material.petg',
-    'material.pla.black', 'material.abs.black', 'material.petg.black',
-    'material.pla.blue', 'material.pla.grey', 'material.pla.red', 'material.pla.yellow',
-    'material.petg.blue', 'material.petg.red', 'material.pla.glow', 'material.pla.wood',
-    'material.tpu.black', 'material.tpu.yellow',
-    'quality.fast_print', 'quality.normal_quality', 'quality.high_quality'
-];
+// const ALL_DEFAULT_DEFINITION_ID_ARRAY = [
+//     'material.pla', 'material.abs', 'material.petg',
+//     'material.pla.black', 'material.abs.black', 'material.petg.black',
+//     'material.pla.blue', 'material.pla.grey', 'material.pla.red', 'material.pla.yellow',
+//     'material.petg.blue', 'material.petg.red', 'material.pla.glow', 'material.pla.wood',
+//     'material.tpu.black', 'material.tpu.yellow',
+//     'quality.fast_print', 'quality.normal_quality', 'quality.high_quality'
+// ];
 function isOfficialDefinition(key) {
     return includes(cloneDeep(PRINTING_QUALITY_CUSTOMIZE_FIELDS), key);
 }
@@ -138,10 +138,6 @@ function Configurations({ widgetActions }) {
         }
     }, [defaultQualityId, qualityDefinitions]);
 
-    const isProfile = defaultQualityId
-        && includes(ALL_DEFAULT_DEFINITION_ID_ARRAY, defaultQualityId);
-
-
     if (!selectedDefinition) {
         return null;
     }
@@ -200,7 +196,7 @@ function Configurations({ widgetActions }) {
                                 key={key}
                                 onChangeDefinition={actions.onChangeDefinition}
                                 isDefaultDefinition={() => {
-                                    return !isProfile;
+                                    return !selectedDefinition.isRecommended;
                                 }}
                                 defaultValue={{
                                     value: selectedSettingDefaultValue && selectedSettingDefaultValue[key].default_value
