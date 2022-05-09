@@ -8,7 +8,7 @@ class PrimeTowerModel extends ThreeModel {
 
     canAttachSupport: boolean;
 
-    constructor(initHeight: Number, modelGroup: ModelGroup, transformation?: ModelTransformation) {
+    constructor(initHeight: Number, modelGroup: ModelGroup, transformation: ModelTransformation = { positionX: 100, positionY: 100 }) {
         const geometry = new THREE.CylinderBufferGeometry(10, 10, 1, 60);
         const material = new THREE.MeshPhongMaterial({
             side: THREE.DoubleSide,
@@ -36,7 +36,7 @@ class PrimeTowerModel extends ThreeModel {
 
         super(modelInfo, modelGroup);
         this.canAttachSupport = false;
-        console.trace('modelGroup._bbox', transformation, modelGroup._bbox);
+        // console.trace('modelGroup._bbox', transformation, modelGroup._bbox);
 
         const positionX = transformation?.positionX || Math.max(modelGroup._bbox.max.x - 50, modelGroup._bbox.min.x - 50);
         const positionY = transformation?.positionY || Math.max(modelGroup._bbox.max.y - 50, modelGroup._bbox.min.y - 50);

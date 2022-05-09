@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { includes, isNil } from 'lodash';
+import { includes, isNil, orderBy } from 'lodash';
 import DataStorage from '../DataStorage';
 import pkg from '../../package.json';
 import logger from '../lib/logger';
@@ -15,93 +15,6 @@ const SETTING_FIELDS = [
     'sm_value'
 ];
 
-
-const DEFAULT_PREDEFINED = {
-    'printing': [
-        'quality.fast_print.def.json',
-        'quality.normal_quality.def.json',
-        'quality.high_quality.def.json',
-        'material.pla.def.json',
-        'material.pla.black.def.json',
-        'material.pla.blue.def.json',
-        'material.pla.grey.def.json',
-        'material.pla.red.def.json',
-        'material.pla.yellow.def.json',
-        'material.abs.def.json',
-        'material.abs.black.def.json',
-        'material.petg.def.json',
-        'material.petg.black.def.json',
-        'material.petg.red.def.json',
-        'material.petg.blue.def.json',
-        'material.pla.wood.def.json',
-        'material.pla.glow.def.json',
-        'material.tpu.black.def.json',
-        'material.tpu.yellow.def.json'
-    ],
-    'cnc': [
-        'tool.default_CVbit.def.json',
-        'tool.default_FEM1.5.def.json',
-        'tool.default_FEM3.175.def.json',
-        'tool.default_MBEM.def.json',
-        'tool.default_SGVbit.def.json',
-        'tool.rAcrylic_FEM1.5.def.json',
-        'tool.rEpoxy_SGVbit.def.json'
-    ],
-    'laser': [
-        'present.default_CUT.def.json',
-        'present.default_HDFill.def.json',
-        'present.default_SDFill.def.json',
-        'present.default_PathEngrave.def.json',
-        'basswood.cutting_1.5mm.def.json',
-        'basswood.dot_filled_engraving.def.json',
-        'black_acrylic.cutting_3mm.def.json',
-        'mdf.dot_filled_engraving.def.json',
-        'basswood.line_filled_engraving.def.json',
-        'mdf.line_filled_engraving.def.json',
-        'basswood.vector_engraving.def.json',
-        'mdf.vector_engraving.def.json'
-    ],
-    '10w-laser': [
-        'basswood.cutting_1.5mm.def.json',
-        'basswood.cutting_3mm.def.json',
-        'basswood.cutting_5mm.def.json',
-        'basswood.cutting_8mm.def.json',
-        'basswood.vector_engraving.def.json',
-        'basswood.dot_filled_engraving.def.json',
-        'basswood.line_filled_engraving.def.json',
-        'black_acrylic.cutting_2mm.def.json',
-        'black_acrylic.cutting_3mm.def.json',
-        'black_acrylic.cutting_5mm.def.json',
-        'black_anodized_aluminum.line_filled_engraving.def.json',
-        'black_anodized_aluminum.vector_engraving.def.json',
-        'cardstock.cutting_200g.def.json',
-        'cardstock.cutting_300g.def.json',
-        'cardstock.cutting_350g.def.json',
-        'coated_paper.cutting_200g.def.json',
-        'coated_paper.cutting_300g.def.json',
-        'coated_paper.cutting_350g.def.json',
-        'corrugated_paper.cutting_1.6mm.def.json',
-        'corrugated_paper.cutting_3mm.def.json',
-        'crazy_horse_leather.cutting_2mm.def.json',
-        'crazy_horse_leather.dot_filled_engraving.def.json',
-        'crazy_horse_leather.line_filled_engraving.def.json',
-        'crazy_horse_leather.vector_engraving.def.json',
-        'mdf.cutting_2mm.def.json',
-        'mdf.cutting_3mm.def.json',
-        'mdf.dot_filled_engraving.def.json',
-        'mdf.line_filled_engraving.def.json',
-        'mdf.vector_engraving.def.json',
-        'pinewood.cutting_4mm.def.json',
-        'pinewood.cutting_8mm.def.json',
-        'pinewood.dot_filled_engraving.def.json',
-        'pinewood.line_filled_engraving.def.json',
-        'vegetable_tanned_leather.cutting_1.5mm.def.json',
-        'vegetable_tanned_leather.cutting_2mm.def.json',
-        'vegetable_tanned_leather.dot_filled_engraving.def.json',
-        'vegetable_tanned_leather.line_filled_engraving.def.json'
-    ]
-};
-console.log('DEFAULT_PREDEFINED', DEFAULT_PREDEFINED);
 const DEFAULT_PREDEFINED_ID = {
     'printing': 'quality.fast_print.def.json',
     'cnc': 'tool.default_CVbit.def.json',
@@ -367,7 +280,9 @@ export function loadDefinitionsByRegex(headType, configPath, regex, defaultId) {
             definitions.push(definitionLoader.toObject());
         }
     }
-
+    if (headType === 'printing') {
+        return orderBy(definitions, ['isRecommended', 'category'], ['asc', 'desc']);
+    }
     return definitions;
 }
 

@@ -424,7 +424,6 @@ export const actions = {
 
         // Update machine size after active definition is loaded
         const { size } = getState().machine;
-        dispatch(actions.updateActiveDefinitionMachineSize(size));
         dispatch(actions.updateState({
             defaultDefinitions: definitionManager?.defaultDefinitions,
             materialDefinitions: await definitionManager.getDefinitionsByPrefixName('material'),
@@ -1539,7 +1538,7 @@ export const actions = {
     },
 
     generateGcode: (thumbnail, isGuideTours = false) => async (dispatch, getState) => {
-        const { hasModel, modelGroup, progressStatesManager, helpersExtruderConfig,
+        const { hasModel, modelGroup, progressStatesManager, helpersExtruderConfig, series, layerCount,
             extruderLDefinition, extruderRDefinition, defaultMaterialId, defaultMaterialIdRight,
             defaultQualityId, qualityDefinitions, materialDefinitions, stopArea: { left, front } } = getState().printing;
         const { size, toolHead: { printingToolhead } } = getState().machine;
@@ -1564,7 +1563,7 @@ export const actions = {
             activeQualityDefinition.settings.prime_tower_position_y.default_value = primeTowerYDefinition;
             activeQualityDefinition.settings.prime_tower_size.default_value = primeTowerWidth;
             // activeDefinition.settings.prime_tower_wipe_enabled.default_value = true;
-
+        }
         const indexL = materialDefinitions.findIndex(d => d.definitionId === defaultMaterialId);
         const indexR = materialDefinitions.findIndex(d => d.definitionId === defaultMaterialIdRight);
         const newExtruderLDefinition = definitionManager.finalizeExtruderDefinition({
@@ -1631,10 +1630,6 @@ export const actions = {
         finalDefinition.settings.support_roof_extruder_nr.default_value = supportExtruder;
         finalDefinition.settings.support_bottom_extruder_nr.default_value = supportExtruder;
         await definitionManager.createDefinition(finalDefinition);
-        console.log('dd', finalDefinition.settings.prime_tower_position_x.default_value,
-            finalDefinition.settings.prime_tower_position_y.default_value,
-            finalDefinition.settings.prime_tower_size.default_value,
-            finalDefinition.settings.prime_tower_wipe_enabled.default_value);
         // slice
         /*
         const params = {

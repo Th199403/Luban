@@ -515,7 +515,7 @@ class ModelGroup extends EventEmitter {
     }
 
     updateBoundingBox(bbox) {
-        console.trace('bbox', bbox);
+        // console.trace('bbox',  bbox);
         this._bbox = bbox;
         return this.getState();
     }
