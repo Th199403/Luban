@@ -1619,7 +1619,9 @@ export const actions = {
         activeQualityDefinition.settings.material_bed_temperature.default_value = extruderLDefinition.settings.material_bed_temperature.default_value;
         activeQualityDefinition.settings.material_bed_temperature_layer_0.default_value = extruderLDefinition.settings.material_bed_temperature_layer_0.default_value;
 
-        const finalDefinition = definitionManager.finalizeActiveDefinition(activeQualityDefinition, size, hasPrimeTower);
+
+        const activeExtruderDefinition = helpersExtruderConfig.adhesion === '0' ? extruderLDefinition : extruderRDefinition;
+        const finalDefinition = definitionManager.finalizeActiveDefinition(activeQualityDefinition, activeExtruderDefinition, size, hasPrimeTower);
         const adhesionExtruder = helpersExtruderConfig.adhesion;
         const supportExtruder = helpersExtruderConfig.support;
         finalDefinition.settings.adhesion_extruder_nr.default_value = adhesionExtruder;

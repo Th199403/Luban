@@ -276,7 +276,7 @@ class DefinitionManager {
         };
     }
 
-    finalizeActiveDefinition(activeDefinition, size, hasPrimeTower = false) {
+    finalizeActiveDefinition(activeDefinition, extruderDefinition, size, hasPrimeTower = false) {
         // Prepare definition file
         const definition = {
             definitionId: 'active_final',
@@ -334,10 +334,9 @@ class DefinitionManager {
                     }
                 }
             });
-
         definition.ownKeys.push('machine_start_gcode');
         definition.ownKeys.push('machine_end_gcode');
-        this.addMachineStartGcode(definition);
+        this.addMachineStartGcode(definition, extruderDefinition);
         this.addMachineEndGcode(definition);
 
         return definition;
@@ -472,14 +471,13 @@ class DefinitionManager {
         return definition;
     }
 
-    addMachineStartGcode(definition) {
-        const settings = definition.settings;
+    addMachineStartGcode(definition, extruderDefinition) {
+        const settings = extruderDefinition.settings;
 
         const machineHeatedBed = settings.machine_heated_bed.default_value;
         const printTemp = settings.material_print_temperature.default_value;
         const printTempLayer0 = settings.material_print_temperature_layer_0.default_value || printTemp;
         const bedTempLayer0 = settings.material_bed_temperature_layer_0.default_value;
-
         /**
          * 1.set bed temperature and not wait to reach the target temperature
          * 2.set hotend temperature and wait to reach the target temperature
@@ -517,7 +515,6 @@ class DefinitionManager {
         gcode.push('G1 E20 F200');
         gcode.push('G92 E0');
         gcode.push(';Start GCode end');
-
         definition.settings.machine_start_gcode = { default_value: gcode.join('\n') };
     }
 
