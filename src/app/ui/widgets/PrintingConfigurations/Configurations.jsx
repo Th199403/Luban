@@ -78,8 +78,14 @@ function Configurations({ widgetActions }) {
             }
             const newDefinitionForManager = cloneDeep(selectedDefinition);
             newDefinitionForManager.settings[definitionKey].default_value = value;
+            const shouldUpdateIsOversteped = definitionKey === 'prime_tower_enable';
 
-            await dispatch(printingActions.updateCurrentDefinition(newDefinitionForManager, PRINTING_MANAGER_TYPE_QUALITY));
+            await dispatch(printingActions.updateCurrentDefinition(
+                newDefinitionForManager,
+                PRINTING_MANAGER_TYPE_QUALITY,
+                undefined,
+                shouldUpdateIsOversteped
+            ));
             await dispatch(printingActions.updateDefinitionsForManager(selectedDefinition.definitionId, PRINTING_MANAGER_TYPE_QUALITY));
 
             actions.onChangeSelectedDefinition(newDefinitionForManager);

@@ -84,6 +84,7 @@ export const set = async (req, res) => {
         if (extname === '.svg') {
             const svgParser = new SVGParser();
             const svg = await svgParser.parseFile(tempPath);
+            console.log('svg', svg);
             res.send({
                 originalName: originalName,
                 uploadName: tempName,
@@ -131,7 +132,9 @@ export const set = async (req, res) => {
                     height: image.bitmap.height
                 });
             }).catch((err) => {
-                throw new Error(err);
+                console.log('err -----', err, originalName, tempName, tempPath);
+                // throw new Error(err);
+                res.status(ERR_INTERNAL_SERVER_ERROR).end();
             });
         }
     } catch (err) {

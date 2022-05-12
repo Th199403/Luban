@@ -52,8 +52,24 @@ class PrimeTowerModel extends ThreeModel {
         });
         this.stickToPlate();
         // model.computeBoundingBox();
-        modelGroup.models = [this, ...modelGroup.models];
-        modelGroup.object.add(this.meshObject);
+        // modelGroup.models = [this, ...modelGroup.models];
+        // console.log('modelGroup.object', modelGroup.object, modelGroup);
+        // modelGroup.object.add(this.meshObject);
+    }
+
+
+    updateHeight(height: number, transformation: ModelTransformation = this.transformation) {
+        const positionX = transformation?.positionX;
+        const positionY = transformation?.positionY;
+        const scaleX = transformation?.scaleX;
+        const scaleY = transformation?.scaleY;
+        this.updateTransformation({
+            positionX,
+            positionY,
+            scaleX,
+            scaleY,
+            scaleZ: height,
+        });
     }
 }
 

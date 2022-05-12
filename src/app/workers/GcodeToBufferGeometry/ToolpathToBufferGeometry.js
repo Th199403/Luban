@@ -19,6 +19,7 @@ class ToolpathToBufferGeometry {
                     }
                 );
             } catch (e) {
+                console.log('ToolpathToBufferGeometry', filePath, e);
                 reject(e);
             }
         });
