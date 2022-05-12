@@ -296,6 +296,7 @@ class Canvas extends PureComponent {
         this.setCamera(this.cameraInitialPosition, this.initialTarget);
 
         this.controls.setTarget(this.initialTarget);
+        console.log('this.modelGroup.object.concat(', this.modelGroup.object);
         this.controls.setSelectableObjects(this.modelGroup.object);
 
         this.controls.on(EVENTS.UPDATE, () => {

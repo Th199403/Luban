@@ -582,10 +582,9 @@ export const actions = {
         const activeQualityDefinition = lodashFind(qualityDefinitions, { definitionId: defaultQualityId });
         modelGroup.removeAllModels();
         if (printingToolhead === DUAL_EXTRUDER_TOOLHEAD_FOR_SM2) {
-            modelGroup.initPrimeTower();
-            const primeTowerModel = lodashFind(modelGroup.models, { type: 'primeTower' });
+            const primeTowerModel = modelGroup.primeTower;
             const enablePrimeTower = activeQualityDefinition?.settings?.prime_tower_enable?.default_value;
-            !enablePrimeTower && dispatch(actions.hideSelectedModel(primeTowerModel));
+            primeTowerModel.visible = enablePrimeTower;
         }
         if (!initEventFlag) {
             dispatch(actions.updateState({
@@ -1026,8 +1025,9 @@ export const actions = {
         dispatch(actions.updateBoundingBox());
     },
 
-    updateCurrentDefinition: (definition, type, direction = LEFT_EXTRUDER) => (dispatch, getState) => {
+    updateCurrentDefinition: (definition, type, direction = LEFT_EXTRUDER, shouldUpdateIsOversteped) => (dispatch, getState) => {
         definitionManager.updateDefinition(definition);
+        const printingState = getState().printing;
         const id = definition?.definitionId;
         const definitionsKey = definitionKeysWithDirection[direction][type];
         // Todo
@@ -1036,12 +1036,17 @@ export const actions = {
                 [definitionsKey]: definition
             }));
         } else {
-            const definitions = getState().printing[definitionsKey];
+            const definitions = printingState[definitionsKey];
             const index = definitions.findIndex(d => d.definitionId === id);
             definitions[index] = definition;
             dispatch(actions.updateState({
                 [definitionsKey]: definitions
             }));
+        }
+        if (shouldUpdateIsOversteped) {
+            const { modelGroup } = printingState;
+            const isAnyModelOverstepped = modelGroup.getOverstepped(definition?.settings?.prime_tower_enable?.default_value);
+            dispatch(actions.updateState({ isAnyModelOverstepped }));
         }
     },
 
@@ -1519,7 +1524,7 @@ export const actions = {
             polygonOffsetUnits: -0.1
         });
         const models = filter(modelGroup.getModels(), (modelItem) => {
-            return modelItem.visible && modelItem.type !== 'primeTower';
+            return modelItem.visible;
         });
         models.forEach(model => {
             let meshObject = lodashFind(modelGroup.object.children, { uuid: model.meshObject.uuid });
@@ -1553,7 +1558,7 @@ export const actions = {
         let primeTowerYDefinition = 0;
         if (hasPrimeTower) {
             const modelGroupBBox = modelGroup._bbox;
-            const primeTowerModel = lodashFind(modelGroup.getModels(), { type: 'primeTower' });
+            const primeTowerModel = modelGroup.primeTower;
             const primeTowerWidth = primeTowerModel.boundingBox.max.x - primeTowerModel.boundingBox.min.x;
             const primeTowerPositionX = modelGroupBBox.max.x - (primeTowerModel.boundingBox.max.x + primeTowerModel.boundingBox.min.x + primeTowerWidth) / 2;
             const primeTowerPositionY = modelGroupBBox.max.y - (primeTowerModel.boundingBox.max.y + primeTowerModel.boundingBox.min.y - primeTowerWidth) / 2;
@@ -1665,7 +1670,7 @@ export const actions = {
             // Use setTimeout to force export executes in next tick, preventing block of updateState()
 
             setTimeout(async () => {
-                const models = modelGroup.models.filter(i => i.visible && i.type !== 'primeTower').reduce((pre, model) => {
+                const models = modelGroup.models.filter(i => i.visible).reduce((pre, model) => {
                     if (model instanceof ThreeGroup) {
                         pre.push(...model.children);
                     } else {
@@ -2094,7 +2099,6 @@ export const actions = {
         //     operations.push(operation);
         // });
         for (const model of targetModels) {
-            if (model.type === 'primeTower') continue;
             const operation = new VisibleOperation3D({
                 target: model,
                 visible: false
@@ -2122,14 +2126,12 @@ export const actions = {
             visible: true
         });
         const operations = new Operations();
-        if (targetModel.type !== 'primeTower') {
-            operations.push(operation);
-            operations.registCallbackAfterAll(() => {
-                dispatch(actions.updateState(modelGroup.getState()));
-                dispatch(actions.destroyGcodeLine());
-                dispatch(actions.displayModel());
-            });
-        }
+        operations.push(operation);
+        operations.registCallbackAfterAll(() => {
+            dispatch(actions.updateState(modelGroup.getState()));
+            dispatch(actions.destroyGcodeLine());
+            dispatch(actions.displayModel());
+        });
 
         dispatch(operationHistoryActions.setOperations(INITIAL_STATE.name, operations));
         dispatch(actions.updateState(modelState));
@@ -2147,9 +2149,6 @@ export const actions = {
         const selectedModelArray = modelGroup.selectedModelArray.concat();
         const { recovery } = modelGroup.unselectAllModels();
         for (const model of selectedModelArray) {
-            if (model.type === 'primeTower') {
-                continue;
-            }
             const operation = new DeleteOperation3D({
                 target: model
             });
@@ -2189,7 +2188,6 @@ export const actions = {
         const { modelGroup } = getState().printing;
         const operations = new Operations();
         for (const model of modelGroup.models) {
-            if (model.type === 'primeTower') continue;
             const operation = new DeleteOperation3D({
                 target: model,
                 parent: null
@@ -2557,9 +2555,8 @@ export const actions = {
     duplicateSelectedModel: () => (dispatch, getState) => {
         const { modelGroup } = getState().printing;
         const modelState = modelGroup.duplicateSelectedModel();
-        const canDuplicateModels = filter(modelGroup.selectedModelArray, (model) => model.type !== 'primeTower');
         const operations = new Operations();
-        for (const model of canDuplicateModels) {
+        for (const model of modelGroup.selectedModelArray) {
             const operation = new AddOperation3D({
                 target: model,
                 parent: null
@@ -2596,7 +2593,6 @@ export const actions = {
 
         const operations = new Operations();
         for (const model of modelGroup.getSelectedModelArray()) {
-            if (model.type === 'primeTower') continue;
             const operation = new AddOperation3D({
                 target: model,
                 parent: null
@@ -3006,7 +3002,7 @@ export const actions = {
         modelGroup.defaultSupportSize = size;
     },
     generateModel: (headType, { loadFrom = LOAD_MODEL_FROM_INNER, files, originalName, uploadName, sourceWidth, sourceHeight, mode, sourceType, transformation, modelID, extruderConfig, isGroup = false, parentModelID = '', modelName, children, primeTowerTag }) => async (dispatch, getState) => {
-        const { progressStatesManager, defaultQualityId, qualityDefinitions, modelGroup } = getState().printing;
+        const { progressStatesManager, modelGroup } = getState().printing;
         const { size } = getState().machine;
         const models = [...modelGroup.models];
         const modelNames = files || [{ originalName, uploadName }];
@@ -3050,12 +3046,9 @@ export const actions = {
                     dispatch(actions.destroyGcodeLine());
                     resolve();
                 } else if (primeTowerTag && printingToolhead === DUAL_EXTRUDER_TOOLHEAD_FOR_SM2) {
-                    const activeActiveQualityDefinition = lodashFind(qualityDefinitions, { definitionId: defaultQualityId });
                     const initHeight = transformation?.scaleZ || 0.1;
-                    modelGroup.initPrimeTower(initHeight, transformation);
-                    const enabledPrimeTower = activeActiveQualityDefinition.settings.prime_tower_enable.default_value;
-                    const primeTowerModel = lodashFind(modelGroup.models, { type: 'primeTower' });
-                    !enabledPrimeTower && dispatch(actions.hideSelectedModel(primeTowerModel));
+                    const primeTowerModel = modelGroup.primeTower;
+                    primeTowerModel.updateHeight(initHeight, transformation);
                     resolve();
                 } else {
                     const onMessage = async (data) => {

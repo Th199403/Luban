@@ -38,11 +38,13 @@ class ModelGroup extends EventEmitter {
         this.object = new Group();
         this.grayModeObject = new Group();
         this.models = [];
+        this.primeTower = new PrimeTowerModel(0.01, this);
         this.selectedGroup = new Group();
         this.selectedGroup.uniformScalingState = true;
         this.selectedGroup.boundingBox = [];
         this.selectedGroup.shouldUpdateBoundingbox = true;
         this.object.add(this.selectedGroup);
+        this.object.add(this.primeTower.meshObject);
         this.selectedModelArray = [];
         this.clipboard = [];
         this.estimatedTime = 0;
@@ -114,6 +116,10 @@ class ModelGroup extends EventEmitter {
         } else {
             return baseState;
         }
+    }
+
+    getOverstepped(shouldCheckPrime) {
+        return this._checkAnyModelOversteppedOrSelected(shouldCheckPrime);
     }
 
     /**
@@ -222,7 +228,7 @@ class ModelGroup extends EventEmitter {
     }
 
     hasAnyModelVisible() {
-        return this.getModels('primeTower').some((model) => model.visible);
+        return this.getModels().some((model) => model.visible);
     }
 
     toggleModelsVisible(visible, models) {
@@ -266,7 +272,7 @@ class ModelGroup extends EventEmitter {
     }
 
     removeModel(model, loop = false) {
-        if (model.type === 'primeTower') return;
+        if (model instanceof PrimeTowerModel) return;
         if (!(model instanceof SvgModel)) {
             model.setSelected(false);
         }
@@ -545,13 +551,13 @@ class ModelGroup extends EventEmitter {
 
     getVisibleValidModels() {
         return _.filter(this.models, (modelItem) => {
-            return modelItem.visible && modelItem.type !== 'primeTower';
+            return modelItem?.visible;
         });
     }
 
     getVisibleModels() {
         return this.models.filter(model => {
-            if (!model.visible || model.type === 'primeTower') {
+            if (!model.visible) {
                 return false;
             } else if (model instanceof ThreeGroup) {
                 return model.children.every(subModel => subModel.visible);
@@ -628,7 +634,7 @@ class ModelGroup extends EventEmitter {
             if (selectModel) {
                 const objectIndex = this.selectedGroup.children.indexOf(selectModel.meshObject);
                 if (objectIndex === -1) {
-                    if (this.selectedModelArray.length === 1 && this.selectedModelArray[0].type === 'primeTower') {
+                    if (this.selectedModelArray.length === 1) {
                         this.unselectAllModels();
                     }
                     let isModelAcrossGroup = false;
@@ -711,7 +717,7 @@ class ModelGroup extends EventEmitter {
     }
 
     findModelByMesh(meshObject) {
-        for (const model of this.models) {
+        for (const model of this.models.concat(this.primeTower)) {
             if (model instanceof ThreeModel) {
                 if (model.meshObject === meshObject || model.meshObject.children.indexOf(meshObject) > -1) {
                     return model;
@@ -773,9 +779,7 @@ class ModelGroup extends EventEmitter {
                         break;
                     }
                     // cannot select model and prime tower
-                    if (this.selectedModelArray.length && _.some(this.selectedModelArray, (item) => {
-                        return item.type !== model.type && (item.type === 'primeTower' || model.type === 'primeTower');
-                    })) {
+                    if (model instanceof PrimeTowerModel || this.selectedModelArray[0] instanceof PrimeTowerModel) {
                         break;
                     }
                     // If all models in the group are selected, select group
@@ -805,7 +809,7 @@ class ModelGroup extends EventEmitter {
 
     addModelToSelectedGroup(model) {
         if (!(model instanceof Model) || model.isSelected) return;
-        if (model.type === 'primeTower' && !model.visible) return;
+        if (model instanceof PrimeTowerModel && !model.visible) return;
         model.setSelected(true);
         ThreeUtils.applyObjectMatrix(this.selectedGroup, new Matrix4().copy(this.selectedGroup.matrix).invert());
         this.selectedModelArray = [...this.selectedModelArray, model];
@@ -866,7 +870,7 @@ class ModelGroup extends EventEmitter {
     selectAllModels() {
         this.selectedModelArray = [];
         this.models.forEach((model) => {
-            if (model.supportTag || model.type === 'primeTower') return;
+            if (model.supportTag) return;
             if (model.visible) {
                 this.addModelToSelectedGroup(model);
             }
@@ -892,7 +896,7 @@ class ModelGroup extends EventEmitter {
         const cancelSelectedModels = this.selectedModelArray.slice(0);
         this.selectedModelArray = [];
         if (this.headType === 'printing') {
-            this.models.forEach((model) => {
+            (this.models.concat(this.primeTower)).forEach((model) => {
                 if (model instanceof ThreeGroup) {
                     model.children.forEach((subModel) => {
                         this.removeModelFromSelectedGroup(subModel);
@@ -939,7 +943,7 @@ class ModelGroup extends EventEmitter {
     }
 
     duplicateSelectedModel(modelID) {
-        const modelsToCopy = _.filter(this.selectedModelArray, (model) => model.type !== 'primeTower');
+        const modelsToCopy = this.selectedModelArray;
         if (modelsToCopy.length === 0) return this._getEmptyState();
 
         // Unselect all models
@@ -985,7 +989,7 @@ class ModelGroup extends EventEmitter {
      * Copy action: copy selected models (simply save the objects without their current positions).
      */
     copy() {
-        this.clipboard = this.selectedModelArray.filter((model) => model.type !== 'primeTower').map(model => model.type !== 'primeTower' && model.clone(this));
+        this.clipboard = this.selectedModelArray.filter((model) => model instanceof PrimeTowerModel).map(model => model.clone(this));
     }
 
     /**
@@ -1083,27 +1087,6 @@ class ModelGroup extends EventEmitter {
         return this.getState();
     }
 
-    autoRotateSelectedModel() {
-        // const selected = this.getSelectedModelArray();
-        let selected = [];
-        if (this.getSelectedModelArray().length > 0) {
-            selected = this.getSelectedModelArray();
-        } else {
-            selected = this.getModels('primeTower');
-        }
-        if (selected.length === 0) {
-            return null;
-        }
-
-        selected.forEach((item) => {
-            item.autoRotate();
-            item.computeBoundingBox();
-        });
-        this.prepareSelectedGroup();
-        return this.getState();
-    }
-
-
     scaleToFitFromModel(size, offsetX = 0, offsetY = 0, models) {
         models.forEach((model) => {
             model.scaleToFit(size, offsetX, offsetY);
@@ -1148,7 +1131,6 @@ class ModelGroup extends EventEmitter {
 
     onModelTransform() {
         try {
-            // this.selectedModelIDArray.splice(0);
             this.selectedModelArray.forEach((model) => {
                 if (model.parent && model.parent instanceof ThreeGroup) {
                     model.parent.children.forEach(subModel => {
@@ -1157,7 +1139,6 @@ class ModelGroup extends EventEmitter {
                 } else {
                     model.onTransform();
                 }
-                // this.selectedModelIDArray.push(item.modelID);
             });
             const { sourceType, mode, transformation, boundingBox, originalName } = this.selectedModelArray[0];
             return {
@@ -1546,7 +1527,7 @@ class ModelGroup extends EventEmitter {
         return { x: 0, y: 0 };
     }
 
-    _checkAnyModelOversteppedOrSelected() {
+    _checkAnyModelOversteppedOrSelected(shouldCheckPrime = true) {
         let isAnyModelOverstepped = false;
         for (const model of this.getModels()) {
             if (model.sourceType === '3d' && model.visible) {
@@ -1554,6 +1535,12 @@ class ModelGroup extends EventEmitter {
                 model.setOversteppedAndSelected(overstepped, model.isSelected);
                 isAnyModelOverstepped = (isAnyModelOverstepped || overstepped);
             }
+        }
+        if (shouldCheckPrime) {
+            const primeTower = this.primeTower;
+            const overstepped = this._checkOverstepped(primeTower);
+            primeTower.setOversteppedAndSelected(overstepped, primeTower.isSelected);
+            isAnyModelOverstepped = (isAnyModelOverstepped || overstepped);
         }
         return isAnyModelOverstepped;
     }
@@ -1567,7 +1554,7 @@ class ModelGroup extends EventEmitter {
     }
 
     hasModel() {
-        return this.getModels().filter(v => v.visible && v.type !== 'primeTower').length > 0;
+        return this.getModels().filter(v => v.visible).length > 0;
     }
 
     // include visible and hidden model
@@ -1742,7 +1729,7 @@ class ModelGroup extends EventEmitter {
     }
 
     isPrimeTowerSelected() {
-        return this.selectedModelArray.length === 1 && this.selectedModelArray[0].type === 'primeTower';
+        return this.selectedModelArray.length === 1 && this.selectedModelArray[0] instanceof PrimeTowerModel;
     }
 
     /**
@@ -2141,7 +2128,7 @@ class ModelGroup extends EventEmitter {
 
     canGroup() {
         return this.selectedModelArray.some(model => {
-            return model.visible && model.type !== 'primeTower';
+            return model?.visible;
         });
     }
 
@@ -2188,7 +2175,7 @@ class ModelGroup extends EventEmitter {
         let maxHeight = 0.1;
         const maxBoundingBoxHeight = this._bbox?.max.z;
         this.models.forEach(modelItem => {
-            if (modelItem.headType === HEAD_PRINTING && modelItem.type !== 'primeTower' && !modelItem.supportTag) {
+            if (modelItem.headType === HEAD_PRINTING && !modelItem.supportTag) {
                 const modelItemHeight = modelItem.boundingBox?.max.z - modelItem.boundingBox?.min.z;
                 maxHeight = Math.max(maxHeight, modelItemHeight);
             }
@@ -2219,7 +2206,7 @@ class ModelGroup extends EventEmitter {
     filterModelsCanAttachSupport(models = this.models) {
         const modelsToAddSupport = [];
         this.traverseModels(models, (subModel) => {
-            if (subModel instanceof ThreeModel && subModel.canAttachSupport && subModel.visible && subModel.type !== 'primeTower') {
+            if (subModel instanceof ThreeModel && subModel.canAttachSupport && subModel.visible) {
                 modelsToAddSupport.push(subModel);
             }
         });
@@ -2555,7 +2542,7 @@ class ModelGroup extends EventEmitter {
             return false;
         }
         return this.selectedModelArray.every(model => {
-            if (!model.visible || model.type === 'primeTower') {
+            if (!model?.visible) {
                 return false;
             } else if (model instanceof ThreeGroup) {
                 return model.children.every(subModel => subModel.visible);

@@ -2,7 +2,7 @@ import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
 import { connect } from 'react-redux';
-import { cloneDeep } from 'lodash';
+// import { cloneDeep } from 'lodash';
 import Select from '../../../components/Select';
 import {
     CNC_MESH_SLICE_MODE_LINKAGE, CNC_MESH_SLICE_MODE_ROTATION,
@@ -14,13 +14,13 @@ import { TextInput } from '../../../components/Input';
 import ToolParameters from './ToolParameters';
 import TipTrigger from '../../../components/TipTrigger';
 import ToolSelector from './ToolSelector';
-import { toHump } from '../../../../../shared/lib/utils';
+// import { toHump } from '../../../../../shared/lib/utils';
 import SvgIcon from '../../../components/SvgIcon';
 
 class CncParameters extends PureComponent {
     static propTypes = {
         toolDefinitions: PropTypes.array.isRequired,
-        activeToolDefinition: PropTypes.object.isRequired,
+        activeToolDefinition: PropTypes.object,
         isModifiedDefinition: PropTypes.bool.isRequired,
         toolPath: PropTypes.object.isRequired,
 
@@ -72,9 +72,9 @@ class CncParameters extends PureComponent {
             gcodeDefinition[key].isGcodeConfig = true;
         });
         const newSettings = {};
-        Object.entries(cloneDeep(this.props.activeToolDefinition?.settings)).forEach(([key, value]) => {
-            newSettings[toHump(key)] = value;
-        });
+        // Object.entries(cloneDeep(this.props.activeToolDefinition?.settings)).forEach(([key, value]) => {
+        //     newSettings[toHump(key)] = value;
+        // });
 
         const allDefinition = {
             ...gcodeDefinition,

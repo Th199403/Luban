@@ -496,7 +496,6 @@ class Controls extends EventEmitter {
             }
             // TODO: selectable objects should not change when objects are selected
             let allObjects = this.selectableObjects.children;
-
             if (this.selectedGroup && this.selectedGroup.children) {
                 allObjects = allObjects.concat(this.selectedGroup.children);
             }
@@ -512,6 +511,7 @@ class Controls extends EventEmitter {
             */
             const allIntersectObjects = this.ray.intersectObjects(allObjects, true);
             let intersect = allIntersectObjects.filter(intersectObject => intersectObject.object.isMesh)[0];
+            console.log('allObjects after', allObjects, intersect, allIntersectObjects);
             const isMultiSelect = event.shiftKey;
             /*
                 Temporarily solving meshobject cannot be selected after the canvas rotates 180 degrees around the Y axis in cnc/laser tab

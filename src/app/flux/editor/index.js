@@ -303,6 +303,7 @@ export const actions = {
 
             controller.on('taskCompleted:generateToolPath', (toolPathTaskResult) => {
                 const { toolPathGroup, progressStatesManager } = getState()[headType];
+                console.log('toolPathTaskResult', toolPathTaskResult);
                 if (headType !== toolPathTaskResult.headType || toolPathTaskResult.taskStatus === 'failed') {
                     dispatch(baseActions.updateState(headType, {
                         stage: STEP_STAGE.CNC_LASER_GENERATE_TOOLPATH_FAILED,
@@ -317,6 +318,7 @@ export const actions = {
                     if (toolPath) {
                         progressStatesManager.startNextStep();
                         taskResult.filenames = toolPathTaskResult.filenames.find(d => d.taskId === taskResult.taskId)?.filenames;
+                        console.log('toolPath', toolPath, taskResult);
                         workerManager.toolpathRenderer([taskResult], (payload) => {
                             const { status, value } = payload;
                             switch (status) {
@@ -885,7 +887,7 @@ export const actions = {
             return;
         }
         // svg process as image
-        if (selectedModel.sourceType === 'svg' && !selectedModel.uploadImageName) {
+        if (selectedModel.sourceType === 'svg' && selectedModel.mode !== 'vector' && !selectedModel.uploadImageName) {
             await selectedModel.uploadSourceImage();
         }
 

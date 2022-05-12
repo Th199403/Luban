@@ -70,7 +70,7 @@ function PrintingObjectListBox() {
             }
         }
     };
-    const allModels = (models) && models.filter(model => !model.supportTag && model.type !== 'primeTower');
+    const allModels = (models) && models.filter(model => !model.supportTag);
     // const prevProps = usePrevious({
     //     allModels
     // });

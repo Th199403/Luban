@@ -89,6 +89,7 @@ function ToolPathConfigurations({ toolpath, onClose, headType }) {
                 if (newSettings.fixed_power) newSettings.fixed_power.default_value = gcodeConfig?.fixedPower;
             }
         }
+        console.log('activeToolDefinition', currentToolDefinition, activeToolDefinition);
 
         setCurrentToolDefinition(activeToolDefinition);
     };
