@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { includes, throttle } from 'lodash';
 import classNames from 'classnames';
@@ -10,7 +10,7 @@ import styles from './styles.styl';
 import SvgIcon from '../../components/SvgIcon';
 import { HEAD_CNC } from '../../../constants';
 
-function ConfigValueBox({ optionConfigGroup, calculateTextIndex, isCategorySelected, type = 'input', isOfficialDefinition = () => true, onChangeDefinition, selectedSettingDefaultValue, definitionForManager, customConfigs, showMiddle = false, hideMiniTitle = false, managerType }) {
+function ConfigValueBox({ optionConfigGroup, calculateTextIndex, isCategorySelected, type = 'input', onChangeDefinition, selectedSettingDefaultValue, definitionForManager, customConfigs, showMiddle = false, hideMiniTitle = false, managerType }) {
     const [activeCateId, setActiveCateId] = useState(2);
     const scrollDom = useRef(null);
     const fieldsDom = useRef([]);
@@ -30,10 +30,6 @@ function ConfigValueBox({ optionConfigGroup, calculateTextIndex, isCategorySelec
     useEffect(() => {
         fieldsDom.current = fieldsDom.current.slice(0, Object.keys(optionConfigGroup).length);
     }, [Object.keys(optionConfigGroup)]);
-    // Make as a demo
-    const isEditable = useCallback(() => {
-        return !isOfficialDefinition(definitionForManager);
-    }, [isOfficialDefinition, definitionForManager]);
 
     return (
         <div className="sm-flex">
@@ -100,7 +96,7 @@ function ConfigValueBox({ optionConfigGroup, calculateTextIndex, isCategorySelec
                                                             definitionKey={key}
                                                             // width={managerType === HEAD_CNC && group.name === 'Carving Tool' ? '120px' : '160px'}
                                                             key={key}
-                                                            isDefaultDefinition={isEditable}
+                                                            isDefaultDefinition={definitionForManager?.isRecommended}
                                                             onChangeDefinition={onChangeDefinition}
                                                             isProfile="true"
                                                             defaultValue={{ // Check to reset
@@ -119,7 +115,7 @@ function ConfigValueBox({ optionConfigGroup, calculateTextIndex, isCategorySelec
                                                             defaultValue={includes(customConfigs, key)}
                                                             definitionKey={key}
                                                             key={key}
-                                                            isOfficialDefinition={isOfficialDefinition}
+                                                            isOfficialDefinition={definitionForManager?.isRecommended}
                                                             onChangeDefinition={onChangeDefinition}
                                                         />
                                                     );
@@ -150,7 +146,6 @@ ConfigValueBox.propTypes = {
     customConfigs: PropTypes.array,
     type: PropTypes.string,
     calculateTextIndex: PropTypes.func,
-    isOfficialDefinition: PropTypes.func,
     onChangeDefinition: PropTypes.func.isRequired,
     selectedSettingDefaultValue: PropTypes.object,
     showMiddle: PropTypes.bool,

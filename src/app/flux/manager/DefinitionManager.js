@@ -109,6 +109,7 @@ class DefinitionManager {
     async getDefinitionsByPrefixName(prefix) {
         const res = await api.profileDefinitions.getDefinitionsByPrefixName(this.headType, prefix, this.configPathname);
         const definitions = await this.markDefaultDefinitions(res.body.definitions);
+        console.log('definitions', definitions, definitions[0]);
         return definitions.map(this.fillCustomCategory);
     }
 

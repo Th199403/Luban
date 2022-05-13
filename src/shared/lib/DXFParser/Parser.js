@@ -156,6 +156,8 @@ BulgeGeometry.prototype = Object.create(THREE.Geometry.prototype);
 export const dxfToSvg = (dxf, strokeWidth = 0.72) => {
     const shapes = []; let
         res = {};
+    const arr = [];
+    const arr2 = [];
     for (const entities of dxf.entities) {
         if (dxf.tables && dxf.tables.layer
             && !isUndefined(dxf.tables.layer.layers[entities.layer].visible)
@@ -243,11 +245,20 @@ export const dxfToSvg = (dxf, strokeWidth = 0.72) => {
             const centerX = entities.center.x;
             const centerY = entities.center.y;
             pathsObj.closed = false;
+            const geometry2 = new THREE.CircleGeometry(radius, 32);
+            // geometry2.vertices.shift();
+
+            geometry2.vertices.forEach((item) => {
+                pathsObj.points.push([item.x + entities.center.x, item.y + entities.center.y]);
+                arr2.push([item.x + entities.center.x, item.y + entities.center.y]);
+            });
+
             for (let i = 0; i <= 360; i += 5) {
                 const x1 = centerX + radius * Math.cos(i * Math.PI / 180);
                 const y1 = centerY + radius * Math.sin(i * Math.PI / 180);
-                pathsObj.points.push([x1, y1]);
+                arr.push([x1, y1]);
             }
+            console.log('arr2', arr2, arr);
             shape.paths.push(pathsObj);
         } else if (entities.type === 'ELLIPSE') {
             const xrad = Math.sqrt((entities.majorAxisEndPoint.x ** 2) + (entities.majorAxisEndPoint.y ** 2));
@@ -277,7 +288,9 @@ export const dxfToSvg = (dxf, strokeWidth = 0.72) => {
     }
 
     res = {
-        shapes
+        shapes,
+        arr2,
+        arr
     };
 
     return res;
@@ -380,10 +393,14 @@ export const measureBoundary = (dxfString) => {
             minY = Math.min(position.y, minY);
         } else if (entities.type === 'CIRCLE') {
             const { center, radius } = entities;
-            maxX = Math.max(center.x + radius, maxX);
-            minX = Math.min(center.x - radius, minX);
-            maxY = Math.max(center.y + radius, maxY);
-            minY = Math.min(center.y - radius, minY);
+            const geometry2 = new THREE.CircleGeometry(radius, 32);
+
+            geometry2.vertices.forEach((item) => {
+                maxX = Math.max(item.x + center.x, maxX);
+                minX = Math.min(item.x + center.x, minX);
+                maxY = Math.max(item.y + center.y, maxY);
+                minY = Math.min(item.y + center.y, minY);
+            });
         } else if (entities.type === 'ARC') {
             const { center, radius, startAngle, endAngle } = entities;
             const anglePer = 180 / Math.PI;
@@ -459,15 +476,19 @@ export const parseDxf = async (originalPath) => {
     let dxfStr = await parser.parseSync(fileText);
     dxfStr = measureBoundary(dxfStr);
 
-    // fs.writeFile(originalPath.replace(/(\.dxf)$/, 'laserdxf.json'), JSON.stringify(dxfStr), (err) => {
-    //     if (err) {
-    //         console.log(err);
-    //     } else {
-    //         console.log('successful>>>>>>>>>>>>>');
-    //     }
-    // });
+    fs.writeFile(originalPath.replace(/(\.dxf)$/, 'laserdxf.json'), JSON.stringify(dxfStr), (err) => {
+        if (err) {
+            console.log(err);
+        } else {
+            console.log('successful>>>>>>>>>>>>>');
+        }
+    });
+    const res = dxfToSvg(dxfStr, 0.1);
+
     return {
         svg: dxfStr,
+        arr: res.arr,
+        arr2: res.arr2,
         width: dxfStr.width,
         height: dxfStr.height
     };

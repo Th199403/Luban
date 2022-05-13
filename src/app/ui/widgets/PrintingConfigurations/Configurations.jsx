@@ -201,9 +201,7 @@ function Configurations({ widgetActions }) {
                                 definitionKey={key}
                                 key={key}
                                 onChangeDefinition={actions.onChangeDefinition}
-                                isDefaultDefinition={() => {
-                                    return !selectedDefinition.isRecommended;
-                                }}
+                                isDefaultDefinition={selectedDefinition.isRecommended}
                                 defaultValue={{
                                     value: selectedSettingDefaultValue && selectedSettingDefaultValue[key].default_value
                                 }}
