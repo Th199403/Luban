@@ -79,6 +79,7 @@ const checkoutBoundingBoxIsNull = (boundingBox) => {
 
 // eslint-disable-next-line consistent-return
 const generateGcode = (toolPaths) => {
+    console.log('generateGcode1');
     if (!toolPaths && !_.isArray(toolPaths) && toolPaths.length === 0) {
         return sendMessage({ status: 'fail', value: 'modelInfo is empty.' });
     }
@@ -105,6 +106,7 @@ const generateGcode = (toolPaths) => {
 
     let isRotate;
     let diameter;
+    console.log('generateGcode2', writeStream);
 
     for (let i = 0; i < toolPaths.length; i++) {
         const toolPath = toolPaths[i];

@@ -29,6 +29,8 @@ class SocketServer extends EventEmitter {
         this.io = new Server(this.server, {
             serveClient: true,
             allowEIO3: true,
+            pingInterval: 5000,
+            allowUpgrades: false,
             pingTimeout: 180000, // 60s without pong to consider the connection closed
             path: '/socket.io',
             maxHttpBufferSize: 1e8

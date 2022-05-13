@@ -131,7 +131,7 @@ export const set = async (req, res) => {
                     height: image.bitmap.height
                 });
             }).catch((err) => {
-                console.log('err -----1', err, originalName, tempName, tempPath);
+                console.log('err -----12', err, originalName, tempName, tempPath);
                 // throw new Error(err);
                 res.status(ERR_INTERNAL_SERVER_ERROR).end();
             });

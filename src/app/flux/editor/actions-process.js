@@ -41,7 +41,7 @@ export const processActions = {
 
         Promise.all(toolPathPromiseArray).then((taskArray) => {
             console.log('taskArray', taskArray);
-            taskArray = taskArray.filter(d => !!d);
+            taskArray = taskArray.filter(d => !!d && d.visible);
             controller.commitToolPathTaskArray(taskArray);
         });
     },
@@ -341,6 +341,7 @@ export const processActions = {
     commitGenerateGcode: (headType) => (dispatch, getState) => {
         const { toolPathGroup, progressStatesManager } = getState()[headType];
         const toolPaths = toolPathGroup.getCommitGenerateGcodeInfos(true);
+        console.log('commitGenerateGcode', toolPaths);
 
         if (!toolPaths || toolPaths.length === 0) {
             return;
