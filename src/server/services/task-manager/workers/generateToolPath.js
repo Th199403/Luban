@@ -18,6 +18,7 @@ const generateLaserToolPathFromEngine = (allTasks, onProgress) => {
         }
         const { taskId } = task;
         for (const modelInfo of modelInfos) {
+            console.log('modelInfo', modelInfo);
             const { headType, type, sourceType } = modelInfo;
             if ([TOOLPATH_TYPE_VECTOR + SOURCE_TYPE_RASTER].includes(type + sourceType)) {
                 const result = await editorProcess(modelInfo);

@@ -101,7 +101,9 @@ class ProgressState {
 
     getNewProgress(stageID, progress, count = 1, totalCount = 1) {
         const stage = this.stages.find(s => s.stageID === stageID);
-        return stage.startPercent + (stage.percent - stage.startPercent) * (count - 1) / totalCount + progress * (stage.percent - stage.startPercent) / totalCount;
+        return stage
+        && (stage.startPercent + (stage.percent - stage.startPercent) * (count - 1) / totalCount
+        + progress * (stage.percent - stage.startPercent) / totalCount);
     }
 
     getNotice(state, stageID, progress) {
@@ -309,7 +311,7 @@ class ProgressStatesManager {
         const newProgress = this.getProgress(this.processStageID, stageID, progress, (totalCount ?? 1) + 1 - (count ?? 1), totalCount ?? 1);
         if (newProgress >= 1 - EPSILON) {
             this.progress = 1;
-        } else {
+        } else if (newProgress < 1 && newProgress > 0) {
             if (newProgress > this.progress) {
                 this.progress = newProgress;
             }

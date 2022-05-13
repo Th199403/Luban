@@ -326,6 +326,7 @@ export const actions = {
                                     if (toolpath) {
                                         toolpath.onGenerateToolpathFinail();
                                     }
+                                    console.log('toolPathTaskResult', toolPathGroup._getCheckAndSuccessToolPaths());
 
                                     if (toolPathGroup && toolPathGroup._getCheckAndSuccessToolPaths()) {
                                         dispatch(baseActions.updateState(headType, {

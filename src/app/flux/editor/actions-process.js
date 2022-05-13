@@ -37,8 +37,10 @@ export const processActions = {
             const { materials } = getState()[headType];
             toolPathPromiseArray.push(toolPathGroup.commitToolPathPromise(toolPath?.id, { materials }));
         });
+        console.log('toolPathPromiseArray', toolPathPromiseArray);
 
         Promise.all(toolPathPromiseArray).then((taskArray) => {
+            console.log('taskArray', taskArray);
             taskArray = taskArray.filter(d => !!d);
             controller.commitToolPathTaskArray(taskArray);
         });
@@ -338,7 +340,7 @@ export const processActions = {
      */
     commitGenerateGcode: (headType) => (dispatch, getState) => {
         const { toolPathGroup, progressStatesManager } = getState()[headType];
-        const toolPaths = toolPathGroup.getCommitGenerateGcodeInfos();
+        const toolPaths = toolPathGroup.getCommitGenerateGcodeInfos(true);
 
         if (!toolPaths || toolPaths.length === 0) {
             return;

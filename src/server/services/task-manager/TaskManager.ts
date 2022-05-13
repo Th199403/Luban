@@ -24,6 +24,9 @@ class TaskManager {
 
     private exec(runnerName: string, task) {
         const { terminate } = this.workerManager[runnerName]([task.data], (payload) => {
+            if ( runnerName === 'generateGcode' ) {
+                log.warn(`${payload.status}, ${payload.value}`);
+            }
             if (payload.status === 'progress') {
                 this.onProgress(task, payload.value);
             } else if (payload.status === 'complete') {

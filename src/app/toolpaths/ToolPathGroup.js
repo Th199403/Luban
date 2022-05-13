@@ -480,11 +480,16 @@ class ToolPathGroup {
         return toolPaths !== null;
     }
 
-    getCommitGenerateGcodeInfos() {
-        const toolPaths = this._getCheckAndSuccessToolPaths();
-        if (!toolPaths) {
-            return null;
+    getCommitGenerateGcodeInfos(shouldSave) {
+        const toolPaths = this.toolPaths.filter(v => v.visible === true && v.hasVisibleModels());
+        if (shouldSave) {
+            this.toolPaths.forEach((item) => {
+                console.log('toolPaths', item);
+            });
         }
+        // if (!toolPaths) {
+        //     return null;
+        // }
         return toolPaths.map(v => v.getState(true));
     }
 

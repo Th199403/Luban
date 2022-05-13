@@ -110,67 +110,71 @@ const generateGcode = (toolPaths) => {
         const toolPath = toolPaths[i];
         const { toolPathFiles, gcodeConfig } = toolPath;
 
-        for (let j = 0; j < toolPathFiles.length; j++) {
-            const toolPathFilePath = `${process.env.Tmpdir}/${toolPathFiles[j]}`;
-            const data = fs.readFileSync(toolPathFilePath, 'utf8');
-            const toolPathObj = JSON.parse(data);
+        try {
+            for (let j = 0; j < toolPathFiles.length; j++) {
+                const toolPathFilePath = `${process.env.Tmpdir}/${toolPathFiles[j]}`;
+                const data = fs.readFileSync(toolPathFilePath, 'utf8');
+                const toolPathObj = JSON.parse(data);
 
-            const gcodeGenerator = new GcodeGenerator();
-            let gcodeLines;
-            if (headType === 'laser') {
-                gcodeLines = gcodeGenerator.parseAsLaser(toolPathObj, gcodeConfig);
-            } else {
-                gcodeLines = gcodeGenerator.parseAsCNC(toolPathObj, gcodeConfig);
+                const gcodeGenerator = new GcodeGenerator();
+                let gcodeLines;
+                if (headType === 'laser') {
+                    gcodeLines = gcodeGenerator.parseAsLaser(toolPathObj, gcodeConfig);
+                } else {
+                    gcodeLines = gcodeGenerator.parseAsCNC(toolPathObj, gcodeConfig);
+                }
+
+                const renderMethod = gcodeConfig.movementMode === 'greyscale-dot' ? 'point' : 'line';
+
+                if (i > 0 || j > 0) {
+                    const header = '\n\n'
+                        + ';Header Start\n'
+                        + `;renderMethod: ${renderMethod}\n`
+                        + ';Header End\n'
+                        + '\n';
+                    writeStream.write(header);
+                    fileTotalLines += header.split('\n').length - 2;
+                }
+
+                fileTotalLines += gcodeLines.length;
+
+                writeStream.write(gcodeLines.join('\n'));
+
+                if (gcodeConfig.multiPassEnabled) {
+                    estimatedTime += toolPathObj.estimatedTime * gcodeConfig.multiPasses;
+                } else {
+                    estimatedTime += toolPathObj.estimatedTime;
+                }
+
+                isRotate = toolPathObj.isRotate;
+                diameter = toolPathObj.diameter;
+
+                const { positionX = 0, positionY = 0, rotationB = 0 } = toolPathObj;
+                toolPathObj.boundingBox.max.x += positionX;
+                toolPathObj.boundingBox.min.x += positionX;
+                toolPathObj.boundingBox.max.y += positionY;
+                toolPathObj.boundingBox.min.y += positionY;
+                toolPathObj.boundingBox.max.b += rotationB;
+                toolPathObj.boundingBox.min.b += rotationB;
+
+                if (boundingBox === null) {
+                    boundingBox = toolPathObj.boundingBox;
+                } else {
+                    boundingBox.max.x = Math.max(boundingBox.max.x, toolPathObj.boundingBox.max.x);
+                    boundingBox.max.y = Math.max(boundingBox.max.y, toolPathObj.boundingBox.max.y);
+                    boundingBox.max.z = Math.max(boundingBox.max.z, toolPathObj.boundingBox.max.z);
+                    boundingBox.max.b = Math.max(boundingBox.max.b, toolPathObj.boundingBox.max.b);
+
+                    boundingBox.min.x = Math.min(boundingBox.min.x, toolPathObj.boundingBox.min.x);
+                    boundingBox.min.y = Math.min(boundingBox.min.y, toolPathObj.boundingBox.min.y);
+                    boundingBox.min.z = Math.min(boundingBox.min.z, toolPathObj.boundingBox.min.z);
+                    boundingBox.min.b = Math.min(boundingBox.min.b, toolPathObj.boundingBox.min.b);
+                }
+
+                checkoutBoundingBoxIsNull(boundingBox);
             }
-
-            const renderMethod = gcodeConfig.movementMode === 'greyscale-dot' ? 'point' : 'line';
-
-            if (i > 0 || j > 0) {
-                const header = '\n\n'
-                    + ';Header Start\n'
-                    + `;renderMethod: ${renderMethod}\n`
-                    + ';Header End\n'
-                    + '\n';
-                writeStream.write(header);
-                fileTotalLines += header.split('\n').length - 2;
-            }
-
-            fileTotalLines += gcodeLines.length;
-
-            writeStream.write(gcodeLines.join('\n'));
-
-            if (gcodeConfig.multiPassEnabled) {
-                estimatedTime += toolPathObj.estimatedTime * gcodeConfig.multiPasses;
-            } else {
-                estimatedTime += toolPathObj.estimatedTime;
-            }
-
-            isRotate = toolPathObj.isRotate;
-            diameter = toolPathObj.diameter;
-
-            const { positionX = 0, positionY = 0, rotationB = 0 } = toolPathObj;
-            toolPathObj.boundingBox.max.x += positionX;
-            toolPathObj.boundingBox.min.x += positionX;
-            toolPathObj.boundingBox.max.y += positionY;
-            toolPathObj.boundingBox.min.y += positionY;
-            toolPathObj.boundingBox.max.b += rotationB;
-            toolPathObj.boundingBox.min.b += rotationB;
-
-            if (boundingBox === null) {
-                boundingBox = toolPathObj.boundingBox;
-            } else {
-                boundingBox.max.x = Math.max(boundingBox.max.x, toolPathObj.boundingBox.max.x);
-                boundingBox.max.y = Math.max(boundingBox.max.y, toolPathObj.boundingBox.max.y);
-                boundingBox.max.z = Math.max(boundingBox.max.z, toolPathObj.boundingBox.max.z);
-                boundingBox.max.b = Math.max(boundingBox.max.b, toolPathObj.boundingBox.max.b);
-
-                boundingBox.min.x = Math.min(boundingBox.min.x, toolPathObj.boundingBox.min.x);
-                boundingBox.min.y = Math.min(boundingBox.min.y, toolPathObj.boundingBox.min.y);
-                boundingBox.min.z = Math.min(boundingBox.min.z, toolPathObj.boundingBox.min.z);
-                boundingBox.min.b = Math.min(boundingBox.min.b, toolPathObj.boundingBox.min.b);
-            }
-
-            checkoutBoundingBoxIsNull(boundingBox);
+        } catch (e) {
+            log.error('eeeeee', e);
         }
 
         sendMessage({ status: 'progress', value: (i + 1) / toolPathFiles.length });
