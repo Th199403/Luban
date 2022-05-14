@@ -504,6 +504,7 @@ function WifiTransport({ widgetActions, controlActions }) {
     const isSended = isWifi ? isSendedOnWifi : true;
     const canPlay = hasFile && isConnected && isSended && _.includes([WORKFLOW_STATE_IDLE, WORKFLOW_STATUS_IDLE], currentWorkflowStatus);
     const canSend = hasFile && isConnected && isHeadType && isWifi && isSendedOnWifi;
+    console.log({ canSend, canPlay });
     return (
         <div className="border-default-grey-1 border-radius-8">
             <input
@@ -579,7 +580,7 @@ function WifiTransport({ widgetActions, controlActions }) {
                         type="primary"
                         priority="level-three"
                         width="144px"
-                        disabled={!canSend}
+                        // disabled={!canSend}
                         onClick={actions.sendFile}
                     >
                         {i18n._('key-Workspace/WifiTransport-Sending File')}
@@ -588,7 +589,7 @@ function WifiTransport({ widgetActions, controlActions }) {
                         type="primary"
                         priority="level-two"
                         width="144px"
-                        disabled={!canPlay}
+                        // disabled={!canPlay}
                         onClick={actions.startPrint}
                     >
                         {i18n._('key-Workspace/Transport-Start Print')}
