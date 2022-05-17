@@ -2256,15 +2256,15 @@ export const actions = {
         const { size } = getState().machine;
 
         const models = modelGroup.models;
-        workerManager.boxSelect([
+        workerManager.boxSelect({
             bbox,
-            models.map((model) => {
+            modelsBbox: models.map((model) => {
                 const { width, height } = model.transformation;
                 return { width, height, vertexPoints: model.vertexPoints, visible: model.visible };
             }),
             onlyContainSelect,
             size
-        ], (indexs) => {
+        }, (indexs) => {
             if (indexs.length > 0) {
                 let selectedEles = [];
                 const selectedModels = indexs.map(index => {

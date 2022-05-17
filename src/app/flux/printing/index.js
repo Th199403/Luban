@@ -2,6 +2,7 @@ import { cloneDeep, filter, find as lodashFind, isNil } from 'lodash';
 import path from 'path';
 import * as THREE from 'three';
 // import FileSaver from 'file-saver';
+import { Transfer } from 'threads';
 import { Vector3 } from 'three';
 import { acceleratedRaycast, computeBoundsTree, disposeBoundsTree } from 'three-mesh-bvh';
 import { timestamp } from '../../../shared/lib/random-utils';
@@ -81,6 +82,14 @@ const isDefaultQualityDefinition = (definitionId) => {
             || definitionId.indexOf('normal_quality') !== -1
         );
 };
+// async function main() {
+//     console.log('Hashed password: start', new Worker('../../workers/auth'));
+//     const counter = await spawn(new Worker('../../workers/auth'));
+//     console.log('Hashed password: start', counter);
+//
+//     counter().subscribe(newCount => console.log('Counter incremented to:', newCount));
+// }
+
 const getRealSeries = (series) => {
     if (
         series === MACHINE_SERIES.ORIGINAL_LZ.value
@@ -2765,23 +2774,36 @@ export const actions = {
             progress: progressStatesManager.updateProgress(STEP_STAGE.PRINTING_SCALE_TO_FIT_WITH_ROTATE, 0.15)
         }));
         setTimeout(() => {
-            const meshObjectJSON = [];
+            const positionAttribute = [];
+            const normalAttribute = [];
+            const matrixWorlds = [];
             modelGroup.selectedModelArray.forEach(modelItem => {
                 if (modelItem instanceof ThreeGroup) {
                     modelItem.children.forEach(child => {
-                        meshObjectJSON.push({
-                            ...child.meshObject.geometry.toJSON(),
-                            modelItemMatrix: child.meshObject.matrixWorld.clone()
-                        });
+                        const childGeometry = child.meshObject.geometry;
+                        positionAttribute.push(childGeometry.getAttribute('position'));
+                        normalAttribute.push(childGeometry.getAttribute('position'));
+                        matrixWorlds.push(child.meshObject.matrixWorld);
+                        // meshObjectJSON.push({
+                        //     ...child.meshObject.geometry.toJSON(),
+                        //     modelItemMatrix: child.meshObject.matrixWorld.clone()
+                        // });
                     });
                 } else {
-                    meshObjectJSON.push({ ...modelItem.meshObject.geometry.toJSON(), modelItemMatrix: modelItem.meshObject.matrixWorld.clone() });
+                    const childGeometry = modelItem.meshObject.geometry;
+                    positionAttribute.push(childGeometry.getAttribute('position'));
+                    normalAttribute.push(childGeometry.getAttribute('position'));
+                    matrixWorlds.push(modelItem.meshObject.matrixWorld);
+                    // meshObjectJSON.push({ ...modelItem.meshObject.geometry.toJSON(), modelItemMatrix: modelItem.meshObject.matrixWorld.clone() });
                 }
             });
             dispatch(actions.recordModelBeforeTransform(modelGroup));
+
             const data = {
                 size,
-                meshObjectJSON,
+                positionAttribute: Transfer(positionAttribute),
+                normalAttribute: Transfer(normalAttribute),
+                matrixWorlds: Transfer(matrixWorlds),
                 left,
                 right,
                 front,
@@ -2789,9 +2811,8 @@ export const actions = {
                 selectedGroupMatrix: modelGroup.selectedGroup.matrix.clone(),
                 selectedCount: modelGroup.selectedModelArray.length
             };
-            workerManager.scaleToFitWithRotate([{
-                data
-            }], (payload) => {
+            console.log('matrixWorlds', matrixWorlds);
+            workerManager.scaleToFitWithRotate(data, (payload) => {
                 const { status, value } = payload;
                 switch (status) {
                     case 'FINISH': {
