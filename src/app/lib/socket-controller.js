@@ -24,9 +24,10 @@ class SocketController {
         this.socket && this.socket.destroy();
 
         this.socket = io.connect('', {
-            query: `token=${token}`
+            query: `token=${token}`,
+            transports: ['websocket'],
+            reconnectionDelay: 0,
         });
-
         this.socket.on('startup', () => {
             if (next) {
                 next();
@@ -42,9 +43,22 @@ class SocketController {
 
     emit(event, ...args) {
         if (event === 'taskCommit:generateGcode') {
-            console.log('this.socket', this.socket, this.socket.emit);
+            console.log(
+                'this.socket right now',
+                this.socket.connected,
+                this.socket.disconnected
+            );
         }
-        this.socket && this.socket.emit(event, ...args);
+        setTimeout(() => {
+            if (event === 'taskCommit:generateGcode') {
+                console.log(
+                    'this.socket',
+                    this.socket.connected,
+                    this.socket.disconnected
+                );
+            }
+            this.socket && this.socket.emit(event, ...args);
+        }, 500);
     }
 
     on(eventName, callback) {
@@ -55,17 +69,19 @@ class SocketController {
         if (callbacks) {
             callbacks.push(callback);
         }
-        this.socket && this.socket.on(eventName, (...args) => {
-            for (const callback1 of callbacks) {
-                callback1(...args);
-            }
-        });
+        this.socket
+            && this.socket.on(eventName, (...args) => {
+                for (const callback1 of callbacks) {
+                    callback1(...args);
+                }
+            });
     }
 
     once(eventName, callback) {
-        this.socket && this.socket.once(eventName, (...args) => {
-            callback(...args);
-        });
+        this.socket
+            && this.socket.once(eventName, (...args) => {
+                callback(...args);
+            });
         return this;
     }
 }

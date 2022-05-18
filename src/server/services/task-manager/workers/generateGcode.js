@@ -7,10 +7,17 @@ import { pathWithRandomSuffix } from '../../../../shared/lib/random-utils';
 import { isNull } from '../../../../shared/lib/utils';
 import sendMessage from '../utils/sendMessage';
 
-
 const log = logger('service:TaskManager');
 
-const addHeaderToFile = (header, name, tmpFilePath, filePath, thumbnail, estimatedTime, boundingBox) => {
+const addHeaderToFile = (
+    header,
+    name,
+    tmpFilePath,
+    filePath,
+    thumbnail,
+    estimatedTime,
+    boundingBox
+) => {
     return new Promise((resolve, reject) => {
         const rs = fs.createReadStream(tmpFilePath, 'utf-8');
         const ws = fs.createWriteStream(filePath, 'utf-8');
@@ -40,8 +47,8 @@ const addHeaderToFile = (header, name, tmpFilePath, filePath, thumbnail, estimat
                     size: ws.bytesWritten,
                     lastModified: +new Date(),
                     estimatedTime,
-                    thumbnail: thumbnail
-                }
+                    thumbnail: thumbnail,
+                },
             });
         });
     });
@@ -79,7 +86,6 @@ const checkoutBoundingBoxIsNull = (boundingBox) => {
 
 // eslint-disable-next-line consistent-return
 const generateGcode = (toolPaths) => {
-    console.log('generateGcode1');
     if (!toolPaths && !_.isArray(toolPaths) && toolPaths.length === 0) {
         return sendMessage({ status: 'fail', value: 'modelInfo is empty.' });
     }
@@ -87,7 +93,10 @@ const generateGcode = (toolPaths) => {
 
     const { headType } = toolPaths[0];
     if (!_.includes(['laser', 'cnc'], headType)) {
-        return sendMessage({ status: 'fail', value: `Unsupported type: ${headType}` });
+        return sendMessage({
+            status: 'fail',
+            value: `Unsupported type: ${headType}`,
+        });
     }
 
     const suffix = headType === 'laser' ? '.nc' : '.cnc';
@@ -98,7 +107,9 @@ const generateGcode = (toolPaths) => {
     let boundingBox = null;
 
     const { baseName } = toolPaths[0];
-    const outputFilename = pathWithRandomSuffix(path.parse(baseName).name + suffix);
+    const outputFilename = pathWithRandomSuffix(
+        path.parse(baseName).name + suffix
+    );
     const outputFilePath = `${process.env.Tmpdir}/${outputFilename}`;
     const outputFilePathTmp = `${outputFilePath}.tmp`;
 
@@ -106,7 +117,6 @@ const generateGcode = (toolPaths) => {
 
     let isRotate;
     let diameter;
-    console.log('generateGcode2', writeStream);
 
     for (let i = 0; i < toolPaths.length; i++) {
         const toolPath = toolPaths[i];
@@ -121,12 +131,20 @@ const generateGcode = (toolPaths) => {
                 const gcodeGenerator = new GcodeGenerator();
                 let gcodeLines;
                 if (headType === 'laser') {
-                    gcodeLines = gcodeGenerator.parseAsLaser(toolPathObj, gcodeConfig);
+                    gcodeLines = gcodeGenerator.parseAsLaser(
+                        toolPathObj,
+                        gcodeConfig
+                    );
                 } else {
-                    gcodeLines = gcodeGenerator.parseAsCNC(toolPathObj, gcodeConfig);
+                    gcodeLines = gcodeGenerator.parseAsCNC(
+                        toolPathObj,
+                        gcodeConfig
+                    );
                 }
 
-                const renderMethod = gcodeConfig.movementMode === 'greyscale-dot' ? 'point' : 'line';
+                const renderMethod = gcodeConfig.movementMode === 'greyscale-dot'
+                    ? 'point'
+                    : 'line';
 
                 if (i > 0 || j > 0) {
                     const header = '\n\n'
@@ -143,7 +161,8 @@ const generateGcode = (toolPaths) => {
                 writeStream.write(gcodeLines.join('\n'));
 
                 if (gcodeConfig.multiPassEnabled) {
-                    estimatedTime += toolPathObj.estimatedTime * gcodeConfig.multiPasses;
+                    estimatedTime
+                        += toolPathObj.estimatedTime * gcodeConfig.multiPasses;
                 } else {
                     estimatedTime += toolPathObj.estimatedTime;
                 }
@@ -151,7 +170,11 @@ const generateGcode = (toolPaths) => {
                 isRotate = toolPathObj.isRotate;
                 diameter = toolPathObj.diameter;
 
-                const { positionX = 0, positionY = 0, rotationB = 0 } = toolPathObj;
+                const {
+                    positionX = 0,
+                    positionY = 0,
+                    rotationB = 0,
+                } = toolPathObj;
                 toolPathObj.boundingBox.max.x += positionX;
                 toolPathObj.boundingBox.min.x += positionX;
                 toolPathObj.boundingBox.max.y += positionY;
@@ -162,15 +185,39 @@ const generateGcode = (toolPaths) => {
                 if (boundingBox === null) {
                     boundingBox = toolPathObj.boundingBox;
                 } else {
-                    boundingBox.max.x = Math.max(boundingBox.max.x, toolPathObj.boundingBox.max.x);
-                    boundingBox.max.y = Math.max(boundingBox.max.y, toolPathObj.boundingBox.max.y);
-                    boundingBox.max.z = Math.max(boundingBox.max.z, toolPathObj.boundingBox.max.z);
-                    boundingBox.max.b = Math.max(boundingBox.max.b, toolPathObj.boundingBox.max.b);
+                    boundingBox.max.x = Math.max(
+                        boundingBox.max.x,
+                        toolPathObj.boundingBox.max.x
+                    );
+                    boundingBox.max.y = Math.max(
+                        boundingBox.max.y,
+                        toolPathObj.boundingBox.max.y
+                    );
+                    boundingBox.max.z = Math.max(
+                        boundingBox.max.z,
+                        toolPathObj.boundingBox.max.z
+                    );
+                    boundingBox.max.b = Math.max(
+                        boundingBox.max.b,
+                        toolPathObj.boundingBox.max.b
+                    );
 
-                    boundingBox.min.x = Math.min(boundingBox.min.x, toolPathObj.boundingBox.min.x);
-                    boundingBox.min.y = Math.min(boundingBox.min.y, toolPathObj.boundingBox.min.y);
-                    boundingBox.min.z = Math.min(boundingBox.min.z, toolPathObj.boundingBox.min.z);
-                    boundingBox.min.b = Math.min(boundingBox.min.b, toolPathObj.boundingBox.min.b);
+                    boundingBox.min.x = Math.min(
+                        boundingBox.min.x,
+                        toolPathObj.boundingBox.min.x
+                    );
+                    boundingBox.min.y = Math.min(
+                        boundingBox.min.y,
+                        toolPathObj.boundingBox.min.y
+                    );
+                    boundingBox.min.z = Math.min(
+                        boundingBox.min.z,
+                        toolPathObj.boundingBox.min.z
+                    );
+                    boundingBox.min.b = Math.min(
+                        boundingBox.min.b,
+                        toolPathObj.boundingBox.min.b
+                    );
                 }
 
                 checkoutBoundingBoxIsNull(boundingBox);
@@ -179,7 +226,10 @@ const generateGcode = (toolPaths) => {
             log.error('eeeeee', e);
         }
 
-        sendMessage({ status: 'progress', value: (i + 1) / toolPathFiles.length });
+        sendMessage({
+            status: 'progress',
+            value: (i + 1) / toolPathFiles.length,
+        });
     }
 
     const { gcodeConfig, thumbnail } = toolPaths[0];
@@ -217,16 +267,20 @@ const generateGcode = (toolPaths) => {
 
     return new Promise((resolve, reject) => {
         writeStream.on('close', async () => {
-            addHeaderToFile(headerStart, outputFilename, outputFilePathTmp, outputFilePath, thumbnail, estimatedTime, boundingBox).then((res) => {
-                resolve(
-                    sendMessage({ status: 'complete', value: res })
-                );
+            addHeaderToFile(
+                headerStart,
+                outputFilename,
+                outputFilePathTmp,
+                outputFilePath,
+                thumbnail,
+                estimatedTime,
+                boundingBox
+            ).then((res) => {
+                resolve(sendMessage({ status: 'complete', value: res }));
             });
         });
         writeStream.on('error', (err) => {
-            reject(
-                sendMessage({ status: 'fail', value: err })
-            );
+            reject(sendMessage({ status: 'fail', value: err }));
         });
     });
 };

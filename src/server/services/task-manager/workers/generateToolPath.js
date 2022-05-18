@@ -1,10 +1,7 @@
 import fs from 'fs';
 import { generateRandomPathName } from '../../../../shared/lib/random-utils';
 import { editorProcess } from '../../../lib/editor/process';
-import {
-    SOURCE_TYPE_RASTER,
-    TOOLPATH_TYPE_VECTOR
-} from '../../../constants';
+import { SOURCE_TYPE_RASTER, TOOLPATH_TYPE_VECTOR } from '../../../constants';
 import slice from '../../../slicer/call-engine';
 import sendMessage from '../utils/sendMessage';
 
@@ -18,14 +15,20 @@ const generateLaserToolPathFromEngine = (allTasks, onProgress) => {
         }
         const { taskId } = task;
         for (const modelInfo of modelInfos) {
-            console.log('modelInfo', modelInfo);
             const { headType, type, sourceType } = modelInfo;
-            if ([TOOLPATH_TYPE_VECTOR + SOURCE_TYPE_RASTER].includes(type + sourceType)) {
+            if (
+                [TOOLPATH_TYPE_VECTOR + SOURCE_TYPE_RASTER].includes(
+                    type + sourceType
+                )
+            ) {
                 const result = await editorProcess(modelInfo);
                 modelInfo.uploadName = result.filename;
             }
-            if (!(/parsed\.svg$/i.test(modelInfo.uploadName))) {
-                const newUploadName = modelInfo.uploadName.replace(/\.svg$/i, 'parsed.svg');
+            if (!/parsed\.svg$/i.test(modelInfo.uploadName)) {
+                const newUploadName = modelInfo.uploadName.replace(
+                    /\.svg$/i,
+                    'parsed.svg'
+                );
                 const uploadPath = `${process.env.Tmpdir}/${newUploadName}`;
                 if (fs.existsSync(uploadPath)) {
                     modelInfo.uploadName = newUploadName;
@@ -49,18 +52,23 @@ const generateLaserToolPathFromEngine = (allTasks, onProgress) => {
             headType: modelInfos[0].headType,
             type: modelInfos[0].type,
             data: modelInfos,
-            toolPathLength
+            toolPathLength,
         };
 
         return new Promise((resolve, reject) => {
-            slice(sliceParams, onProgress, (res) => {
-                resolve({
-                    taskId,
-                    filenames: res.filenames
-                });
-            }, () => {
-                reject(new Error('Slice Error'));
-            });
+            slice(
+                sliceParams,
+                onProgress,
+                (res) => {
+                    resolve({
+                        taskId,
+                        filenames: res.filenames,
+                    });
+                },
+                () => {
+                    reject(new Error('Slice Error'));
+                }
+            );
         });
     });
     return Promise.all(allResultPromise);
@@ -69,7 +77,10 @@ const generateLaserToolPathFromEngine = (allTasks, onProgress) => {
 const generateToolPath = (allTasks) => {
     const { headType } = allTasks[0];
     if (!['laser', 'cnc'].includes(headType)) {
-        return sendMessage({ status: 'fail', value: `Unsupported type: ${headType}` });
+        return sendMessage({
+            status: 'fail',
+            value: `Unsupported type: ${headType}`,
+        });
     }
 
     const onProgress = (num) => {
@@ -77,15 +88,13 @@ const generateToolPath = (allTasks) => {
     };
 
     return new Promise((resolve, reject) => {
-        generateLaserToolPathFromEngine(allTasks, onProgress).then((ret) => {
-            resolve(
-                sendMessage({ status: 'complete', value: ret })
-            );
-        }).catch((err) => {
-            reject(
-                sendMessage({ status: 'fail', value: err })
-            );
-        });
+        generateLaserToolPathFromEngine(allTasks, onProgress)
+            .then((ret) => {
+                resolve(sendMessage({ status: 'complete', value: ret }));
+            })
+            .catch((err) => {
+                reject(sendMessage({ status: 'fail', value: err }));
+            });
     });
 };
 
