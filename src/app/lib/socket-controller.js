@@ -41,6 +41,9 @@ class SocketController {
     }
 
     emit(event, ...args) {
+        if (event === 'taskCommit:generateGcode') {
+            console.log('this.socket', this.socket, this.socket.emit);
+        }
         this.socket && this.socket.emit(event, ...args);
     }
 

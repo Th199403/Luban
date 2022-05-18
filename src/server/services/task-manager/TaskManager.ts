@@ -46,10 +46,12 @@ class TaskManager {
     }
 
     private onComplete(task: Task, res: any) {
+        log.warn(`${task.taskType}`);
         if (task.taskType === TASK_TYPE_GENERATE_TOOLPATH) {
             task.filenames = res;
         } else if (task.taskType === TASK_TYPE_GENERATE_GCODE) {
             task.gcodeFile = res.gcodeFile;
+            log.warn(`${task.gcodeFile}, ${task.taskStatus}, ${task.taskType}, ${task.getData()}`);
         } else if (task.taskType === TASK_TYPE_GENERATE_VIEWPATH) {
             task.viewPathFile = res.viewPathFile;
         } else if (task.taskType === TASK_TYPE_PROCESS_IMAGE) {
@@ -129,6 +131,9 @@ class TaskManager {
         if (!exists) {
             this.tasks.push(task);
         }
+        if(task.taskType === TASK_TYPE_GENERATE_GCODE) {
+            console.log('this.tasks', exists, this.tasks);
+        }
 
         this.taskHandle(task);
     }
@@ -149,6 +154,7 @@ const addGenerateToolPathTask = (socket, taskArray) => {
 };
 
 const addGenerateGcodeTask = (socket, task) => {
+    console.log('addGenerateGcodeTask');
     manager.addTask(new Task(task.taskId, socket, task.data, TASK_TYPE_GENERATE_GCODE, task.headType));
 };
 

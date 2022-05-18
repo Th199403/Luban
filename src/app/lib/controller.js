@@ -174,7 +174,6 @@ class SerialPortClient {
                 }
                 if (eventName === 'daily:heartbeat') {
                     lubanVisit();
-                    return;
                 }
                 if (eventName === 'workflow:state') {
                     // this.workflowState = args[0];
@@ -256,6 +255,7 @@ class SerialPortClient {
     }
 
     commitGcodeTask(task) {
+        console.log('commitGcodeTask');
         socketController.emit('taskCommit:generateGcode', task);
     }
 

@@ -341,7 +341,7 @@ export const processActions = {
     commitGenerateGcode: (headType) => (dispatch, getState) => {
         const { toolPathGroup, progressStatesManager } = getState()[headType];
         const toolPaths = toolPathGroup.getCommitGenerateGcodeInfos(true);
-        console.log('commitGenerateGcode', toolPaths);
+        console.log('commitGenerateGcode', toolPaths, !toolPaths || toolPaths.length === 0);
 
         if (!toolPaths || toolPaths.length === 0) {
             return;
@@ -356,6 +356,7 @@ export const processActions = {
             stage: STEP_STAGE.CNC_LASER_GENERATING_GCODE,
             progress: progressStatesManager.updateProgress(STEP_STAGE.CNC_LASER_GENERATING_GCODE, 0.1)
         }));
+        console.log('commitGenerateGcode2', headType, toolPaths);
         controller.commitGcodeTask({
             taskId: uuid(),
             headType: headType,

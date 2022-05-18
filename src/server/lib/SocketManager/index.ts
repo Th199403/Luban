@@ -30,6 +30,7 @@ class SocketServer extends EventEmitter {
             serveClient: true,
             allowEIO3: true,
             pingInterval: 5000,
+            transports: ['websocket', 'polling'],
             allowUpgrades: false,
             pingTimeout: 180000, // 60s without pong to consider the connection closed
             path: '/socket.io',
@@ -85,6 +86,7 @@ class SocketServer extends EventEmitter {
         socket.emit('startup');
 
         this.emit('connection', socket);
+        console.log('this.events', this.events.length);
 
         if (this.events && this.events.length > 0) {
             for (const [event, callback] of this.events) {
