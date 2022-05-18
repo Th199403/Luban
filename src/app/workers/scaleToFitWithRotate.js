@@ -2,24 +2,7 @@ import * as THREE from 'three';
 import { Observable } from 'rxjs';
 import ThreeUtils from '../three-extensions/ThreeUtils';
 
-
-type MatrixElement = {
-    element: Array[]
-}
-
-type ScaleToFitData = {
-    positionAttribute: any,
-    normalAttribute: any,
-    matrixWorlds: boolean,
-    left: number,
-    right: number,
-    front: number,
-    back: number,
-    electedGroupMatrix: MatrixElement,
-    selectedCount: number,
-}
-
-function scaleToFitWithRotate(data: ScaleToFitData) {
+function scaleToFitWithRotate(data) {
     return new Observable(observer => {
         try {
             const tempSelectedGroup = new THREE.Group();
