@@ -19,7 +19,7 @@ import {
     PRINTING_QUALITY_CUSTOMIZE_FIELDS,
     PRINTING_QUALITY_CONFIG_GROUP_DUAL,
     PRINTING_QUALITY_CONFIG_GROUP_SINGLE,
-    SINGLE_EXTRUDER_TOOLHEAD_FOR_SM2
+    SINGLE_EXTRUDER_TOOLHEAD_FOR_SM2,
 } from '../../../constants';
 import SettingItem from '../../views/ProfileManager/SettingItem';
 import ConfigValueBox from '../../views/ProfileManager/ConfigValueBox';
@@ -35,28 +35,44 @@ const newKeys = cloneDeep(PRINTING_QUALITY_CONFIG_INDEX);
 //     'material.tpu.black', 'material.tpu.yellow',
 //     'quality.fast_print', 'quality.normal_quality', 'quality.high_quality'
 // ];
-function isOfficialDefinition(key) {
+function isOfficialDefinitionKey(key) {
     return includes(cloneDeep(PRINTING_QUALITY_CUSTOMIZE_FIELDS), key);
 }
 function calculateTextIndex(key) {
     return `${newKeys[key] * 20}px`;
 }
 function Configurations({ widgetActions }) {
-    const [selectedSettingDefaultValue, setSelectedSettingDefaultValue] = useState(null);
+    const [
+        selectedSettingDefaultValue,
+        setSelectedSettingDefaultValue,
+    ] = useState(null);
     const [selectedDefinition, setSelectedDefinition] = useState(null);
     const [showCustomConfigPannel, setShowCustomConfigPannel] = useState(false);
-    const qualityDefinitions = useSelector(state => state?.printing?.qualityDefinitions);
-    const defaultQualityId = useSelector(state => state?.printing?.defaultQualityId, shallowEqual);
-    let printingCustomConfigs = useSelector(state => state?.machine?.printingCustomConfigs);
-    const toolHead = useSelector(state => state?.machine?.toolHead);
-    const printingQualityConfigGroup = (toolHead.printingToolhead === SINGLE_EXTRUDER_TOOLHEAD_FOR_SM2 ? PRINTING_QUALITY_CONFIG_GROUP_SINGLE : PRINTING_QUALITY_CONFIG_GROUP_DUAL);
+    const qualityDefinitions = useSelector(
+        (state) => state?.printing?.qualityDefinitions
+    );
+    const defaultQualityId = useSelector(
+        (state) => state?.printing?.defaultQualityId,
+        shallowEqual
+    );
+    let printingCustomConfigs = useSelector(
+        (state) => state?.machine?.printingCustomConfigs
+    );
+    const toolHead = useSelector((state) => state?.machine?.toolHead);
+    const printingQualityConfigGroup = toolHead.printingToolhead === SINGLE_EXTRUDER_TOOLHEAD_FOR_SM2
+        ? PRINTING_QUALITY_CONFIG_GROUP_SINGLE
+        : PRINTING_QUALITY_CONFIG_GROUP_DUAL;
     const dispatch = useDispatch();
 
     const actions = {
         onChangeSelectedDefinition: (definition) => {
             if (definition) {
                 setSelectedSettingDefaultValue(
-                    dispatch(printingActions.getDefaultDefinition(definition.definitionId))
+                    dispatch(
+                        printingActions.getDefaultDefinition(
+                            definition.definitionId
+                        )
+                    )
                 );
                 setSelectedDefinition(definition);
             }
@@ -74,29 +90,45 @@ function Configurations({ widgetActions }) {
         onChangeDefinition: async (definitionKey, value) => {
             if (isNil(value)) {
                 // if 'value' does't exit, then reset this value
-                value = dispatch(printingActions.getDefaultDefinition(selectedDefinition.definitionId))[definitionKey].default_value;
+                value = dispatch(
+                    printingActions.getDefaultDefinition(
+                        selectedDefinition.definitionId
+                    )
+                )[definitionKey].default_value;
             }
             const newDefinitionForManager = cloneDeep(selectedDefinition);
-            newDefinitionForManager.settings[definitionKey].default_value = value;
+            newDefinitionForManager.settings[
+                definitionKey
+            ].default_value = value;
             const shouldUpdateIsOversteped = definitionKey === 'prime_tower_enable';
 
-            await dispatch(printingActions.updateCurrentDefinition(
-                newDefinitionForManager,
-                PRINTING_MANAGER_TYPE_QUALITY,
-                undefined,
-                shouldUpdateIsOversteped
-            ));
-            await dispatch(printingActions.updateDefinitionsForManager(selectedDefinition.definitionId, PRINTING_MANAGER_TYPE_QUALITY));
+            await dispatch(
+                printingActions.updateCurrentDefinition(
+                    newDefinitionForManager,
+                    PRINTING_MANAGER_TYPE_QUALITY,
+                    undefined,
+                    shouldUpdateIsOversteped
+                )
+            );
 
             actions.onChangeSelectedDefinition(newDefinitionForManager);
             actions.displayModel();
         },
         onShowMaterialManager: () => {
-            dispatch(printingActions.updateManagerDisplayType(PRINTING_MANAGER_TYPE_QUALITY));
+            dispatch(
+                printingActions.updateManagerDisplayType(
+                    PRINTING_MANAGER_TYPE_QUALITY
+                )
+            );
             dispatch(printingActions.updateShowPrintingManager(true));
         },
         updateActiveDefinition: (definition) => {
-            dispatch(printingActions.updateCurrentDefinition(definition, PRINTING_MANAGER_TYPE_QUALITY));
+            dispatch(
+                printingActions.updateCurrentDefinition(
+                    definition,
+                    PRINTING_MANAGER_TYPE_QUALITY
+                )
+            );
             dispatch(projectActions.autoSaveEnvironment(HEAD_PRINTING));
         },
         /**
@@ -105,15 +137,19 @@ function Configurations({ widgetActions }) {
          * @param definition
          */
         onSelectDefinition: (definition) => {
-            dispatch(printingActions.updateDefaultQualityId(definition.definitionId));
+            dispatch(
+                printingActions.updateDefaultQualityId(definition.definitionId)
+            );
             actions.onChangeSelectedDefinition(definition);
             actions.updateActiveDefinition(definition);
         },
         onSelectCustomDefinitionById: (definitionId) => {
-            const definition = qualityDefinitions.find(d => d.definitionId === definitionId);
+            const definition = qualityDefinitions.find(
+                (d) => d.definitionId === definitionId
+            );
             actions.onSelectDefinition(definition);
             actions.displayModel();
-        }
+        },
     };
 
     const onChangeCustomConfig = useCallback((key, value) => {
@@ -121,20 +157,28 @@ function Configurations({ widgetActions }) {
             printingCustomConfigs.push(key);
             printingCustomConfigs = [...printingCustomConfigs];
         } else if (!value) {
-            printingCustomConfigs = printingCustomConfigs.filter((a) => a !== key);
+            printingCustomConfigs = printingCustomConfigs.filter(
+                (a) => a !== key
+            );
         }
-        dispatch(machineActions.updatePrintingCustomConfigs(printingCustomConfigs));
+        dispatch(
+            machineActions.updatePrintingCustomConfigs(printingCustomConfigs)
+        );
     }, []);
 
     useEffect(() => {
-        widgetActions.setTitle(i18n._('key-Printing/PrintingConfigurations-Printing Settings'));
+        widgetActions.setTitle(
+            i18n._('key-Printing/PrintingConfigurations-Printing Settings')
+        );
     }, [widgetActions]);
 
     useEffect(() => {
         // re-select definition based on new properties
 
         if (qualityDefinitions.length > 0) {
-            const definition = qualityDefinitions.find(d => d.definitionId === defaultQualityId);
+            const definition = qualityDefinitions.find(
+                (d) => d.definitionId === defaultQualityId
+            );
             if (!definition) {
                 // definition no found, select first official definition
                 actions.onSelectDefinition(qualityDefinitions[0]);
@@ -150,15 +194,16 @@ function Configurations({ widgetActions }) {
     const toolDefinitionOptions = getSelectOptions(qualityDefinitions);
     const valueObj = {
         firstKey: 'definitionId',
-        firstValue: selectedDefinition?.definitionId
+        firstValue: selectedDefinition?.definitionId,
     };
     return (
         <div>
-            <div className={classNames(
-                'sm-flex',
-                'margin-bottom-16',
-                'margin-top-8'
-            )}
+            <div
+                className={classNames(
+                    'sm-flex',
+                    'margin-bottom-16',
+                    'margin-top-8'
+                )}
             >
                 <Select
                     clearable={false}
@@ -178,14 +223,19 @@ function Configurations({ widgetActions }) {
                     borderRadius={8}
                 />
             </div>
-            <div className={classNames(
-                'border-default-grey-1',
-                'border-radius-8',
-                'clearfix'
-            )}
+            <div
+                className={classNames(
+                    'border-default-grey-1',
+                    'border-radius-8',
+                    'clearfix'
+                )}
             >
                 <div className="sm-flex height-40 border-bottom-normal padding-horizontal-16">
-                    <span className="sm-flex-width main-text-normal">{i18n._('key-Printing/PrintingConfigurations-General Parameters')}</span>
+                    <span className="sm-flex-width main-text-normal">
+                        {i18n._(
+                            'key-Printing/PrintingConfigurations-General Parameters'
+                        )}
+                    </span>
                     <SvgIcon
                         name="Manage"
                         size={24}
@@ -193,7 +243,7 @@ function Configurations({ widgetActions }) {
                     />
                 </div>
                 <div className="padding-horizontal-16 padding-vertical-8 overflow-y-auto height-max-400">
-                    { printingCustomConfigs.map((key) => {
+                    {printingCustomConfigs.map((key) => {
                         return (
                             <SettingItem
                                 styleSize="middle"
@@ -201,15 +251,19 @@ function Configurations({ widgetActions }) {
                                 definitionKey={key}
                                 key={key}
                                 onChangeDefinition={actions.onChangeDefinition}
-                                isDefaultDefinition={selectedDefinition.isRecommended}
+                                isDefaultDefinition={
+                                    selectedDefinition.isRecommended
+                                }
                                 defaultValue={{
-                                    value: selectedSettingDefaultValue && selectedSettingDefaultValue[key].default_value
+                                    value:
+                                        selectedSettingDefaultValue
+                                        && selectedSettingDefaultValue[key]
+                                            .default_value,
                                 }}
                             />
                         );
                     })}
                 </div>
-
             </div>
             {showCustomConfigPannel && (
                 <Modal
@@ -218,18 +272,20 @@ function Configurations({ widgetActions }) {
                     onClose={actions.closePannel}
                 >
                     <Modal.Header>
-                        {i18n._('key-Printing/PrintingConfigurations-Custom Parameter Visibility')}
+                        {i18n._(
+                            'key-Printing/PrintingConfigurations-Custom Parameter Visibility'
+                        )}
                     </Modal.Header>
                     <Modal.Body>
-                        <div
-                            className={classNames(styles['manager-content'])}
-                        >
+                        <div className={classNames(styles['manager-content'])}>
                             <ConfigValueBox
                                 calculateTextIndex={calculateTextIndex}
                                 customConfigs={printingCustomConfigs}
                                 definitionForManager={selectedDefinition}
                                 optionConfigGroup={printingQualityConfigGroup}
-                                isOfficialDefinition={isOfficialDefinition}
+                                isOfficialDefinitionKey={
+                                    isOfficialDefinitionKey
+                                }
                                 type="checkbox"
                                 onChangeDefinition={onChangeCustomConfig}
                                 onResetDefinition={actions.onChangeDefinition}
@@ -244,7 +300,9 @@ function Configurations({ widgetActions }) {
                             width="96px"
                             priority="level-two"
                         >
-                            {i18n._('key-Printing/PrintingConfigurations-Close')}
+                            {i18n._(
+                                'key-Printing/PrintingConfigurations-Close'
+                            )}
                         </Button>
                     </Modal.Footer>
                 </Modal>
@@ -253,6 +311,6 @@ function Configurations({ widgetActions }) {
     );
 }
 Configurations.propTypes = {
-    widgetActions: PropTypes.object
+    widgetActions: PropTypes.object,
 };
 export default Configurations;

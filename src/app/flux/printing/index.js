@@ -696,11 +696,13 @@ export const actions = {
             definitionId: defaultQualityId,
         });
         modelGroup.removeAllModels();
+        const primeTowerModel = modelGroup.primeTower;
         if (printingToolhead === DUAL_EXTRUDER_TOOLHEAD_FOR_SM2) {
-            const primeTowerModel = modelGroup.primeTower;
             const enablePrimeTower = activeQualityDefinition?.settings?.prime_tower_enable
                 ?.default_value;
             primeTowerModel.visible = enablePrimeTower;
+        } else {
+            primeTowerModel.visible = false;
         }
         if (!initEventFlag) {
             dispatch(
@@ -1225,7 +1227,7 @@ export const actions = {
         definition,
         type,
         direction = LEFT_EXTRUDER,
-        shouldUpdateIsOversteped
+        shouldUpdateIsOversteped = false
     ) => (dispatch, getState) => {
         definitionManager.updateDefinition(definition);
         const printingState = getState().printing;
@@ -1255,33 +1257,6 @@ export const actions = {
             );
             dispatch(actions.updateState({ isAnyModelOverstepped }));
         }
-    },
-
-    updateDefinitionsForManager: (definitionId, type) => async (
-        dispatch,
-        getState
-    ) => {
-        const state = getState().printing;
-        const savedDefinition = await definitionManager.getDefinition(
-            definitionId
-        );
-        if (!savedDefinition) {
-            return;
-        }
-        const definitionsKey = defaultDefinitionKeys[type].definitions;
-        const newDefinitions = state[definitionsKey].map((item) => {
-            if (item.definitionId === definitionId) {
-                return savedDefinition;
-            } else {
-                return item;
-            }
-        });
-
-        dispatch(
-            actions.updateState({
-                [definitionsKey]: [...newDefinitions],
-            })
-        );
         dispatch(actions.updateAllModelColors());
     },
 
