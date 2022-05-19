@@ -95,8 +95,6 @@ class Visualizer extends PureComponent {
         setRotationPlacementFace: PropTypes.func.isRequired,
         enablePrimeTower: PropTypes.bool,
         primeTowerHeight: PropTypes.number.isRequired,
-        // hidePrimeTower: PropTypes.func,
-        // showPrimeTower: PropTypes.func,
         printingToolhead: PropTypes.string,
         stopArea: PropTypes.object,
         controlAxis: PropTypes.array,
@@ -460,7 +458,6 @@ class Visualizer extends PureComponent {
         }
         if (!Number.isNaN(primeTowerHeight) && !Number.isNaN(this.props.primeTowerHeight) && primeTowerHeight !== prevProps.primeTowerHeight) {
             const primeTowerModel = modelGroup.primeTower;
-            console.log('primeTowerHeight', primeTowerHeight, primeTowerModel);
             if (primeTowerModel) {
                 primeTowerModel.updateTransformation({
                     scaleZ: primeTowerHeight / 1,
@@ -758,8 +755,6 @@ const mapDispatchToProps = (dispatch) => ({
     moveSupportBrush: (raycastResult) => dispatch(printingActions.moveSupportBrush(raycastResult)),
     applySupportBrush: (raycastResult) => dispatch(printingActions.applySupportBrush(raycastResult)),
     setRotationPlacementFace: (userData) => dispatch(printingActions.setRotationPlacementFace(userData)),
-    hidePrimeTower: (targetModel) => dispatch(printingActions.hideSelectedModel(targetModel)),
-    showPrimeTower: (targetModel) => dispatch(printingActions.showSelectedModel(targetModel)),
     displayModel: () => dispatch(printingActions.displayModel())
 });
 

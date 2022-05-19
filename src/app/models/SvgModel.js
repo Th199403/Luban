@@ -510,8 +510,8 @@ class SvgModel extends BaseModel {
 
         const canvas = document.createElement('canvas');
         // set canvas size to get image of exactly same size
-        canvas.width = this.width < 10 ? 10 : this.width;
-        canvas.height = this.height < 10 ? 10 : this.height;
+        canvas.width = this.width;
+        canvas.height = this.height;
         canvas.style.font = '16px Arial';
         document.body.appendChild(canvas);
         const ctx = canvas.getContext('2d');
@@ -519,19 +519,15 @@ class SvgModel extends BaseModel {
         const v = await Canvg.fromString(ctx, content);
         await v.render();
         const blob = await new Promise(resolve => canvas.toBlob(resolve));
-        if (blob) {
-            const file = new File([blob], 'gen.png');
-            document.body.removeChild(canvas);
-            const formData = new FormData();
-            formData.append('image', file);
-            const res = await api.uploadImage(formData);
+        const file = new File([blob], 'gen.png');
+        document.body.removechild(canvas);
+        const formdata = new FormData();
+        formdata.append('image', file);
+        const res = await api.uploadimage(formdata);
 
-            this.uploadImageName = res.body.uploadName;
-        } else {
-            this.uploadImageName = '';
-        }
-        this.generateModelObject3D();
-        this.generateProcessObject3D();
+        this.uploadimagename = res.body.uploadname;
+        this.generatemodelobject3d();
+        this.generateprocessobject3d();
     }
 
     // update model source file

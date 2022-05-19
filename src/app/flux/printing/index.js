@@ -1588,13 +1588,8 @@ export const actions = {
         const state = getState().printing;
 
         const newQualityDefinitions = [];
-        const defaultDefinitionIds = [
-            'quality.fast_print',
-            'quality.normal_quality',
-            'quality.high_quality',
-        ];
         for (const definition of state.qualityDefinitions) {
-            if (defaultDefinitionIds.includes(definition.definitionId)) {
+            if (definition.isRecommended) {
                 newQualityDefinitions.push(definition);
                 continue;
             }
