@@ -2,7 +2,32 @@ import * as THREE from 'three';
 import { Observable } from 'rxjs';
 import { nesting } from '../../shared/lib/nesting';
 
-const getModelFaces = (model) => {
+type SizeNumber = {
+    x: number;
+    y: number;
+};
+type validAreaData = {
+    max: SizeNumber;
+    min: SizeNumber;
+};
+
+type ModelData = {
+    modelID: string;
+    children: any;
+    isGroup: boolean;
+    center: SizeNumber;
+};
+
+type ArrangeModelsData = {
+    models: ModelData[];
+    validArea: validAreaData;
+    angle: number;
+    offset: number;
+    padding: number;
+    memory: number;
+};
+
+const getModelFaces = (model: any) => {
     // TODO, move to util
     const min = {
         x: Number.MAX_SAFE_INTEGER,
@@ -45,7 +70,7 @@ const getModelFaces = (model) => {
     return { faces, min, max };
 };
 
-const arrangeModels = (data) => {
+const arrangeModels = (data: ArrangeModelsData) => {
     return new Observable((observer) => {
         try {
             const {
@@ -59,7 +84,7 @@ const arrangeModels = (data) => {
 
             let memoryCount = 0;
             const stls = [];
-            models.forEach((model) => {
+            models.forEach((model: ModelData) => {
                 observer.next({
                     status: 'progress',
                     value: {
@@ -133,7 +158,7 @@ const arrangeModels = (data) => {
                     angle,
                     offset,
                 },
-                (progress) => {
+                (progress: number) => {
                     observer.next({ status: 'progress', value: { progress } });
                 }
             );

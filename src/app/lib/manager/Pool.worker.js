@@ -6,6 +6,7 @@ const methods = require
     .reduce((prev, key) => {
         key = key.replace('./', '');
         const [name] = key.split('.');
+        console.trace('name', name);
         // eslint-disable-next-line import/no-dynamic-require
         prev[name] = require(`../../workers/${key}`).default;
         return prev;

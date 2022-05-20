@@ -95,13 +95,6 @@ const isDefaultQualityDefinition = (definitionId) => {
             || definitionId.indexOf('normal_quality') !== -1)
     );
 };
-// async function main() {
-//     console.log('Hashed password: start', new Worker('../../workers/auth'));
-//     const counter = await spawn(new Worker('../../workers/auth'));
-//     console.log('Hashed password: start', counter);
-//
-//     counter().subscribe(newCount => console.log('Counter incremented to:', newCount));
-// }
 
 const getRealSeries = (series) => {
     if (
@@ -296,11 +289,10 @@ const createLoadModelWorker = (() => {
         let task = runningTasks[uploadPath];
         if (!task) {
             task = {
-                worker: workerManager.loadModel(uploadPath, async (data) => {
+                worker: workerManager.loadModel(uploadPath, (data) => {
                     const { type } = data;
 
                     switch (type) {
-                        case 'LOAD_MODEL_CONVEX':
                         case 'LOAD_MODEL_FAILED':
                             task.worker.then((result) => {
                                 result.terminate();
@@ -1053,30 +1045,30 @@ export const actions = {
                 } = value;
                 const bufferGeometry = new THREE.BufferGeometry();
                 const positionAttribute = new THREE.Float32BufferAttribute(
-                    positions,
+                    positions.send,
                     3
                 );
                 const colorAttribute = new THREE.Uint8BufferAttribute(
-                    colors,
+                    colors.send,
                     3
                 );
                 // this will map the buffer values to 0.0f - +1.0f in the shader
                 colorAttribute.normalized = true;
                 const color1Attribute = new THREE.Uint8BufferAttribute(
-                    colors1,
+                    colors1.send,
                     3
                 );
                 color1Attribute.normalized = true;
                 const layerIndexAttribute = new THREE.Float32BufferAttribute(
-                    layerIndices,
+                    layerIndices.send,
                     1
                 );
                 const typeCodeAttribute = new THREE.Float32BufferAttribute(
-                    typeCodes,
+                    typeCodes.send,
                     1
                 );
                 const toolCodeAttribute = new THREE.Float32BufferAttribute(
-                    toolCodes,
+                    toolCodes.send,
                     1
                 );
 
@@ -3157,7 +3149,6 @@ export const actions = {
                                 })
                             );
                         }
-                        console.log('res', res);
                         res.then((websocket) => websocket.terminate());
                         break;
                     }
@@ -3520,7 +3511,6 @@ export const actions = {
                 positionAttribute.push(geometry.getAttribute('position'));
                 normalAttribute.push(geometry.getAttribute('normal'));
             });
-            console.log('selectedModelInfo0', selectedModelInfo);
             workerManager.autoRotateModels(
                 {
                     selectedModelInfo,

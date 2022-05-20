@@ -41,7 +41,7 @@ Object.entries(WorkerMethods).forEach(([, method]) => {
     ) {
         const pool = this.pool
             || (this.pool = await spawn(new Worker('./Pool.worker.js')));
-        console.log('counter', method, pool[method], pool);
+        console.log('pool', method, pool[method], pool);
         if (pool[method]) {
             pool[method](data).subscribe((payload: PayloadData) => {
                 if (onmessage) {
@@ -51,7 +51,8 @@ Object.entries(WorkerMethods).forEach(([, method]) => {
         }
         return {
             terminate: async () => {
-                await Thread.terminate(pool);
+                const res = await Thread.terminate(pool);
+                console.log('res', res);
                 this.pool = null;
             },
         };

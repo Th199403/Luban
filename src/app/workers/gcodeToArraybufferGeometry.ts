@@ -1,8 +1,16 @@
 import isEmpty from 'lodash/isEmpty';
 import { Observable } from 'rxjs';
+import { Transfer } from 'threads';
 import GcodeToBufferGeometryWorkspace from './GcodeToBufferGeometry/GcodeToBufferGeometryWorkspace';
 
-const gcodeToArraybufferGeometry = (data) => {
+type GcodeToArraybufferGeometryData = {
+    func: string;
+    gcodeFilename: string;
+    gcode: string;
+    isPreview: boolean;
+};
+
+const gcodeToArraybufferGeometry = (data: GcodeToArraybufferGeometryData) => {
     return new Observable((observer) => {
         if (isEmpty(data)) {
             observer.next({ status: 'err', value: 'Data is empty' });
@@ -31,11 +39,18 @@ const gcodeToArraybufferGeometry = (data) => {
                     isDone,
                     boundingBox,
                 } = result;
-                const positions = bufferGeometry.getAttribute('position').array;
-                const colors = bufferGeometry.getAttribute('a_color').array;
-                const index = bufferGeometry.getAttribute('a_index').array;
-                const indexColors = bufferGeometry.getAttribute('a_index_color')
-                    .array;
+                const positions = Transfer(
+                    bufferGeometry.getAttribute('position').array
+                );
+                const colors = Transfer(
+                    bufferGeometry.getAttribute('a_color').array
+                );
+                const index = Transfer(
+                    bufferGeometry.getAttribute('a_index').array
+                );
+                const indexColors = Transfer(
+                    bufferGeometry.getAttribute('a_index_color').array
+                );
 
                 const _data = {
                     status: 'succeed',
@@ -52,21 +67,16 @@ const gcodeToArraybufferGeometry = (data) => {
                     },
                 };
 
-                observer.next(_data, [
-                    positions.buffer,
-                    colors.buffer,
-                    index.buffer,
-                    indexColors.buffer,
-                ]);
+                observer.next(_data);
             },
-            (progress) => {
+            (progress: number) => {
                 observer.next({
                     status: 'progress',
                     value: progress,
                     isPreview,
                 });
             },
-            (err) => {
+            (err: string) => {
                 observer.next({ status: 'err', value: err });
             }
         );

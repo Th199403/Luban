@@ -759,7 +759,6 @@ export const actions = {
                         break;
                     }
                     case 'LOAD_MODEL_CONVEX': {
-                        worker.terminate();
                         const { positions } = data;
 
                         const convexGeometry = new THREE.BufferGeometry();
@@ -779,7 +778,7 @@ export const actions = {
                         break;
                     }
                     case 'LOAD_MODEL_FAILED': {
-                        worker.terminate();
+                        worker.then((pool) => pool.terminate());
                         dispatch(
                             actions.updateState(headType, {
                                 stage: STEP_STAGE.CNC_LASER_PREVIEW_FAILED,

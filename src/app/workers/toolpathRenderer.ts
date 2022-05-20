@@ -2,8 +2,14 @@ import isEmpty from 'lodash/isEmpty';
 import { Observable } from 'rxjs';
 import ToolpathToBufferGeometry from './GcodeToBufferGeometry/ToolpathToBufferGeometry';
 
-const toolpathRenderer = (taskResult) => {
-    return new Observable(async (observer) => {
+type ToolpathRendererData = {
+    data: any;
+    filenames: string[];
+    taskId: string;
+    headType: string;
+};
+const toolpathRenderer = (taskResult: ToolpathRendererData) => {
+    return new Observable((observer) => {
         if (isEmpty(taskResult.data)) {
             observer.next({
                 status: 'err',
@@ -16,9 +22,22 @@ const toolpathRenderer = (taskResult) => {
         try {
             for (let i = 0; i < taskResult.data.length; i++) {
                 const filename = taskResult.filenames[i];
-                const renderResult = await new ToolpathToBufferGeometry().parse(
+                new ToolpathToBufferGeometry().parse(
                     filename,
-                    (progress) => {
+                    (renderResult) => {
+                        const data = {
+                            status: 'data',
+                            headType: headType,
+                            value: {
+                                taskResult: taskResult,
+                                index: i,
+                                renderResult: renderResult,
+                            },
+                        };
+
+                        observer.next(data);
+                    },
+                    (progress: number) => {
                         observer.next({
                             status: 'progress',
                             headType: headType,
@@ -30,21 +49,6 @@ const toolpathRenderer = (taskResult) => {
                         });
                     }
                 );
-
-                const data = {
-                    status: 'data',
-                    headType: headType,
-                    value: {
-                        taskResult: taskResult,
-                        index: i,
-                        renderResult: renderResult,
-                    },
-                };
-
-                observer.next(data, [
-                    renderResult.positions.buffer,
-                    renderResult.gCodes.buffer,
-                ]);
             }
 
             const data = {

@@ -62,22 +62,21 @@ export const actions = {
             case 'succeed': {
                 const { modelGroup, previewModelGroup } = getState().workspace;
                 const { positions, colors, index, indexColors } = value;
-
                 const bufferGeometry = new THREE.BufferGeometry();
                 const positionAttribute = new THREE.Float32BufferAttribute(
-                    positions,
+                    positions.send,
                     3
                 );
                 const indexAttribute = new THREE.Float32BufferAttribute(
-                    index,
+                    index.send,
                     1
                 );
                 const colorAttribute = new THREE.Uint8BufferAttribute(
-                    colors,
+                    colors.send,
                     3
                 );
                 const indexColorAttribute = new THREE.Uint8BufferAttribute(
-                    indexColors,
+                    indexColors.send,
                     3
                 );
                 // this will map the buffer values to 0.0f - +1.0f in the shader
