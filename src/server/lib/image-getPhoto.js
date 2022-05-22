@@ -13,18 +13,37 @@ const log = logger('lib:camera_capture');
 /**
  * Server represents HTTP Server on Snapmaker 2.
  */
-export const takePhoto = (options) => {
+export const takePhoto = options => {
     const { address, index, x, y, z, feedRate, photoQuality } = options;
     log.info(`takePhoto: index=${index}, x=${x}, y=${y}, z=${z}, feedRate=${feedRate}, photoQuality=${photoQuality}`);
     if (connectionManager.protocol === 'SACP') {
-        return new Promise((resolve) => {
+        // const params = {
+        //     modelId: 4,
+        //     headType: 14,
+        // };
+        const params2 = {
+            modelId: 4,
+            headType: 14,
+            positionX: 265,
+            positionY: 205,
+            positionZ: 330
+        };
+        connectionManager.setPosition(params2, res => {
+            console.log('res', res);
+        });
+        return new Promise(resolve => {
             const params = {
-                index, x: 260, y: 194, z: 330, feedRate
+                // index, x: 260, y: 194, z: 330, feedRate
+                index,
+                x: 265,
+                y: 205,
+                z: 330,
+                feedRate
             };
             if (photoQuality >= 0 && photoQuality <= 255) {
                 params.photoQuality = photoQuality;
             }
-            connectionManager.takePhoto(params, (res) => {
+            connectionManager.takePhoto(params, res => {
                 resolve({
                     res: {
                         text: JSON.stringify(res)
@@ -38,7 +57,7 @@ export const takePhoto = (options) => {
         if (photoQuality >= 0 && photoQuality <= 255) {
             api += `&photoQuality=${photoQuality}`;
         }
-        return new Promise((resolve) => {
+        return new Promise(resolve => {
             request.get(api).end((err, res) => {
                 log.debug(`request_capture_photo: ${res}`);
                 resolve({
@@ -49,12 +68,12 @@ export const takePhoto = (options) => {
     }
 };
 
-export const getCameraCalibration = (options) => {
+export const getCameraCalibration = options => {
     const { address, toolHead } = options;
     log.info(`getCameraCalibration: toolHead=${toolHead}`);
     if (connectionManager.protocol === 'SACP') {
         return new Promise(resolve => {
-            connectionManager.getCameraCalibration((matrix) => {
+            connectionManager.getCameraCalibration(matrix => {
                 resolve({
                     res: {
                         text: JSON.stringify(matrix)
@@ -70,7 +89,7 @@ export const getCameraCalibration = (options) => {
             api = `http://${address}:8080/api/request_camera_calibration`;
         }
 
-        return new Promise((resolve) => {
+        return new Promise(resolve => {
             request.get(api).end((err, res) => {
                 log.debug(`request_10w_laser_camera_calibration: ${res}`);
                 resolve({
@@ -81,13 +100,12 @@ export const getCameraCalibration = (options) => {
     }
 };
 
-
-export const getPhoto = (options) => {
+export const getPhoto = options => {
     const { index, address } = options;
     log.info(`getPhoto: index=${index}`);
     if (connectionManager.protocol === 'SACP') {
         return new Promise(resolve => {
-            connectionManager.getPhoto((res) => {
+            connectionManager.getPhoto(res => {
                 if (res.success) {
                     resolve({
                         fileName: res.filename
@@ -101,7 +119,7 @@ export const getPhoto = (options) => {
         });
     } else {
         const api = `http://${address}:8080/api/get_camera_image?index=${index}`;
-        return new Promise((resolve) => {
+        return new Promise(resolve => {
             request.get(api).end((err, res) => {
                 if (res.status === 404) {
                     resolve({
@@ -121,15 +139,15 @@ export const getPhoto = (options) => {
     }
 };
 
-export const calibrationPhoto = (options) => {
+export const calibrationPhoto = options => {
     const { address, toolHead } = options;
     log.info(`calibrationPhoto: toolHead=${toolHead}`);
     if (connectionManager.protocol === 'SACP') {
         return new Promise(resolve => {
-            connectionManager.getCalibrationPhoto((res) => {
+            connectionManager.getCalibrationPhoto(res => {
                 if (res.success) {
                     const fileName = res.filename;
-                    Jimp.read(`${DataStorage.tmpDir}/${fileName}`).then((image) => {
+                    Jimp.read(`${DataStorage.tmpDir}/${fileName}`).then(image => {
                         const { width, height } = image.bitmap;
                         resolve({
                             fileName,
@@ -151,12 +169,12 @@ export const calibrationPhoto = (options) => {
         } else {
             api = `http://${address}:8080/api/v1/camera_calibration_photo`;
         }
-        return new Promise((resolve) => {
+        return new Promise(resolve => {
             request.get(api).end((err, res) => {
                 let fileName = 'calibration.jpg';
                 fileName = pathWithRandomSuffix(fileName);
                 fs.writeFile(`${DataStorage.tmpDir}/${fileName}`, res.body, () => {
-                    Jimp.read(`${DataStorage.tmpDir}/${fileName}`).then((image) => {
+                    Jimp.read(`${DataStorage.tmpDir}/${fileName}`).then(image => {
                         const { width, height } = image.bitmap;
                         resolve({
                             fileName,
@@ -170,20 +188,23 @@ export const calibrationPhoto = (options) => {
     }
 };
 
-export const setMatrix = (options) => {
+export const setMatrix = options => {
     const { matrix, address, toolHead } = options;
     log.info(`setMatrix: matrix=${matrix}, toolHead=${toolHead}`);
     if (connectionManager.protocol === 'SACP') {
         return new Promise(resolve => {
-            connectionManager.setMatrix({
-                matrix: JSON.parse(matrix)
-            }, (emptyText) => {
-                resolve({
-                    res: {
-                        text: emptyText
-                    }
-                });
-            });
+            connectionManager.setMatrix(
+                {
+                    matrix: JSON.parse(matrix)
+                },
+                emptyText => {
+                    resolve({
+                        res: {
+                            text: emptyText
+                        }
+                    });
+                }
+            );
         });
     } else {
         let api;
@@ -193,7 +214,7 @@ export const setMatrix = (options) => {
             api = `http://${address}:8080/api/set_camera_calibration_matrix`;
         }
         api += `?matrix=${matrix}`;
-        return new Promise((resolve) => {
+        return new Promise(resolve => {
             request.post(api).end((err, res) => {
                 log.debug(`set_10w_laser_camera_calibration_matrix: ${res}`);
                 resolve({

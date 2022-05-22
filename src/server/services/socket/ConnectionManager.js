@@ -4,8 +4,17 @@ import logger from '../../lib/logger';
 import socketSerial from './socket-serial';
 import socketHttp from './socket-http';
 import socketTcp from './SACP-TCP';
-import { HEAD_PRINTING, HEAD_LASER, LEVEL_TWO_POWER_LASER_FOR_SM2, MACHINE_SERIES,
-    CONNECTION_TYPE_WIFI, CONNECTION_TYPE_SERIAL, WORKFLOW_STATE_PAUSED, PORT_SCREEN_HTTP, PORT_SCREEN_SACP } from '../../constants';
+import {
+    HEAD_PRINTING,
+    HEAD_LASER,
+    LEVEL_TWO_POWER_LASER_FOR_SM2,
+    MACHINE_SERIES,
+    CONNECTION_TYPE_WIFI,
+    CONNECTION_TYPE_SERIAL,
+    WORKFLOW_STATE_PAUSED,
+    PORT_SCREEN_HTTP,
+    PORT_SCREEN_SACP
+} from '../../constants';
 import DataStorage from '../../DataStorage';
 import ScheduledTasks from '../../lib/ScheduledTasks';
 
@@ -24,19 +33,19 @@ class ConnectionManager {
 
     protocol = '';
 
-    scheduledTasksHandle
+    scheduledTasksHandle;
 
-    onConnection = (socket) => {
+    onConnection = socket => {
         socketHttp.onConnection(socket);
         socketSerial.onConnection(socket);
         this.scheduledTasksHandle = new ScheduledTasks(socket);
-    }
+    };
 
-    onDisconnection = (socket) => {
+    onDisconnection = socket => {
         socketHttp.onDisconnection(socket);
         socketSerial.onDisconnection(socket);
         this.scheduledTasksHandle.cancelTasks();
-    }
+    };
 
     refreshDevices = (socket, options) => {
         const { connectionType } = options;
@@ -45,7 +54,7 @@ class ConnectionManager {
         } else if (connectionType === CONNECTION_TYPE_SERIAL) {
             socketSerial.serialportList(socket);
         }
-    }
+    };
 
     connectionOpen = async (socket, options) => {
         const { connectionType, sacp, addByUser, address } = options;
@@ -72,7 +81,6 @@ class ConnectionManager {
                 this.socket = socketHttp;
             }
 
-
             this.socket.connectionOpen(socket, options);
         } else {
             this.socket = socketSerial;
@@ -85,42 +93,42 @@ class ConnectionManager {
         this.socket && this.socket.connectionClose(socket, options);
     };
 
-    inspectProtocol = async (address) => {
-        const [resSACP, resHTTP] = await Promise.allSettled([
-            this.tryConnect(address, PORT_SCREEN_SACP),
-            this.tryConnect(address, PORT_SCREEN_HTTP)
-        ]);
+    inspectProtocol = async address => {
+        const [resSACP, resHTTP] = await Promise.allSettled([this.tryConnect(address, PORT_SCREEN_SACP), this.tryConnect(address, PORT_SCREEN_HTTP)]);
         if (resHTTP.value) {
             return 'HTTP';
         } else if (resSACP.value) {
             return 'SACP';
         }
         return '';
-    }
+    };
 
     tryConnect = (host, port) => {
-        return new Promise((resolve) => {
-            const tcpSocket = net.createConnection({
-                host,
-                port,
-                timeout: 1000
-            }, () => {
-                tcpSocket.destroy();
-                resolve(true);
-                log.debug(`tryConnect connected ${host}:${port}`);
-            });
+        return new Promise(resolve => {
+            const tcpSocket = net.createConnection(
+                {
+                    host,
+                    port,
+                    timeout: 1000
+                },
+                () => {
+                    tcpSocket.destroy();
+                    resolve(true);
+                    log.debug(`tryConnect connected ${host}:${port}`);
+                }
+            );
             tcpSocket.once('timeout', () => {
                 tcpSocket.destroy();
                 log.debug(`tryConnect connect ${host}:${port} timeout`);
                 resolve(false);
             });
-            tcpSocket.once('error', (e) => {
+            tcpSocket.once('error', e => {
                 tcpSocket.destroy();
                 log.debug(`tryConnect connect ${host}:${port} error: ${e}`);
                 resolve(false);
             });
         });
-    }
+    };
 
     startGcode = (socket, options) => {
         const { headType, isRotate, toolHead, isLaserPrintAutoMode, materialThickness, eventName } = options;
@@ -130,16 +138,26 @@ class ConnectionManager {
             const promises = [];
             if (series !== MACHINE_SERIES.ORIGINAL.value && series !== MACHINE_SERIES.CUSTOM.value && headType === HEAD_LASER && !isRotate) {
                 if (laserFocalLength) {
-                    const promise = new Promise((resolve) => {
+                    const promise = new Promise(resolve => {
                         if (isLaserPrintAutoMode) {
-                            this.socket.executeGcode({ gcode: `G53;\nG0 Z${laserFocalLength + materialThickness} F1500;\nG54;` }, () => {
-                                resolve();
-                            });
+                            this.socket.executeGcode(
+                                {
+                                    gcode: `G53;\nG0 Z${laserFocalLength + materialThickness} F1500;\nG54;`
+                                },
+                                () => {
+                                    resolve();
+                                }
+                            );
                         } else {
                             if (toolHead === LEVEL_TWO_POWER_LASER_FOR_SM2) {
-                                this.socket.executeGcode({ gcode: `G53;\nG0 Z${laserFocalLength + materialThickness} F1500;\nG54;` }, () => {
-                                    resolve();
-                                });
+                                this.socket.executeGcode(
+                                    {
+                                        gcode: `G53;\nG0 Z${laserFocalLength + materialThickness} F1500;\nG54;`
+                                    },
+                                    () => {
+                                        resolve();
+                                    }
+                                );
                             } else {
                                 this.socket.executeGcode({ gcode: 'G0 Z0 F1500;' }, () => {
                                     resolve();
@@ -159,23 +177,27 @@ class ConnectionManager {
                     x = Math.max(0, Math.min(x, size.x - 20));
                     y = Math.max(0, Math.min(y, size.y - 20));
 
-                    const promise = new Promise((resolve) => {
-                        this.socket.executeGcode({ gcode: `G53;\nG0 X${x} Y${y};\nG54;\nG92 X${x} Y${y};` }, () => {
-                            resolve();
-                        });
+                    const promise = new Promise(resolve => {
+                        this.socket.executeGcode(
+                            {
+                                gcode: `G53;\nG0 X${x} Y${y};\nG54;\nG92 X${x} Y${y};`
+                            },
+                            () => {
+                                resolve();
+                            }
+                        );
                     });
                     promises.push(promise);
                 }
             }
-            Promise.all(promises)
-                .then(() => {
-                    this.socket.uploadGcodeFile(gcodeFilePath, headType, (msg) => {
-                        if (msg) {
-                            return;
-                        }
-                        this.socket.startGcode(options);
-                    });
+            Promise.all(promises).then(() => {
+                this.socket.uploadGcodeFile(gcodeFilePath, headType, msg => {
+                    if (msg) {
+                        return;
+                    }
+                    this.socket.startGcode(options);
                 });
+            });
         } else {
             const { workflowState } = options;
             if (headType === HEAD_LASER && workflowState !== WORKFLOW_STATE_PAUSED) {
@@ -185,23 +207,23 @@ class ConnectionManager {
                 if (!isRotate) {
                     if (toolHead === LEVEL_TWO_POWER_LASER_FOR_SM2) {
                         this.socket.command(socket, {
-                            args: [`G0 Z${(isLaserPrintAutoMode ? 0 : materialThickness)} F1000`, null]
+                            args: [`G0 Z${isLaserPrintAutoMode ? 0 : materialThickness} F1000`, null]
                         });
                     } else {
                         this.socket.command(socket, {
-                            args: [`G0 Z${(isLaserPrintAutoMode ? materialThickness : 0)} F1000`, null]
+                            args: [`G0 Z${isLaserPrintAutoMode ? materialThickness : 0} F1000`, null]
                         });
                     }
                 }
             }
             setTimeout(() => {
                 this.socket.command(socket, {
-                    cmd: 'gcode:start',
+                    cmd: 'gcode:start'
                 });
             }, 100);
             socket && socket.emit(eventName, {});
         }
-    }
+    };
 
     resumeGcode = (socket, options) => {
         if (this.connectionType === CONNECTION_TYPE_WIFI) {
@@ -216,15 +238,14 @@ class ConnectionManager {
                     args: [code]
                 });
                 this.socket.command(this.socket, {
-                    cmd: 'gcode:resume',
+                    cmd: 'gcode:resume'
                 });
             } else if (headType === HEAD_LASER) {
                 if (pauseStatus.headStatus) {
                     // resume laser power
                     const powerPercent = ensureRange(pauseStatus.headPower, 0, 100);
-                    const powerStrength = Math.floor(powerPercent * 255 / 100);
-                    const code = powerPercent !== 0 ? `M3 P${powerPercent} S${powerStrength}`
-                        : 'M3';
+                    const powerStrength = Math.floor((powerPercent * 255) / 100);
+                    const code = powerPercent !== 0 ? `M3 P${powerPercent} S${powerStrength}` : 'M3';
                     this.socket.command(this.socket, {
                         cmd: 'gcode',
                         args: [code]
@@ -232,7 +253,7 @@ class ConnectionManager {
                 }
 
                 this.socket.command(this.socket, {
-                    cmd: 'gcode:resume',
+                    cmd: 'gcode:resume'
                 });
             } else {
                 if (pauseStatus.headStatus) {
@@ -245,12 +266,12 @@ class ConnectionManager {
                     // for CNC machine, resume need to wait >500ms to let the tool head started
                     setTimeout(() => {
                         this.socket.command(this.socket, {
-                            cmd: 'gcode:resume',
+                            cmd: 'gcode:resume'
                         });
                     }, 1000);
                 } else {
                     this.socket.command(this.socket, {
-                        cmd: 'gcode:resume',
+                        cmd: 'gcode:resume'
                     });
                 }
             }
@@ -265,7 +286,7 @@ class ConnectionManager {
         } else {
             const { eventName } = options;
             this.socket.command(this.socket, {
-                cmd: 'gcode:pause',
+                cmd: 'gcode:pause'
             });
             socket && socket.emit(eventName, {});
         }
@@ -276,10 +297,10 @@ class ConnectionManager {
             this.socket.stopGcode(options);
         } else {
             this.socket.command(this.socket, {
-                cmd: 'gcode:pause',
+                cmd: 'gcode:pause'
             });
             this.socket.command(this.socket, {
-                cmd: 'gcode:stop',
+                cmd: 'gcode:stop'
             });
             const { eventName } = options;
             socket && socket.emit(eventName, {});
@@ -308,7 +329,7 @@ class ConnectionManager {
                 args: [`M104 S${nozzleTemperatureValue}`]
             });
         }
-    }
+    };
 
     updateBedTemperature = (socket, options) => {
         if (this.connectionType === CONNECTION_TYPE_WIFI) {
@@ -319,8 +340,7 @@ class ConnectionManager {
                 args: [`M140 S${heatedBedTemperatureValue}`]
             });
         }
-    }
-
+    };
 
     loadFilament = (socket, options) => {
         if (this.connectionType === CONNECTION_TYPE_WIFI) {
@@ -330,7 +350,7 @@ class ConnectionManager {
                 args: ['G91;\nG0 E60 F200;\nG90;']
             });
         }
-    }
+    };
 
     unloadFilament = (socket, options) => {
         if (this.connectionType === CONNECTION_TYPE_WIFI) {
@@ -340,7 +360,7 @@ class ConnectionManager {
                 args: ['G91;\nG0 E6 F200;\nG0 E-60 F150;\nG90;']
             });
         }
-    }
+    };
 
     updateWorkSpeedFactor = (socket, options) => {
         if (this.connectionType === CONNECTION_TYPE_WIFI) {
@@ -351,7 +371,7 @@ class ConnectionManager {
                 args: [`M220 S${workSpeedValue}`]
             });
         }
-    }
+    };
 
     updateLaserPower = (socket, options) => {
         const { isPrinting, laserPower, laserPowerOpen, eventName } = options;
@@ -359,43 +379,37 @@ class ConnectionManager {
             if (this.connectionType === CONNECTION_TYPE_WIFI) {
                 this.socket.updateLaserPower(options);
             } else {
-                this.executeGcode(
-                    this.socket,
-                    { gcode: `M3 P${laserPower} S${laserPower * 255 / 100}`, eventName }
-                );
+                this.executeGcode(this.socket, {
+                    gcode: `M3 P${laserPower} S${(laserPower * 255) / 100}`,
+                    eventName
+                });
             }
         } else {
             if (laserPowerOpen) {
-                this.executeGcode(
-                    this.socket,
-                    { gcode: `M3 P${laserPower} S${laserPower * 255 / 100}`, eventName }
-                );
+                this.executeGcode(this.socket, {
+                    gcode: `M3 P${laserPower} S${(laserPower * 255) / 100}`,
+                    eventName
+                });
             }
-            this.executeGcode(
-                this.socket,
-                { gcode: 'M500', eventName }
-            );
+            this.executeGcode(this.socket, { gcode: 'M500', eventName });
         }
-    }
+    };
 
     switchLaserPower = (socket, options) => {
         const { isSM2, laserPower, laserPowerOpen, eventName } = options;
         if (laserPowerOpen) {
-            this.executeGcode(
-                this.socket,
-                { gcode: 'M3 P0 S0', eventName }
-            );
+            this.executeGcode(this.socket, { gcode: 'M3 P0 S0', eventName });
         } else {
             if (isSM2) {
-                this.executeGcode(
-                    this.socket,
-                    { gcode: 'M3 P1 S2.55', eventName }
-                );
+                this.executeGcode(this.socket, {
+                    gcode: 'M3 P1 S2.55',
+                    eventName
+                });
             } else {
-                this.executeGcode(
-                    this.socket,
-                    { gcode: `M3 P${laserPower} S${laserPower * 255 / 100}`, eventName }
-                );
+                this.executeGcode(this.socket, {
+                    gcode: `M3 P${laserPower} S${(laserPower * 255) / 100}`,
+                    eventName
+                });
             }
         }
     };
@@ -405,10 +419,7 @@ class ConnectionManager {
             this.socket.setEnclosureLight(options);
         } else {
             const { value, eventName } = options;
-            this.executeGcode(
-                this.socket,
-                { gcode: `M1010 S3 P${value};` }
-            );
+            this.executeGcode(this.socket, { gcode: `M1010 S3 P${value};` });
             socket && socket.emit(eventName);
         }
     };
@@ -418,10 +429,7 @@ class ConnectionManager {
             this.socket.setEnclosureFan(options);
         } else {
             const { value, eventName } = options;
-            this.executeGcode(
-                this.socket,
-                { gcode: `M1010 S4 P${value};` }
-            );
+            this.executeGcode(this.socket, { gcode: `M1010 S4 P${value};` });
             socket && socket.emit(eventName);
         }
     };
@@ -431,10 +439,9 @@ class ConnectionManager {
             this.socket.setFilterSwitch(options);
         } else {
             const { value, enable } = options;
-            this.executeGcode(
-                this.socket,
-                { gcode: `M1011 F${enable ? value : 0};` }
-            );
+            this.executeGcode(this.socket, {
+                gcode: `M1011 F${enable ? value : 0};`
+            });
         }
     };
 
@@ -443,10 +450,7 @@ class ConnectionManager {
             this.socket.setFilterWorkSpeed(options);
         } else {
             const { value } = options;
-            this.executeGcode(
-                this.socket,
-                { gcode: `M1011 F${value};` }
-            );
+            this.executeGcode(this.socket, { gcode: `M1011 F${value};` });
         }
     };
 
@@ -479,29 +483,37 @@ class ConnectionManager {
 
     abortLaserMaterialThickness = (socket, options) => {
         this.socket.abortLaserMaterialThickness(options);
-    }
+    };
 
     // camera capture related, currently for socket-tcp
     takePhoto = (params, callback) => {
         this.socket.takePhoto(params, callback);
     };
 
-    getCameraCalibration = (callback) => {
+    getCameraCalibration = callback => {
         this.socket.getCameraCalibration(callback);
     };
 
-    getPhoto = (callback) => {
+    getPhoto = callback => {
         this.socket.getPhoto(callback);
     };
 
-    getCalibrationPhoto = (callback) => {
+    getCalibrationPhoto = callback => {
         this.socket.getCalibrationPhoto(callback);
     };
 
     setMatrix = (params, callback) => {
         this.socket.setMatrix(params, callback);
     };
+
     // only for Wifi
+    getPosition = (params, callback) => {
+        this.socket.getPosition(params, callback);
+    };
+
+    setPosition = (params, callback) => {
+        this.socket.setPosition(params, callback);
+    };
 }
 
 const connectionManager = new ConnectionManager();
