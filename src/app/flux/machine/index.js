@@ -447,34 +447,27 @@ export const actions = {
                     })
                 );
                 if (!isNil(airPurifier)) {
-                    dispatch(
-                        baseActions.updateState({
-                            laserFocalLength: laserFocalLength,
-                            laserPower: laserPower,
-                            nozzleTemperature: nozzleTemperature,
-                            nozzleTargetTemperature: nozzleTargetTemperature,
-                            heatedBedTemperature: heatedBedTemperature,
-                            doorSwitchCount: doorSwitchCount,
-                            heatedBedTargetTemperature: heatedBedTargetTemperature,
-                            // Note: Wifi indiviual
-                            moduleStatusList,
-                            airPurifier: airPurifier,
-                            airPurifierSwitch: airPurifierSwitch,
-                            airPurifierFanSpeed: airPurifierFanSpeed,
-                            airPurifierFilterHealth: airPurifierFilterHealth,
-                            isEmergencyStopped: isEmergencyStopped,
-                            isEnclosureDoorOpen: isEnclosureDoorOpen,
-                            workflowStatus: status,
-                            laserCamera
-                        })
-                    );
-                    dispatch(
-                        baseActions.updateState({
-                            gcodePrintingInfo: machineState.server.getGcodePrintingInfo(
-                                state
-                            )
-                        })
-                    );
+                    dispatch(baseActions.updateState({
+                        laserFocalLength: laserFocalLength,
+                        laserPower: laserPower,
+                        nozzleTemperature: nozzleTemperature,
+                        nozzleTargetTemperature: nozzleTargetTemperature,
+                        heatedBedTemperature: heatedBedTemperature,
+                        doorSwitchCount: doorSwitchCount,
+                        heatedBedTargetTemperature: heatedBedTargetTemperature,
+                        // Note: Wifi indiviual
+                        airPurifier: airPurifier,
+                        airPurifierSwitch: airPurifierSwitch,
+                        airPurifierFanSpeed: airPurifierFanSpeed,
+                        airPurifierFilterHealth: airPurifierFilterHealth,
+                        isEmergencyStopped: isEmergencyStopped,
+                        isEnclosureDoorOpen: isEnclosureDoorOpen,
+                        workflowStatus: status,
+                        laserCamera
+                    }));
+                    dispatch(baseActions.updateState({
+                        gcodePrintingInfo: machineState.server.getGcodePrintingInfo(state)
+                    }));
                 } else {
                     dispatch(
                         baseActions.updateState({
@@ -492,6 +485,11 @@ export const actions = {
                             zAxisModule: zAxisModule
                         })
                     );
+                }
+                if (!isNil(moduleStatusList)) {
+                    dispatch(baseActions.updateState({
+                        moduleStatusList
+                    }));
                 }
                 // TODO: wifi emergencyStop goes there
                 if (isEmergencyStopped) {
