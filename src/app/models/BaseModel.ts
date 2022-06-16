@@ -66,6 +66,7 @@ export type ModelInfo = {
         whiteClip: number;
         invert: boolean
         svgNodeName: string;
+        editable: boolean
     },
     mode: TMode,
     visible?: boolean,
@@ -77,6 +78,7 @@ export type ModelInfo = {
     color?: string;
     width?: number;
     height?: number;
+    paths?: string[];
     elem: SvgModelElement;
     size: TSize
 };
@@ -101,8 +103,10 @@ abstract class BaseModel {
     public modelObject3D?: Object3D;
     public meshObject: THREE.Mesh & { uniformScalingState?: boolean };
     public parent: SVGGElement;
+    public uploadName: string;
 
     public mode: TMode;
+    public paths?: string[];
 
     public width: number;
     public height: number;

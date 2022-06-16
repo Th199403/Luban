@@ -158,7 +158,7 @@ const SVGEditor = forwardRef((props, ref) => {
 
     const insertDefaultTextVector = async () => {
         const element = await props.createText('Snapmaker');
-        props.onCreateElement(element);
+        props.onCreateElement('text', element);
 
         // todo, select text after create
         // canvas.current.selectOnly([elem]);
@@ -237,7 +237,7 @@ const SVGEditor = forwardRef((props, ref) => {
                     <SVGLeftBar
                         ref={leftBarRef}
                         mode={props.SVGCanvasMode}
-                        selectEditing={!!props.SVGCanvasExt.elem}
+                        selectEditing={!!props.SVGCanvasExt?.paths}
                         insertDefaultTextVector={insertDefaultTextVector}
                         setMode={changeCanvasMode}
                         onChangeFile={props.onChangeFile}

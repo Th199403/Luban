@@ -293,8 +293,8 @@ const transformAngleFromXY = (x, y, cx, cy) => {
     return (Math.atan2(cy - y, cx - x) / Math.PI * 180 + SVG_ANGLE_OFFSET) % 360;
 };
 
-const coordGmSvgToModel = (size, elem) => {
-    const bbox = getBBox(elem);
+const coordGmSvgToModel = (size, elem, _bbox) => {
+    const bbox = _bbox || getBBox(elem);
     const angle = getRotationAngle(elem) || 0;
     const { scaleX, scaleY } = getScale(elem);
 

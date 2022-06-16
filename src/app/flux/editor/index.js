@@ -113,10 +113,10 @@ function shouldProcessModel(selectedModel) {
 }
 
 // a wrapper function for recording scaled models states
-function recordScaleActionsToHistory(scaleActionsFn, elements, SVGActions, headType, machine, dispatch) {
+function recordScaleActionsToHistory(scaleActionsFn, elements, SVGActions, headType, machine, dispatch, _operations) {
     if (typeof scaleActionsFn === 'function') {
         const tmpTransformationState = {};
-        const operations = new Operations();
+        const operations = _operations || new Operations();
         for (const element of elements) {
             const svgModel = SVGActions.getSVGModelByElement(element);
             tmpTransformationState[element.id] = {
@@ -224,14 +224,16 @@ function recordScaleActionsToHistory(scaleActionsFn, elements, SVGActions, headT
                 });
             }
         });
-        // all the SVGModel changed, record operations to history
-        Promise.all(promises)
-            .then(() => {
-                dispatch(operationHistoryActions.setOperations(headType, operations));
-            })
-            .catch(() => {
-                dispatch(operationHistoryActions.setOperations(headType, operations));
-            });
+        if (!_operations) {
+            // all the SVGModel changed, record operations to history
+            Promise.all(promises)
+                .then(() => {
+                    dispatch(operationHistoryActions.setOperations(headType, operations));
+                })
+                .catch(() => {
+                    dispatch(operationHistoryActions.setOperations(headType, operations));
+                });
+        }
     }
 }
 
@@ -312,7 +314,7 @@ export const actions = {
                 );
             });
 
-            controller.on('taskProgress:cutModel', () => {});
+            controller.on('taskProgress:cutModel', () => { });
 
             // task completed
             controller.on('taskCompleted:processImage', taskResult => {
@@ -522,7 +524,7 @@ export const actions = {
 
         api.uploadImage(formData)
             .then(res => {
-                const { width, height, originalName, uploadName } = res.body;
+                const { width, height, originalName, uploadName, paths } = res.body;
                 dispatch(
                     actions.generateModel(headType, {
                         originalName,
@@ -530,7 +532,8 @@ export const actions = {
                         sourceWidth: width,
                         sourceHeight: height,
                         mode,
-                        config: { svgNodeName: 'image' },
+                        paths,
+                        config: { svgNodeName: 'image', editable: !!paths },
                         isLimit
                     })
                 );
@@ -643,7 +646,7 @@ export const actions = {
      */
     generateModel: (
         headType,
-        { originalName, uploadName, sourceWidth, sourceHeight, mode, sourceType, config, gcodeConfig, transformation, modelID, zIndex, isLimit }
+        { originalName, uploadName, sourceWidth, sourceHeight, mode, sourceType, config, gcodeConfig, transformation, modelID, zIndex, isLimit, paths }
     ) => (dispatch, getState) => {
         const { size } = getState().machine;
         const { materials, modelGroup, SVGActions, contentGroup, toolPathGroup, coordinateMode, coordinateSize } = getState()[headType];
@@ -742,6 +745,7 @@ export const actions = {
             gcodeConfig,
             zIndex,
             isRotate: materials.isRotate,
+            paths,
             elem: contentGroup.addSVGElement({
                 element: config.svgNodeName === 'text' ? 'image' : config.svgNodeName || 'image',
                 attr: { id: modelID }
@@ -1332,7 +1336,8 @@ export const actions = {
     /**
      * Create model from element.
      */
-    createModelFromElement: (headType, element) => async (dispatch, getState) => {
+    createModelFromElement: (headType, mode, element) => async (dispatch, getState) => {
+        console.log(mode, element);
         const { SVGActions, toolPathGroup } = getState()[headType];
 
         const newSVGModel = await SVGActions.createModelFromElement(element);
@@ -1460,13 +1465,17 @@ export const actions = {
      * Move elements finish.
      */
     moveElementsFinish: (headType, elements, options) => (dispatch, getState) => {
+        console.log('这个地方会报错', elements);
+
         const { SVGActions } = getState()[headType];
         const { machine } = getState();
 
         const tmpTransformationState = {};
         for (const element of elements) {
             const svgModel = SVGActions.getSVGModelByElement(element);
-            tmpTransformationState[element.id] = { ...svgModel.transformation };
+            if (svgModel) {
+                tmpTransformationState[element.id] = { ...svgModel.transformation };
+            }
         }
 
         SVGActions.moveElementsFinish(elements, options);
@@ -1474,15 +1483,17 @@ export const actions = {
         const operations = new Operations();
         for (const element of elements) {
             const svgModel = SVGActions.getSVGModelByElement(element);
-            if (whetherTransformed(tmpTransformationState[element.id], svgModel.transformation)) {
-                const operation = new MoveOperation2D({
-                    target: svgModel,
-                    svgActions: SVGActions,
-                    machine,
-                    from: tmpTransformationState[element.id],
-                    to: { ...svgModel.transformation }
-                });
-                operations.push(operation);
+            if (svgModel) {
+                if (whetherTransformed(tmpTransformationState[element.id], svgModel.transformation)) {
+                    const operation = new MoveOperation2D({
+                        target: svgModel,
+                        svgActions: SVGActions,
+                        machine,
+                        from: tmpTransformationState[element.id],
+                        to: { ...svgModel.transformation }
+                    });
+                    operations.push(operation);
+                }
             }
         }
         dispatch(actions.resetProcessState(headType));
@@ -1568,7 +1579,7 @@ export const actions = {
     /**
      * Resize elements finish.
      */
-    resizeElementsFinish: (headType, elements, options) => async (dispatch, getState) => {
+    resizeElementsFinish: (headType, elements, options, _operations) => async (dispatch, getState) => {
         const { SVGActions, modelGroup } = getState()[headType];
         const { machine } = getState();
 
@@ -1580,7 +1591,8 @@ export const actions = {
             SVGActions,
             headType,
             machine,
-            dispatch
+            dispatch,
+            _operations
         );
 
         dispatch(actions.resetProcessState(headType));
@@ -2171,7 +2183,7 @@ export const actions = {
                             throw new Error('geometry invalid');
                         }
                     },
-                    () => {}, // onprogress
+                    () => { }, // onprogress
                     err => {
                         onError && onError(err);
                         dispatch(
@@ -2258,11 +2270,14 @@ export const actions = {
             })
         );
     },
-    drawTransformComplete: (headType, elem, before, after) => (dispatch, getState) => {
-        const { contentGroup, history, SVGActions } = getState()[headType];
+    drawTransformComplete: (headType, { modelID, before, after, bbox }) => async (dispatch, getState) => {
+        const { modelGroup, contentGroup, history, SVGActions } = getState()[headType];
         history.clearDrawOperations();
+        const model = modelGroup.getModel(modelID);
+        if (!model) {
+            return;
+        }
         if (before !== after) {
-            const model = SVGActions.getSVGModelByElement(elem);
             if (after === '') {
                 // delete model
                 SVGActions.clearSelection();
@@ -2270,30 +2285,60 @@ export const actions = {
                 dispatch(actions.removeSelectedModelsByCallback(headType, 'select'));
                 return;
             }
-            const operations = new Operations();
-            const operation = new DrawTransformComplete({
+            const obj = {
                 svgModel: model,
-                before,
-                after,
-                drawGroup: contentGroup.drawGroup
-            });
+                before: {
+                    paths: before,
+                    width: model.width,
+                    height: model.height,
+                    x: model.transformation.positionX + 320 - model.width / 2,
+                    y: 350 - model.transformation.positionY - model.height / 2,
+                    uploadName: model.uploadName,
+                },
+                after: {
+                    paths: after,
+                    width: 0,
+                    height: 0,
+                    x: 0,
+                    y: 0,
+                    uploadName: '',
+                },
+                drawGroup: contentGroup.drawGroup,
+            };
+            // SvgModel.completeElementTransform(elem);
+            model.paths = after;
+            const fileInfo = await model.updateSource(bbox);
+            console.log('@@@@@@@@@@@@@@', fileInfo, bbox);
+            if (model.config.editable && model.config.svgNodeName === 'image') {
+                obj.after.uploadName = fileInfo.uploadName;
+                obj.after.width = bbox.width;
+                obj.after.height = bbox.height;
+                obj.after.x = bbox.x;
+                obj.after.y = bbox.y;
+            }
+            const operations = new Operations();
+            const operation = new DrawTransformComplete(obj);
+            // model.onTransform();
+            model.elem.setAttribute('visibility', 'visible');
+
             operations.push(operation);
             history.push(operations);
-
-            SvgModel.completeElementTransform(elem);
-            model.onTransform();
-            model.updateSource();
-
-            dispatch(
-                actions.updateState(headType, {
-                    history
-                })
-            );
+            dispatch(actions.updateState(headType, {
+                history
+            }));
             dispatch(actions.resetProcessState(headType));
             dispatch(projectActions.autoSaveEnvironment(headType));
+        } else {
+            if (model.config.editable) {
+                model.elem.setAttribute('href', `/data/Tmp/${model.uploadName}`);
+            }
+        }
+        if (model.config.editable) {
+            // dispatch(actions.clearSelection(headType));
+            dispatch(actions.selectElements(headType, [model.elem]));
         }
     },
-    drawStart: (headType, elem) => (dispatch, getState) => {
+    drawStart: (headType, modelID) => (dispatch, getState) => {
         const { contentGroup, history } = getState()[headType];
 
         if (history.history[history.index]?.operations[0] instanceof DrawStart) {
@@ -2301,7 +2346,7 @@ export const actions = {
         }
         const operations = new Operations();
         const operation = new DrawStart({
-            elemID: elem ? elem.getAttribute('id') : '',
+            elemID: modelID,
             contentGroup
         });
         operations.push(operation);
@@ -2312,17 +2357,17 @@ export const actions = {
             })
         );
     },
-    drawComplete: (headType, elem) => (dispatch, getState) => {
+    drawComplete: (headType, modelID, element) => (dispatch, getState) => {
         const { history } = getState()[headType];
 
-        if (elem) {
+        if (element) {
             history.clearDrawOperations();
             dispatch(
                 actions.updateState(headType, {
                     history
                 })
             );
-            dispatch(actions.createModelFromElement(headType, elem, true));
+            dispatch(actions.createModelFromElement(headType, 'draw', element));
             dispatch(actions.resetProcessState(headType));
         }
     },
@@ -2375,7 +2420,7 @@ export const actions = {
         if (!ext) {
             ext = {};
         }
-        if (mode === 'draw' || ext?.elem) {
+        if (mode === 'draw' || ext?.paths) {
             SVGActions.svgContentGroup.operatorPoints.showOperator(false);
         } else {
             SVGActions.svgContentGroup.operatorPoints.showOperator(true);

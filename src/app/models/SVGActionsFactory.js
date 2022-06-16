@@ -54,7 +54,7 @@ function genModelConfig(elem, size, materials = {}) {
         coord.positionX = 0;
     }
 
-    const isDraw = elem.getAttribute('id')?.includes('graph');
+    const isDraw = !!elem.getAttribute('preset');
     if (elem.nodeName === 'path') {
         if (!isDraw) {
             coord.positionX = +elem.getAttribute('x') + coord.width / 2 * coord.scaleX - size.x;
@@ -405,13 +405,23 @@ class SVGActionsFactory {
     //     svgModel.refresh();
     // }
 
-    getSVGModelByElement(elem) {
+    getSVGModelByID(modelID) {
         for (const svgModel of this.modelGroup.models) {
-            if (svgModel.elem === elem) {
+            if (svgModel.modelID === modelID) {
                 return svgModel;
             }
         }
         return null;
+    }
+
+    getSVGModelByElement(elem) {
+        let model = null;
+        for (const svgModel of this.modelGroup.models) {
+            if (svgModel.elem === elem) {
+                model = svgModel;
+            }
+        }
+        return model;
     }
 
     getModelsByElements(elems) {
@@ -557,13 +567,19 @@ class SVGActionsFactory {
 
                 const formData = new FormData();
                 formData.append('image', file);
+                formData.append('needSetCenter', false);
                 res = await api.uploadImage(formData);
             }
-            const { originalName, uploadName, width, height } = res.body;
+            const { originalName, uploadName, width, height, paths, } = res.body;
             const sourceType = 'svg';
             const mode = 'vector';
             let { config, gcodeConfig } = generateModelDefaultConfigs(headType, sourceType, mode, isRotate);
-            config = { ...config, ...elemConfig };
+            config = {
+                ...config,
+                ...elemConfig,
+                editable: true,
+                svgNodeName: 'image'
+            };
             gcodeConfig = { ...gcodeConfig };
 
             const options = {
@@ -582,7 +598,8 @@ class SVGActionsFactory {
                 config,
                 gcodeConfig,
                 elem: element,
-                size: this.size
+                size: this.size,
+                paths
             };
 
             const svgModel = this.modelGroup.addModel(options);
@@ -875,7 +892,7 @@ class SVGActionsFactory {
     moveElementsFinish(elements) {
         for (const element of elements) {
             SvgModel.completeElementTransform(element);
-            this.getSVGModelByElement(element).onTransform();
+            this.getSVGModelByElement(element)?.onTransform();
         }
 
         // update selector

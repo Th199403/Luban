@@ -298,14 +298,14 @@ class Visualizer extends Component {
         onDrawTransform: ({ before, after }) => {
             this.props.onDrawTransform(before, after);
         },
-        onDrawTransformComplete: ({ elem, before, after }) => {
-            this.props.onDrawTransformComplete(elem, before, after);
+        onDrawTransformComplete: (...args) => {
+            this.props.onDrawTransformComplete(args);
         },
         onDrawStart: (elem) => {
             this.props.onDrawStart(elem);
         },
-        onDrawComplete: (elem) => {
-            this.props.onDrawComplete(elem);
+        onDrawComplete: (modelID, paths) => {
+            this.props.onDrawComplete(modelID, paths);
         },
         onBoxSelect: (bbox, onlyContainSelect) => {
             this.props.onBoxSelect(bbox, onlyContainSelect);
@@ -762,9 +762,9 @@ const mapDispatchToProps = (dispatch) => {
         onDrawLine: (line, closedLoop) => dispatch(editorActions.drawLine('cnc', line, closedLoop)),
         onDrawDelete: (lines) => dispatch(editorActions.drawDelete('cnc', lines)),
         onDrawTransform: (before, after) => dispatch(editorActions.drawTransform('cnc', before, after)),
-        onDrawTransformComplete: (elem, before, after) => dispatch(editorActions.drawTransformComplete('cnc', elem, before, after)),
+        onDrawTransformComplete: (...args) => dispatch(editorActions.drawTransformComplete('cnc', ...args)),
         onDrawStart: (elem) => dispatch(editorActions.drawStart('cnc', elem)),
-        onDrawComplete: (elem) => dispatch(editorActions.drawComplete('cnc', elem)),
+        onDrawComplete: (modelID, paths) => dispatch(editorActions.drawComplete('cnc', modelID, paths)),
         onBoxSelect: (bbox, onlyContainSelect) => dispatch(editorActions.boxSelect('cnc', bbox, onlyContainSelect)),
         setMode: (mode, ext) => dispatch(editorActions.setCanvasMode('cnc', mode, ext)),
 

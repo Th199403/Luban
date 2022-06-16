@@ -150,17 +150,12 @@ export const actions = {
     recoverModels: (promiseArray = [], modActions, models, envHeadType) => (dispatch) => {
         for (let k = 0; k < models.length; k++) {
             const { headType, originalName, uploadName, modelName, config, sourceType, gcodeConfig,
-                sourceWidth, sourceHeight, mode, transformation, modelID, supportTag, extruderConfig, children, parentModelID } = models[k];
+                sourceWidth, sourceHeight, mode, transformation, modelID, supportTag, extruderConfig, children, parentModelID, paths } = models[k];
             const primeTowerTag = includes(originalName, 'prime_tower');
             // prevent project recovery recorded into operation history
             if (supportTag) {
                 continue;
             }
-            if (!children) {
-                // excludeModelById only works for models except group
-                dispatch(operationHistoryActions.excludeModelById(envHeadType, modelID));
-            }
-
             promiseArray.push(
                 dispatch(modActions.generateModel(headType, {
                     loadFrom: LOAD_MODEL_FROM_OUTER,
@@ -179,7 +174,8 @@ export const actions = {
                     isGroup: !!children,
                     parentModelID,
                     children,
-                    primeTowerTag
+                    primeTowerTag,
+                    paths
                 }))
             );
             if (children && children.length > 0) {
@@ -437,6 +433,7 @@ export const actions = {
                 }
             });
         }
+        // TODO clear history
     },
 
     // Note: add progress bar when saving project file

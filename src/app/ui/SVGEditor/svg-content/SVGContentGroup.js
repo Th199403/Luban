@@ -32,10 +32,8 @@ class SVGContentGroup {
 
     onExitModelEditing = noop;
 
-    preSelectionGroup = null
-
     constructor(options) {
-        const { svgContent, scale } = options;
+        const { svgContent, scale, drawableGroup } = options;
 
         this.svgContent = svgContent;
         this.scale = scale;
@@ -46,12 +44,10 @@ class SVGContentGroup {
         this.group = document.createElementNS(NS.SVG, 'g');
         this.group.setAttribute('id', 'svg-data');
 
-        this.preSelectionGroup = document.createElementNS(NS.SVG, 'g');
-        this.preSelectionGroup.setAttribute('id', 'svg-pre-selection');
-
         this.svgContent.append(this.backgroundGroup);
         this.svgContent.append(this.group);
-        this.svgContent.append(this.preSelectionGroup);
+        this.drawableGroup = drawableGroup;
+        this.svgContent.append(drawableGroup);
 
         this.initFilter();
         // this.selectorManager = new SelectorManager({
@@ -64,7 +60,7 @@ class SVGContentGroup {
         });
         this.operatorPoints.showOperator(true);
 
-        this.drawGroup = new DrawGroup(this.group, this.scale);
+        this.drawGroup = new DrawGroup(this.group, this.scale, this.drawableGroup);
 
         this.drawGroup.onDrawLine = (line, closedLoop) => {
             this.onDrawLine(line, closedLoop);
@@ -75,14 +71,14 @@ class SVGContentGroup {
         this.drawGroup.onDrawTransform = ({ before, after }) => {
             this.onDrawTransform({ before, after });
         };
-        this.drawGroup.onDrawTransformComplete = ({ elem, before, after }) => {
-            this.onDrawTransformComplete({ elem, before, after });
+        this.drawGroup.onDrawTransformComplete = (...args) => {
+            this.onDrawTransformComplete(...args);
         };
         this.drawGroup.onDrawStart = (elem) => {
             this.onDrawStart(elem);
         };
-        this.drawGroup.onDrawComplete = (svg) => {
-            this.onDrawComplete(svg);
+        this.drawGroup.onDrawComplete = (modelID, paths) => {
+            this.onDrawComplete(modelID, paths);
         };
     }
 

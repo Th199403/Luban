@@ -1,9 +1,22 @@
+import { ModelTransformation } from '../../models/BaseModel';
+import SVGActionsFactory from '../../models/SVGActionsFactory';
+import SvgModel from '../../models/SvgModel';
 import Operation from './Operation';
 
-export default class MoveOperation2D extends Operation {
-    state = {};
+type TState = {
+    target: SvgModel,
+    from: ModelTransformation,
+    to: ModelTransformation,
+    machine: {
+        size: { x: number, y: number }
+    },
+    svgActions: SVGActionsFactory,
+    oldPaths?: string[];
+    newPaths?: string[];
+}
 
-    constructor(state) {
+export default class MoveOperation2D extends Operation<TState> {
+    public constructor(state) {
         super();
         this.state = {
             target: null, // SvgModel
@@ -13,9 +26,23 @@ export default class MoveOperation2D extends Operation {
             svgActions: null, // SVGActionsFactory instance
             ...state
         };
+        const svgModel = this.state.target;
+        if (svgModel.config.editable) {
+            this.state.oldPaths = svgModel.paths;
+            svgModel.updateSvgPaths(this.state.from);
+            this.state.newPaths = svgModel.paths;
+        }
     }
 
-    redo() {
+    private updatePaths(paths: string[]) {
+        const svgModel = this.state.target;
+
+        if (svgModel.config.editable && paths) {
+            svgModel.paths = paths;
+        }
+    }
+
+    public redo() {
         const model = this.state.target;
         const svgActions = this.state.svgActions;
         svgActions.moveElementsImmediately([model.elem], {
@@ -23,9 +50,10 @@ export default class MoveOperation2D extends Operation {
             newY: -this.state.to.positionY + this.state.machine.size.y
         });
         svgActions.clearSelection();
+        this.updatePaths(this.state.newPaths);
     }
 
-    undo() {
+    public undo() {
         const model = this.state.target;
         const svgActions = this.state.svgActions;
         svgActions.moveElementsImmediately([model.elem], {
@@ -33,5 +61,6 @@ export default class MoveOperation2D extends Operation {
             newY: -this.state.from.positionY + this.state.machine.size.y
         });
         svgActions.clearSelection();
+        this.updatePaths(this.state.oldPaths);
     }
 }

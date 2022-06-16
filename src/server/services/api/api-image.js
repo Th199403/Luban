@@ -42,7 +42,7 @@ const moveFile = (originalPath, tempPath) => {
 
 export const set = async (req, res) => {
     const files = req.files;
-    const { isRotate } = req.body;
+    const { isRotate, needSetCenter = true } = req.body;
     let originalName, tempName, tempPath, originalPath;
     // if 'files' does not exist, the model in the case library is being loaded
     if (files) {
@@ -61,6 +61,7 @@ export const set = async (req, res) => {
         tempPath = `${DataStorage.tmpDir}/${tempName}`;
     }
     const extname = path.extname(tempName).toLowerCase();
+    console.log('extname =', needSetCenter);
 
     try {
         if (files) {
@@ -94,12 +95,13 @@ export const set = async (req, res) => {
         }
         if (extname === '.svg') {
             const svgParser = new SVGParser();
-            const svg = await svgParser.parseFile(tempPath);
+            const svg = await svgParser.parseFile(tempPath, needSetCenter !== 'false');
             res.send({
                 originalName: originalName,
-                uploadName: tempName,
+                uploadName: svg.uploadName,
                 width: svg.width,
                 height: svg.height,
+                paths: svg.paths
             });
         } else if (extname === '.dxf') {
             const result = await parseDxf(tempPath);
@@ -153,6 +155,7 @@ export const set = async (req, res) => {
                 });
         }
     } catch (err) {
+        console.log(err);
         log.error(`Failed to read image ${tempName} ,${err.message} `);
         res.status(ERR_INTERNAL_SERVER_ERROR).end();
     }

@@ -1,21 +1,51 @@
+import { ModelTransformation } from '../../models/BaseModel';
+import SVGActionsFactory from '../../models/SVGActionsFactory';
+import SvgModel from '../../models/SvgModel';
 import Operation from './Operation';
 
-export default class ScaleOperation2D extends Operation {
-    state = {};
+type Transform = ModelTransformation & {
+    refImage: string
+}
 
-    constructor(state) {
+type TState = {
+    target: SvgModel,
+    from: Transform, // original SvgModel.transformation
+    to: Transform, // distination SvgModel.transformation
+    machine: { // machine series info, the size may be changed
+        size: { x: number, y: number }
+    },
+    svgActions: SVGActionsFactory, // SVGActionsFactory instance
+    oldPaths?: string[];
+    newPaths?: string[];
+}
+
+export default class ScaleOperation2D extends Operation<TState> {
+    public constructor(state) {
         super();
         this.state = {
-            target: null, // SvgModel
-            from: null, // original SvgModel.transformation
-            to: null, // distination SvgModel.transformation
-            machine: null, // machine series info, the size may be changed
-            svgActions: null, // SVGActionsFactory instance
-            ...state
+            target: state.target, // SvgModel
+            from: state.from, // original SvgModel.transformation
+            to: state.to, // distination SvgModel.transformation
+            machine: state.machine, // machine series info, the size may be changed
+            svgActions: state.svgActions, // SVGActionsFactory instance
         };
+        const svgModel = this.state.target;
+        if (svgModel.config.editable) {
+            this.state.oldPaths = svgModel.paths;
+            svgModel.updateSvgPaths(this.state.from);
+            this.state.newPaths = svgModel.paths;
+        }
     }
 
-    redo() {
+    private updatePaths(paths: string[]) {
+        const svgModel = this.state.target;
+
+        if (svgModel.config.editable && paths) {
+            svgModel.paths = paths;
+        }
+    }
+
+    public redo() {
         const model = this.state.target;
         const svgActions = this.state.svgActions;
         const elements = [model.elem];
@@ -44,9 +74,10 @@ export default class ScaleOperation2D extends Operation {
         } else {
             restore();
         }
+        this.updatePaths(this.state.newPaths);
     }
 
-    undo() {
+    public undo() {
         const model = this.state.target;
         const svgActions = this.state.svgActions;
         const elements = [model.elem];
@@ -75,5 +106,6 @@ export default class ScaleOperation2D extends Operation {
         } else {
             restore();
         }
+        this.updatePaths(this.state.oldPaths);
     }
 }
