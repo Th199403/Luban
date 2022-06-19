@@ -764,7 +764,7 @@ const mapDispatchToProps = (dispatch) => {
         onDrawTransform: (before, after) => dispatch(editorActions.drawTransform('cnc', before, after)),
         onDrawTransformComplete: (...args) => dispatch(editorActions.drawTransformComplete('cnc', ...args)),
         onDrawStart: (elem) => dispatch(editorActions.drawStart('cnc', elem)),
-        onDrawComplete: (modelID, paths) => dispatch(editorActions.drawComplete('cnc', modelID, paths)),
+        onDrawComplete: (elem) => dispatch(editorActions.drawComplete('cnc', elem)),
         onBoxSelect: (bbox, onlyContainSelect) => dispatch(editorActions.boxSelect('cnc', bbox, onlyContainSelect)),
         setMode: (mode, ext) => dispatch(editorActions.setCanvasMode('cnc', mode, ext)),
 

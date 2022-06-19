@@ -521,22 +521,28 @@ class SvgModel extends BaseModel {
 
     public calculationPath(path: string) {
         const allPoints: [number, number][][] = [];
-        svgPath(path).iterate((segment, __, x, y) => {
-            const arr = cloneDeep(segment);
-            const mark = arr.shift();
+        svgPath(path).abs().unarc().unshort()
+            .iterate((segment, __, x, y) => {
+                const arr = cloneDeep(segment) as unknown as number[];
+                const mark = arr.shift().toString();
 
-            if (mark !== 'M' && mark !== 'Z') {
-                const points: [number, number][] = [];
-                points.push([x, y]);
-                for (let index = 0; index < arr.length; index += 2) {
-                    points.push([
-                        Number(arr[index]),
-                        Number(arr[index + 1])
-                    ]);
+                if (mark !== 'M' && mark !== 'Z') {
+                    if (mark === 'H') {
+                        arr.push(y);
+                    } else if (mark === 'V') {
+                        arr.unshift(x);
+                    }
+                    const points: [number, number][] = [];
+                    points.push([x, y]);
+                    for (let index = 0; index < arr.length; index += 2) {
+                        points.push([
+                            Number(arr[index]),
+                            Number(arr[index + 1])
+                        ]);
+                    }
+                    allPoints.push(points);
                 }
-                allPoints.push(points);
-            }
-        });
+            });
 
         const sorted: { item: [number, number][], connected: boolean }[] = [];
         const findConnect = (arr) => {
@@ -646,17 +652,19 @@ class SvgModel extends BaseModel {
         return paths;
     }
 
-    public genModelConfig(pathBbox) {
+    public genModelConfig() {
         const elem = this.elem;
-        const coord = coordGmSvgToModel(this.size, elem, pathBbox);
+        const coord = coordGmSvgToModel(this.size, elem);
 
         const { x, y, width, height, positionX, positionY } = coord;
         let modelContent = '';
         // const isDraw = elem.getAttribute('id')?.includes('graph');
 
-        if (this.paths) {
+        if (this.config.svgNodeName === 'path') {
             // 应用节点的transform
-            const segments = this.paths.map((item) => {
+            const path = elem.getAttribute('d');
+            const paths = this.calculationPath(path);
+            const segments = paths.map((item) => {
                 const temp = createSVGElement({
                     element: 'path',
                     attr: {}
@@ -733,11 +741,11 @@ class SvgModel extends BaseModel {
     }
 
     // update model source file
-    public async updateSource(pathBbox) {
+    public async updateSource() {
         // svg and image files(always has this.type = 'image') do nothing
-        // if (this.type === 'image') return null;
+        if (this.type === 'image') return null;
         const bbox = this.elem.getBBox();
-        const fileInfo = await this.uploadSourceFile(pathBbox);
+        const fileInfo = await this.uploadSourceFile();
         const uploadName = fileInfo.uploadName;
 
         const processImageName = uploadName,
@@ -764,8 +772,8 @@ class SvgModel extends BaseModel {
         };
     }
 
-    public async uploadSourceFile(pathBbox) {
-        const { content } = this.genModelConfig(pathBbox);
+    public async uploadSourceFile() {
+        const { content } = this.genModelConfig();
 
         const blob = new Blob([content], { type: 'image/svg+xml' });
         const file = new File([blob], 'gen.svg');
@@ -777,22 +785,24 @@ class SvgModel extends BaseModel {
     }
 
     public updateSvgPaths(preTransformation: ModelTransformation) {
-        const preScaleX = Math.abs(preTransformation.width / this.width);
-        const preScaleY = Math.abs(preTransformation.height / this.height);
+        console.log(preTransformation);
 
-        const scaleX = Math.abs(this.transformation.width / this.width);
-        const scaleY = Math.abs(this.transformation.height / this.height);
+        // const preScaleX = Math.abs(preTransformation.width / this.width);
+        // const preScaleY = Math.abs(preTransformation.height / this.height);
 
-        this.paths = [
-            svgPath(this.paths.join(' Z '))
-                .translate(-320 - preTransformation.positionX, -350 + preTransformation.positionY)
-                .scale(scaleX / preScaleX, scaleY / preScaleY)
-                .scale(this.transformation.scaleX / preTransformation.scaleX, this.transformation.scaleY / preTransformation.scaleY)
-                .rotate(preTransformation.rotationZ / Math.PI * 180)
-                .rotate(-this.transformation.rotationZ / Math.PI * 180)
-                .translate(320 + this.transformation.positionX, 350 - this.transformation.positionY)
-                .toString()
-        ];
+        // const scaleX = Math.abs(this.transformation.width / this.width);
+        // const scaleY = Math.abs(this.transformation.height / this.height);
+
+        // this.paths = [
+        //     svgPath(this.paths.join(' Z '))
+        //         .translate(-320 - preTransformation.positionX, -350 + preTransformation.positionY)
+        //         .scale(scaleX / preScaleX, scaleY / preScaleY)
+        //         .scale(this.transformation.scaleX / preTransformation.scaleX, this.transformation.scaleY / preTransformation.scaleY)
+        //         .rotate(preTransformation.rotationZ / Math.PI * 180)
+        //         .rotate(-this.transformation.rotationZ / Math.PI * 180)
+        //         .translate(320 + this.transformation.positionX, 350 - this.transformation.positionY)
+        //         .toString()
+        // ];
         console.log('update svg paths = ', this.paths);
     }
 
@@ -802,11 +812,6 @@ class SvgModel extends BaseModel {
             this.elem.setAttribute('transform', 'translate(0,0)');
         }
         return this.elem.transform.baseVal;
-    }
-
-    public isDrawGraphic() {
-        return this.elem.getAttribute('id')?.includes('graph');
-        // || this.config.editable;
     }
 
     public refreshElemAttrs() {
@@ -836,44 +841,38 @@ class SvgModel extends BaseModel {
             //     numberAttrs.push('x1', 'y1', 'x2', 'y2');
             //     break;
             case 'path': {
-                // const isDraw = this.isDrawGraphic();
-                // if (isDraw) {
-                //     const d = elem.getAttribute('d');
-                //     const bbox = elem.getBBox();
-                //     const cx = bbox.x + bbox.width / 2;
-                //     const cy = bbox.y + bbox.height / 2;
-                //     // clone Model
-                //     if (cx !== x || cy !== y) {
-                //         const newPath = svgPath(d)
-                //             .translate(x - cx, y - cy)
-                //             .toString();
-                //         elem.setAttribute('d', newPath);
-                //     }
-                //     break;
-                // }
-                // if (this.tempElem) {
-                //     break;
-                // }
-                const imageElement = document.createElementNS(NS.SVG, 'image') as SVGImageElement;
-                const absWidth = Math.abs(width), absHeight = Math.abs(height);
-                const attributes = {
-                    // from: 'inner-svg',
-                    'href': href, // .replace(/\.svg$/, 'parsed.svg'),
-                    'id': elem.getAttribute('id'),
-                    'x': x - absWidth / 2,
-                    'y': y - absHeight / 2,
-                    editable: 'true',
-                    width: absWidth,
-                    height: absHeight
-                };
-                // // set attribute
-                for (const [key, value] of Object.entries(attributes)) {
-                    imageElement.setAttribute(key, `${value}`);
+                const d = elem.getAttribute('d');
+                const bbox = elem.getBBox();
+                const cx = bbox.x + bbox.width / 2;
+                const cy = bbox.y + bbox.height / 2;
+                // clone Model
+                if (cx !== x || cy !== y) {
+                    const newPath = svgPath(d)
+                        .translate(x - cx, y - cy)
+                        .toString();
+                    elem.setAttribute('d', newPath);
                 }
-                this.elem.parentNode.append(imageElement);
-                this.elem.remove();
-                this.elem = imageElement;
                 break;
+                // const imageElement = document.createElementNS(NS.SVG, 'image') as SVGImageElement;
+                // const absWidth = Math.abs(width), absHeight = Math.abs(height);
+                // const attributes = {
+                //     // from: 'inner-svg',
+                //     'href': href, // .replace(/\.svg$/, 'parsed.svg'),
+                //     'id': elem.getAttribute('id'),
+                //     'x': x - absWidth / 2,
+                //     'y': y - absHeight / 2,
+                //     editable: 'true',
+                //     width: absWidth,
+                //     height: absHeight
+                // };
+                // // // set attribute
+                // for (const [key, value] of Object.entries(attributes)) {
+                //     imageElement.setAttribute(key, `${value}`);
+                // }
+                // this.elem.parentNode.append(imageElement);
+                // this.elem.remove();
+                // this.elem = imageElement;
+                // break;
             }
             case 'rect': {
                 elem.setAttribute('x', `${x - width / 2}`);
@@ -1217,8 +1216,7 @@ class SvgModel extends BaseModel {
         // Not to update source for text, because <path> need to remap first
         // Todo, <Path> error, add remap method or not to use model source
         // this.updateSource();
-        const isDraw = this.isDrawGraphic();
-        if (isDraw) {
+        if (this.type === 'path') {
             this.config.d = this.elem.getAttribute('d');
         }
         this.computevertexPoints();
@@ -1261,8 +1259,7 @@ class SvgModel extends BaseModel {
     public clone(modelGroup: ModelGroup) {
         const clone = new SvgModel({ ...this } as unknown as ModelInfo, modelGroup);
         clone.originModelID = this.modelID;
-        const specialPrefix = this.isDrawGraphic() ? 'graph-' : '';
-        clone.modelID = `${specialPrefix}${uuid()}`;
+        clone.modelID = `id${uuid()}`;
         clone.updateConfig(clone.config);
         clone.generateModelObject3D();
         clone.generateProcessObject3D();
@@ -1294,7 +1291,7 @@ class SvgModel extends BaseModel {
     public getSerializableConfig() {
         const {
             modelID, limitSize, headType, sourceType, originalName, config, mode,
-            transformation, visible, sourceHeight, sourceWidth, paths
+            transformation, visible, sourceHeight, sourceWidth
         } = this;
         return {
             modelID,
@@ -1309,8 +1306,7 @@ class SvgModel extends BaseModel {
             visible,
             mode,
             transformation,
-            processImageName: this.resource.processedFile.name,
-            paths
+            processImageName: this.resource.processedFile.name
         };
     }
 

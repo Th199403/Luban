@@ -55,7 +55,9 @@ class SVGParser {
                     return;
                 }
                 try {
+                    console.log('$$$$$$$$$$$$', xml);
                     const paths = await svg2path(xml);
+                    console.log('$$$$$$$$$$$$', paths);
                     resolve(await this.readString(paths));
                 } catch (e) {
                     reject(e);
@@ -216,25 +218,25 @@ class SVGParser {
         }
         const width = boundingBox.maxX - boundingBox.minX;
         const height = boundingBox.maxY - boundingBox.minY;
-        if (this.needSetCenter) {
-            console.log('==>> set center');
-            const center = { x: (boundingBox.maxX + boundingBox.minX) / 2, y: (boundingBox.maxY + boundingBox.minY) / 2 };
-            const offsetX = 320 - center.x;
-            const offsetY = 350 - center.y;
+        // if (this.needSetCenter) {
+        console.log('==>> set center');
+        const center = { x: (boundingBox.maxX + boundingBox.minX) / 2, y: (boundingBox.maxY + boundingBox.minY) / 2 };
+        const offsetX = 320 - center.x;
+        const offsetY = 350 - center.y;
 
-            gArray.forEach((item) => {
-                const d = svgPath(item.$.d).translate(offsetX, offsetY).toString();
-                item.$.d = d;
-                paths.push(d);
-            });
+        gArray.forEach((item) => {
+            const d = svgPath(item.$.d).translate(offsetX, offsetY).toString();
+            item.$.d = d;
+            paths.push(d);
+        });
 
-            newSvg.$.viewBox = `${boundingBox.minX + offsetX} ${boundingBox.minY + offsetY} ${width} ${height}`;
-            root.attributes.viewBox = [boundingBox.minX + offsetX, boundingBox.minY + offsetY, width, height];
-        } else {
-            gArray.forEach((item) => {
-                paths.push(item.$.d);
-            });
-        }
+        newSvg.$.viewBox = `${boundingBox.minX + offsetX} ${boundingBox.minY + offsetY} ${width} ${height}`;
+        root.attributes.viewBox = [boundingBox.minX + offsetX, boundingBox.minY + offsetY, width, height];
+        // } else {
+        //     gArray.forEach((item) => {
+        //         paths.push(item.$.d);
+        //     });
+        // }
 
         return {
             shapes: root.shapes,
@@ -324,6 +326,7 @@ class SVGParser {
             this.parseUseStructure(tag, node, parent, attributes);
 
             let shouldParseChildren = true;
+            console.log('@@@@@@@@@@@@', tag);
             switch (tag) {
                 // graphics elements
                 case 'circle': {

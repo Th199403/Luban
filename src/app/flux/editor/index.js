@@ -533,12 +533,13 @@ export const actions = {
                         sourceHeight: height,
                         mode,
                         paths,
-                        config: { svgNodeName: 'image', editable: !!paths },
+                        config: { svgNodeName: paths ? 'path' : 'image', editable: !!paths },
                         isLimit
                     })
                 );
             })
             .catch(err => {
+                console.log('@@@@@@@', err);
                 onError && onError(err);
                 dispatch(
                     actions.updateState(headType, {
@@ -748,7 +749,11 @@ export const actions = {
             paths,
             elem: contentGroup.addSVGElement({
                 element: config.svgNodeName === 'text' ? 'image' : config.svgNodeName || 'image',
-                attr: { id: modelID }
+                attr: {
+                    id: modelID,
+                    d: config.d || (paths && paths.join(' ')) || ''
+                }
+
             }),
             size: size
         };
@@ -1336,8 +1341,7 @@ export const actions = {
     /**
      * Create model from element.
      */
-    createModelFromElement: (headType, mode, element) => async (dispatch, getState) => {
-        console.log(mode, element);
+    createModelFromElement: (headType, element) => async (dispatch, getState) => {
         const { SVGActions, toolPathGroup } = getState()[headType];
 
         const newSVGModel = await SVGActions.createModelFromElement(element);
@@ -2270,7 +2274,7 @@ export const actions = {
             })
         );
     },
-    drawTransformComplete: (headType, { modelID, before, after, bbox }) => async (dispatch, getState) => {
+    drawTransformComplete: (headType, { modelID, before, after }) => async (dispatch, getState) => {
         const { modelGroup, contentGroup, history, SVGActions } = getState()[headType];
         history.clearDrawOperations();
         const model = modelGroup.getModel(modelID);
@@ -2285,60 +2289,30 @@ export const actions = {
                 dispatch(actions.removeSelectedModelsByCallback(headType, 'select'));
                 return;
             }
-            const obj = {
-                svgModel: model,
-                before: {
-                    paths: before,
-                    width: model.width,
-                    height: model.height,
-                    x: model.transformation.positionX + 320 - model.width / 2,
-                    y: 350 - model.transformation.positionY - model.height / 2,
-                    uploadName: model.uploadName,
-                },
-                after: {
-                    paths: after,
-                    width: 0,
-                    height: 0,
-                    x: 0,
-                    y: 0,
-                    uploadName: '',
-                },
-                drawGroup: contentGroup.drawGroup,
-            };
-            // SvgModel.completeElementTransform(elem);
-            model.paths = after;
-            const fileInfo = await model.updateSource(bbox);
-            console.log('@@@@@@@@@@@@@@', fileInfo, bbox);
-            if (model.config.editable && model.config.svgNodeName === 'image') {
-                obj.after.uploadName = fileInfo.uploadName;
-                obj.after.width = bbox.width;
-                obj.after.height = bbox.height;
-                obj.after.x = bbox.x;
-                obj.after.y = bbox.y;
-            }
             const operations = new Operations();
-            const operation = new DrawTransformComplete(obj);
-            // model.onTransform();
-            model.elem.setAttribute('visibility', 'visible');
-
+            const operation = new DrawTransformComplete({
+                svgModel: model,
+                before,
+                after,
+                drawGroup: contentGroup.drawGroup
+            });
             operations.push(operation);
             history.push(operations);
-            dispatch(actions.updateState(headType, {
-                history
-            }));
+
+            SvgModel.completeElementTransform(model.elem);
+            model.onTransform();
+            model.updateSource();
+
+            dispatch(
+                actions.updateState(headType, {
+                    history
+                })
+            );
             dispatch(actions.resetProcessState(headType));
             dispatch(projectActions.autoSaveEnvironment(headType));
-        } else {
-            if (model.config.editable) {
-                model.elem.setAttribute('href', `/data/Tmp/${model.uploadName}`);
-            }
-        }
-        if (model.config.editable) {
-            // dispatch(actions.clearSelection(headType));
-            dispatch(actions.selectElements(headType, [model.elem]));
         }
     },
-    drawStart: (headType, modelID) => (dispatch, getState) => {
+    drawStart: (headType, elem) => (dispatch, getState) => {
         const { contentGroup, history } = getState()[headType];
 
         if (history.history[history.index]?.operations[0] instanceof DrawStart) {
@@ -2346,7 +2320,7 @@ export const actions = {
         }
         const operations = new Operations();
         const operation = new DrawStart({
-            elemID: modelID,
+            elemID: elem ? elem.getAttribute('id') : '',
             contentGroup
         });
         operations.push(operation);
@@ -2357,17 +2331,17 @@ export const actions = {
             })
         );
     },
-    drawComplete: (headType, modelID, element) => (dispatch, getState) => {
+    drawComplete: (headType, elem) => (dispatch, getState) => {
         const { history } = getState()[headType];
 
-        if (element) {
+        if (elem) {
             history.clearDrawOperations();
             dispatch(
                 actions.updateState(headType, {
                     history
                 })
             );
-            dispatch(actions.createModelFromElement(headType, 'draw', element));
+            dispatch(actions.createModelFromElement(headType, elem, true));
             dispatch(actions.resetProcessState(headType));
         }
     },

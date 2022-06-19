@@ -324,8 +324,8 @@ class Visualizer extends Component {
         onDrawStart: (elem) => {
             this.props.onDrawStart(elem);
         },
-        onDrawComplete: (modelID, paths) => {
-            this.props.onDrawComplete(modelID, paths);
+        onDrawComplete: (elem) => {
+            this.props.onDrawComplete(elem);
         },
         onBoxSelect: (bbox, onlyContainSelect) => {
             this.props.onBoxSelect(bbox, onlyContainSelect);
@@ -757,7 +757,7 @@ const mapDispatchToProps = (dispatch) => {
         cut: () => dispatch(editorActions.cut('laser')),
         copy: () => dispatch(editorActions.copy('laser')),
         paste: () => dispatch(editorActions.paste('laser')),
-        onCreateElement: (mode, element) => dispatch(editorActions.createModelFromElement('laser', mode, element)),
+        onCreateElement: (element) => dispatch(editorActions.createModelFromElement('laser', element)),
         selectAllElements: () => dispatch(editorActions.selectAllElements('laser')),
         onSelectElements: (elements) => dispatch(editorActions.selectElements('laser', elements)),
         onClearSelection: () => dispatch(editorActions.clearSelection('laser')),
@@ -777,7 +777,7 @@ const mapDispatchToProps = (dispatch) => {
         onDrawTransform: (before, after) => dispatch(editorActions.drawTransform('laser', before, after)),
         onDrawTransformComplete: (...args) => dispatch(editorActions.drawTransformComplete('laser', ...args)),
         onDrawStart: (elem) => dispatch(editorActions.drawStart('laser', elem)),
-        onDrawComplete: (modelID, paths) => dispatch(editorActions.drawComplete('laser', modelID, paths)),
+        onDrawComplete: (elem) => dispatch(editorActions.drawComplete('laser', elem)),
         onBoxSelect: (bbox, onlyContainSelect) => dispatch(editorActions.boxSelect('laser', bbox, onlyContainSelect)),
         setMode: (mode, ext) => dispatch(editorActions.setCanvasMode('laser', mode, ext)),
 

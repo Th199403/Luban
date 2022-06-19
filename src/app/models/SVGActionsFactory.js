@@ -256,12 +256,12 @@ class SVGActionsFactory {
         };
     }
 
-    updateElementImage(iamgeName) {
+    updateElementImage(imageName) {
         const selected = this.svgContentGroup.getSelected();
         if (!selected) {
             return;
         }
-        const imagePath = `${DATA_PREFIX}/${iamgeName}`;
+        const imagePath = `${DATA_PREFIX}/${imageName}`;
         selected.setAttribute('href', imagePath);
     }
 
@@ -561,6 +561,17 @@ class SVGActionsFactory {
                     width: res.body?.width,
                     height: res.body?.height
                 });
+                // element.remove();
+                // element = this.svgContentGroup.addSVGElement({
+                //     element: 'path',
+                //     curStyles: true,
+                //     attr: {
+                //         from: 'inner-svg',
+                //         d: res.body.paths.join(' '),
+                //         stroke: '#000',
+                //         'stroke-width': 1
+                //     }
+                // });
             } else {
                 const blob = new Blob([content], { type: 'image/svg+xml' });
                 const file = new File([blob], `${modelID}.svg`);
@@ -578,7 +589,7 @@ class SVGActionsFactory {
                 ...config,
                 ...elemConfig,
                 editable: true,
-                svgNodeName: 'image'
+                svgNodeName: isText ? 'image' : 'path'
             };
             gcodeConfig = { ...gcodeConfig };
 

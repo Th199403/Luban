@@ -115,8 +115,7 @@ const convertTextToSvg = async (options) => {
     }
 
     // We use descender line as the bottom of a line, first line with lineHeight = 1
-    let y = (ascender - descender + sTypoLineGap) > unitsPerEm ? estimatedFontSize
-            : (realUnitsPerEm + descender) / realUnitsPerEm * estimatedFontSize, x = 0;
+    let y = (ascender - descender + sTypoLineGap) > unitsPerEm ? estimatedFontSize : (realUnitsPerEm + descender) / realUnitsPerEm * estimatedFontSize, x = 0;
     const fullPath = new opentype.Path();
     for (let i = 0; i < numberOfLines; i++) {
         const line = lines[i];
@@ -166,7 +165,8 @@ const convertTextToSvg = async (options) => {
                     uploadName: uploadName,
                     family: fontObj?.names?.fontFamily?.en,
                     width,
-                    height
+                    height,
+                    paths: result.paths
                 });
             }
         });

@@ -140,7 +140,7 @@ class ModelGroup extends EventEmitter {
     // }
 
     public onModelUpdate() {
-        this.object.dispatchEvent(EVENTS.UPDATE);
+        this.object && this.object.dispatchEvent(EVENTS.UPDATE);
     }
 
     public getState(shouldCheckOverStep: boolean = true) {
