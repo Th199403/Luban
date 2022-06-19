@@ -3,7 +3,7 @@ import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
 import jQuery from 'jquery';
 import { throttle } from 'lodash';
-
+import toPath from 'element-to-path';
 import svgPath from 'svgpath';
 import { NS } from './lib/namespaces';
 import {
@@ -175,7 +175,7 @@ class SVGCanvas extends PureComponent {
 
     drawableGroup = null;
 
-    editingPaths = null
+    editingElem = null
 
     preSelectionGroup = null;
 
@@ -374,8 +374,8 @@ class SVGCanvas extends PureComponent {
         this.svgContentGroup.onDrawStart = (elem) => {
             this.props.onDrawStart(elem);
         };
-        this.svgContentGroup.onDrawComplete = (modelID, paths) => {
-            this.props.onDrawComplete(modelID, paths);
+        this.svgContentGroup.onDrawComplete = (elem) => {
+            this.props.onDrawComplete(elem);
         };
         this.svgContentGroup.onChangeMode = (mode, ext) => {
             this.setMode(mode, ext);
@@ -402,7 +402,7 @@ class SVGCanvas extends PureComponent {
         this.svgContainer.addEventListener('mouseleave', (event) => {
             this.svgContentGroup.drawGroup.onMouseleave();
             const leftKeyPressed = event.which === 1;
-            if (leftKeyPressed && this.mode !== 'draw' && !(this.mode === 'select' && this.editingPaths)) {
+            if (leftKeyPressed && this.mode !== 'draw' && !(this.mode === 'select' && this.editingElem)) {
                 this.calculateSelectedModel(event, true);
                 this.currentDrawing.selectedTarget = null;
                 this.svgSelector.setVisible(false);
@@ -441,7 +441,7 @@ class SVGCanvas extends PureComponent {
         } else if (mode === 'draw') {
             jQuery(this.svgContainer).css('cursor', 'none');
         } else {
-            this.editingPaths = null;
+            this.editingElem = null;
             jQuery(this.svgContainer).css('cursor', 'crosshair');
         }
 
@@ -449,11 +449,11 @@ class SVGCanvas extends PureComponent {
             this.clearSelection();
         }
         if (mode === 'select') {
-            if (extShape.paths) {
-                this.editingPaths = extShape.paths;
-                this.svgContentGroup.drawGroup.startDraw(mode, this.editingPaths);
+            if (extShape.elem) {
+                this.editingElem = extShape.elem;
+                this.svgContentGroup.drawGroup.startDraw(mode, this.editingElem);
             } else {
-                this.editingPaths = null;
+                this.editingElem = null;
             }
         } else if (mode === 'draw') {
             if (this.svgContentGroup.drawGroup.mode === 0) {
@@ -462,18 +462,15 @@ class SVGCanvas extends PureComponent {
             this.currentDrawing = Object.assign({}, CURRENTDRAWING_INIT);
             this.currentDrawing.started = true;
 
-            if (extShape.paths) {
+            if (extShape.elem) {
                 // 编辑转绘制
                 console.warn('编辑转绘制');
-                this.editingPaths = extShape.paths;
-                const paths = this.svgContentGroup.drawGroup.stopDraw();
-                if (paths) {
-                    this.editingPaths = paths;
-                }
-                this.svgContentGroup.drawGroup.startDraw(mode, this.editingPaths);
+                this.editingElem = extShape.elem;
+                this.svgContentGroup.drawGroup.stopDraw();
+                this.svgContentGroup.drawGroup.startDraw(mode, this.editingElem);
             } else {
                 console.warn('新绘制');
-                this.editingPaths = null;
+                this.editingElem = null;
                 this.svgContentGroup.drawGroup.startDraw(mode);
             }
         }
@@ -503,7 +500,7 @@ class SVGCanvas extends PureComponent {
             return this.svgContentGroup.selectorParentGroup;
         }
 
-        if (this.mode === 'draw' || (this.mode === 'select' && this.editingPaths)) {
+        if (this.mode === 'draw' || (this.mode === 'select' && this.editingElem)) {
             return target;
         } else if ((this.mode === 'select' || this.mode === 'move') && target.parentElement === this.preSelectionGroup) {
             const targetId = target.getAttribute('target-id');
@@ -520,7 +517,7 @@ class SVGCanvas extends PureComponent {
     };
 
     isCanMove(mouseTarget, x, y) {
-        if (this.mode !== 'select' || this.editingPaths) {
+        if (this.mode !== 'select' || this.editingElem) {
             return false;
         }
         const allVisible = this.svgContentGroup.selectedElements.every(elem => {
@@ -570,7 +567,7 @@ class SVGCanvas extends PureComponent {
         this.props.hideLeftBarOverlay();
         switch (this.mode) {
             case 'select': {
-                if (this.editingPaths) {
+                if (this.editingElem) {
                     draw.started = true;
                     draw.startX = x;
                     draw.startY = y;
@@ -850,7 +847,7 @@ class SVGCanvas extends PureComponent {
         const x = pt.x;
         const y = pt.y;
 
-        if (this.mode === 'select' && event.which === 1 && !this.editingPaths) {
+        if (this.mode === 'select' && event.which === 1 && !this.editingElem) {
             this.svgSelector.updateBox(x, y);
             this.calculateSelectedModel(event, true);
         }
@@ -995,7 +992,7 @@ class SVGCanvas extends PureComponent {
 
         switch (this.mode) {
             case 'select': {
-                if (this.editingPaths) {
+                if (this.editingElem) {
                     const dx = x - draw.startX;
                     const dy = y - draw.startY;
                     if (dx === 0 && dy === 0) {
@@ -1166,7 +1163,7 @@ class SVGCanvas extends PureComponent {
     }, 300);
 
     onMouseUp = (event) => {
-        if (this.mode === 'select' && event.which === 1 && !this.editingPaths) {
+        if (this.mode === 'select' && event.which === 1 && !this.editingElem) {
             this.svgSelector.setVisible(false);
         }
         const draw = this.currentDrawing;
@@ -1183,7 +1180,7 @@ class SVGCanvas extends PureComponent {
         switch (this.mode) {
             case 'select': {
                 // element && element.remove();
-                if (this.editingPaths) {
+                if (this.editingElem) {
                     this.svgContentGroup.drawGroup.onMouseUp(event, x, y);
                 }
                 return; // note this is not break
@@ -1237,7 +1234,7 @@ class SVGCanvas extends PureComponent {
             }
 
             case 'panMove': {
-                if (!draw.moved && draw.mode !== 'draw' && (draw.mode === 'select' && !this.editingPaths)) {
+                if (!draw.moved && draw.mode !== 'draw' && (draw.mode === 'select' && !this.editingElem)) {
                     this.onContextmenu(event);
                 }
                 this.props.updateTarget(this.target);
@@ -1319,15 +1316,68 @@ class SVGCanvas extends PureComponent {
                 element.setAttribute('opacity', this.currentProperties.opacity);
                 cleanupAttributes(element);
 
-                const transform = element.getAttribute('transform');
-                const d = element.getAttribute('d');
-                const newPath = svgPath(d).transform(transform).toString();
+                if (this.mode === 'ext') {
+                    const transform = element.getAttribute('transform');
+                    const d = element.getAttribute('d');
+                    const newPath = svgPath(d).transform(transform).toString();
 
 
-                element.setAttribute('d', newPath);
-                element.setAttribute('transform', '');
+                    element.setAttribute('d', newPath);
+                    element.setAttribute('transform', '');
+                } else if (this.mode === 'rect') {
+                    const reactX = element.getAttribute('x');
+                    const reactY = element.getAttribute('y');
+                    const reactWidth = element.getAttribute('width');
+                    const reactHeight = element.getAttribute('height');
 
-                this.props.onCreateElement(this.mode, element);
+                    const path = toPath({
+                        type: 'element',
+                        name: 'rect',
+                        attributes: { x: reactX, y: reactY, width: reactWidth, height: reactHeight }
+                    });
+                    const elem = this.svgContentGroup.addSVGElement({
+                        element: 'path',
+                        curStyles: true,
+                        attr: {
+                            from: 'inner-svg',
+                            x: reactX,
+                            y: reactY,
+                            d: path,
+                            stroke: '#000',
+                            'stroke-width': 1
+                        }
+                    });
+                    element.remove();
+                    element = elem;
+                } else if (this.mode === 'ellipse') {
+                    const ellipseCX = element.getAttribute('cx');
+                    const ellipseCY = element.getAttribute('cy');
+                    const ellipseRX = element.getAttribute('rx');
+                    const ellipseRY = element.getAttribute('ry');
+                    const ellipseBbox = element.getBBox();
+
+                    const path = toPath({
+                        type: 'element',
+                        name: 'ellipse',
+                        attributes: { cx: ellipseCX, cy: ellipseCY, rx: ellipseRX, ry: ellipseRY }
+                    });
+                    const elem = this.svgContentGroup.addSVGElement({
+                        element: 'path',
+                        curStyles: true,
+                        attr: {
+                            from: 'inner-svg',
+                            x: ellipseBbox.x,
+                            y: ellipseBbox.y,
+                            d: path,
+                            stroke: '#000',
+                            'stroke-width': 1
+                        }
+                    });
+                    element.remove();
+                    element = elem;
+                }
+
+                this.props.onCreateElement(element);
 
                 // TODO: select model newly created
                 // this.addToSelection([element]);
@@ -1374,15 +1424,14 @@ class SVGCanvas extends PureComponent {
         if (this.props.editable && tagName === 'text' && this.mode !== 'textedit') {
             this.textActions.select(mouseTarget, x, y);
             this.setMode('textedit');
-        } else if (tagName === 'image' && mouseTarget.getAttribute('editable')) {
+        } else if (tagName === 'path' && mouseTarget.getAttribute('editable')) {
             this.clearSelection();
             const svgModel = this.props.SVGActions.getSVGModelByElement(mouseTarget);
-
             svgModel.elem.setAttribute('visibility', 'hidden');
-            this.drawableGroup.setAttribute('id', svgModel.modelID);
+
             this.addToSelection([mouseTarget]);
             this.setMode('select', {
-                paths: svgModel.paths
+                elem: svgModel.elem
             });
         }
     };
@@ -1460,43 +1509,35 @@ class SVGCanvas extends PureComponent {
     };
 
     startDraw = () => {
-        console.log(`svgCanavas startDraw => editingPaths=${this.editingPaths}`);
-        this.setMode('draw', this.editingPaths ? {
-            paths: this.editingPaths
+        console.log(`svgCanavas startDraw => editingElem=${this.editingElem}`);
+        this.setMode('draw', this.editingElem ? {
+            elem: this.editingElem
         } : {});
     };
-
-    set drawingModelID(modelID) {
-        this.drawableGroup.setAttribute('id', modelID);
-    }
-
-    get drawingModelID() {
-        return this.drawableGroup.getAttribute('id');
-    }
 
     stopDraw = (exitCompletely, nextMode) => {
         console.log(`svgCanvas stopdraw => exitCompletely=${exitCompletely},nextMode=${nextMode},currentMode=${this.mode}`);
         return new Promise((resolve) => {
             if (this.mode === 'select') {
-                if (!this.editingPaths) {
+                if (!this.editingElem) {
                     resolve();
                 }
             } else if (this.mode !== 'draw') {
                 resolve();
             }
             const mode = this.mode;
-            const success = this.svgContentGroup.drawGroup.stopDraw();
+            const modelID = this.svgContentGroup.drawGroup.stopDraw();
             // this.clearSelection();
-            if (success && mode === 'draw') {
+            if (modelID && mode === 'draw') {
                 // Circular search
                 // Wait for svgmode creation to complete
                 const loop = setInterval(() => {
-                    const svgModel = this.props.SVGActions.getSVGModelByID(this.drawingModelID);
+                    const svgModel = this.props.SVGActions.getSVGModelByID(modelID);
                     console.log('@@@@@@@@@@', svgModel);
                     if (svgModel) {
                         clearInterval(loop);
                         if (exitCompletely) {
-                            this.editingPaths = null;
+                            this.editingElem = null;
                             if (nextMode) {
                                 this.setMode(nextMode);
                                 resolve();
@@ -1509,28 +1550,24 @@ class SVGCanvas extends PureComponent {
                         } else {
                             console.warn('绘制转编辑');
                             const elem = svgModel.elem;
-                            elem.setAttribute('visibility', 'hidden');
-                            this.drawingModelID = svgModel.modelID;
                             this.setMode('select', {
-                                paths: svgModel.paths
+                                elem
                             });
-                            this.editingPaths = svgModel.paths;
-                            this.svgContentGroup.drawGroup.startDraw(this.mode, svgModel.paths);
+                            this.svgContentGroup.drawGroup.startDraw(this.mode, elem);
                             resolve(elem);
                         }
                     }
                 }, 100);
             } else if (nextMode === 'select' && mode === 'draw') {
-                if (this.editingPaths && this.drawingModelID) {
+                if (this.editingElem && this.drawingModelID) {
                     console.warn('编辑转绘制之前, 保存编辑状态下的更改');
-                    const svgModel = this.props.SVGActions.getSVGModelByID(this.drawingModelID);
-                    const elem = svgModel.elem;
-                    elem.setAttribute('visibility', 'hidden');
+                    // const svgModel = this.props.SVGActions.getSVGModelByID(this.drawingModelID);
+                    // const elem = svgModel.elem;
                     this.setMode('select', {
-                        paths: this.editingPaths
+                        elem: this.editingElem
                     });
                 }
-                // editingPaths && this.addToSelection([editingPaths]);
+                // editingElem && this.addToSelection([editingElem]);
                 this.currentDrawing.started = false;
                 resolve();
             } else {
@@ -1889,3 +1926,4 @@ class SVGCanvas extends PureComponent {
 }
 
 export default SVGCanvas;
+

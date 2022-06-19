@@ -26,12 +26,13 @@ export default class MoveOperation2D extends Operation<TState> {
             svgActions: null, // SVGActionsFactory instance
             ...state
         };
-        const svgModel = this.state.target;
-        if (svgModel.config.editable) {
-            this.state.oldPaths = svgModel.paths;
-            svgModel.updateSvgPaths(this.state.from);
-            this.state.newPaths = svgModel.paths;
-        }
+        // const svgModel = this.state.target;
+        // if (svgModel.config.editable) {
+        //     this.state.oldPaths = svgModel.paths;
+        //     // svgModel.updateSvgPaths(this.state.from);
+        //     svgModel.paths = this.state.newPaths;
+        //     this.state.newPaths = svgModel.paths;
+        // }
     }
 
     private updatePaths(paths: string[]) {

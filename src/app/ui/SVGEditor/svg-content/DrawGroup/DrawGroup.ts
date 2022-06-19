@@ -49,11 +49,11 @@ class DrawGroup {
 
     public onDrawTransform: (records: { before: TransformRecord[], after: TransformRecord[] }) => void = noop;
 
-    public onDrawStart: (modelID?: string) => void = noop;
+    public onDrawStart: (elem?: SVGPathElement) => void = noop;
 
-    public onDrawComplete: (modelID: string, svg?: SVGPathElement) => void = noop;
+    public onDrawComplete: (elem?: SVGPathElement) => void = noop;
 
-    public onDrawTransformComplete: (records: { modelID: string, before: string[], after: string[], bbox: DOMRect }) => void = noop;
+    public onDrawTransformComplete: (records: { modelID: string, before: string, after: string }) => void = noop;
 
     private selected: {
         line?: Line,
@@ -79,8 +79,9 @@ class DrawGroup {
 
     private isAttached: boolean;
 
-    private originPaths: string[]
-    private bbox: DOMRect;
+    private originElem: SVGPathElement;
+    private originPath: string;
+    private modelID: string;
 
     public constructor(contentGroup: SVGGElement, scale: number, drawableGroup: SVGGElement) {
         this.scale = scale;
@@ -113,10 +114,6 @@ class DrawGroup {
         contentGroup.parentElement.append(this.container);
     }
 
-    public get modelID() {
-        return this.graph.getAttribute('id');
-    }
-
     public stopDraw(forcedStop: boolean = false) {
         if (this.mode === MODE.NONE) {
             return null;
@@ -127,10 +124,13 @@ class DrawGroup {
         this.operationGroup.lastControlsArray = [];
 
         this.clearAllEndPoint();
-        this.bbox = this.graph.getBBox();
         this.clearDrawedLine();
 
         if (forcedStop) {
+            if (this.originElem) {
+                this.originElem.setAttribute('visibility', 'visible');
+                this.originElem = null;
+            }
             this.mode = MODE.NONE;
             this.clearDrawedLine();
 
@@ -205,9 +205,6 @@ class DrawGroup {
 
     private setMode(mode: MODE) {
         this.mode = mode;
-        if (mode !== MODE.NONE) {
-            this.onDrawStart && this.onDrawStart(this.modelID);
-        }
 
         this.cursorGroup.setAttachPoint();
         this.unSelectAllPoint();
@@ -218,15 +215,43 @@ class DrawGroup {
         this.operationGroup.clearOperation();
     }
 
-    public startDraw(mode: MODE, paths: string[]) {
+    private get transformation() {
+        const transform = this.originElem.transform;
+        if (!transform) {
+            return null;
+        }
+        const transformList = transform.baseVal;
+        if (transformList.length === 0) {
+            return null;
+        }
+
+        const scaleX = transformList.getItem(2).matrix.a;
+        const scaleY = transformList.getItem(2).matrix.d;
+        const angle = transformList.getItem(1).angle;
+        return { scaleX, scaleY, angle };
+    }
+
+    public startDraw(mode: MODE, elem: SVGPathElement) {
         this.setMode(mode);
+        this.clearDrawedLine();
+
 
         // 用户区分是编辑还是创建
-        this.originPaths = paths;
-        if (paths) {
-            this.generatelines(paths);
+
+        if (elem) {
+            this.originElem = elem;
+            this.modelID = this.originElem?.getAttribute('id');
+            this.originElem.setAttribute('visibility', 'hidden');
+            this.originPath = elem.getAttribute('d');
+            this.generatelines(this.originPath);
         } else {
-            this.graph.setAttribute('id', uuid());
+            this.originPath = '';
+            this.originElem = null;
+            this.modelID = `id${uuid()}`;
+            this.graph.setAttribute('id', this.modelID);
+        }
+        if (mode !== MODE.NONE) {
+            this.onDrawStart && this.onDrawStart(this.originElem);
         }
         this.cursorGroup.toogleVisible(this.mode === MODE.DRAW);
     }
@@ -254,41 +279,51 @@ class DrawGroup {
         }
     }
 
-    private applyTransform(d: string) {
-        return svgPath(d);
-        // const transform = this.originGraph.getAttribute('transform');
-        // if (!transform || transform === 'translate(0 0) rotate(0) scale(1 1) translate(0 0)') {
-        //     return svgPath(d);
-        // }
-        // const config = this.originTransformation;
-        // const { scaleX, scaleY, rotationZ } = config;
+    private applyTransform(d: string, restore?: boolean) {
+        // return svgPath(d);
+        console.log('------------------', this.transformation);
 
-        // const angle = rotationZ * 180 / Math.PI;
+        if (!this.transformation) {
+            return svgPath(d);
+        }
 
-        // if (restore) {
-        //     const { x, y, width, height } = this.originGraph.getBBox();
-        //     const cx = x + width / 2;
-        //     const cy = y + height / 2;
+        if (restore) {
+            const { scaleX, scaleY, angle } = this.transformation;
+            const { x, y, width, height } = this.originElem.getBBox();
+            const cx = x + width / 2;
+            const cy = y + height / 2;
 
-        //     return svgPath(d)
-        //         .translate(-cx, -cy)
-        //         .rotate(angle)
-        //         .scale(1 / scaleX, 1 / scaleY)
-        //         .translate(cx, cy);
-        // } else {
-        //     return svgPath(d).transform(transform);
-        // }
+            return svgPath(d)
+                .translate(-cx, -cy)
+                .rotate(-angle)
+                .scale(1 / scaleX, 1 / scaleY)
+                .translate(cx, cy);
+        } else {
+            const transform = this.originElem.getAttribute('transform');
+            return svgPath(d).transform(transform);
+        }
     }
 
-    private generatelines(paths: string[]) {
+    private generatelines(path: string) {
         this.drawedLine = [];
-        const path = paths.join(' ');
-        this.applyTransform(path).abs().unarc().unshort()
-            .iterate((segment, _, x, y) => {
-                const arr = cloneDeep(segment);
-                const mark = arr.shift() as string;
+        // const path = paths.join(' ');
+        // let preLinePoints = [];
+        const svgpath = this.applyTransform(path);
+        console.log(svgpath.toString());
 
-                if (mark.toUpperCase() !== 'M' && mark.toUpperCase() !== 'Z') {
+        let m;
+        svgpath.abs().unarc().unshort().round(5)
+            .iterate((segment, _, x, y) => {
+                let arr = cloneDeep(segment) as unknown as number[];
+                const mark = arr.shift().toString();
+                if (mark.toUpperCase() !== 'M') {
+                    if (mark === 'H') {
+                        arr.push(y);
+                    } else if (mark === 'V') {
+                        arr.unshift(x);
+                    } else if (mark.toUpperCase() === 'Z') {
+                        arr = m;
+                    }
                     const points: TCoordinate[] = [];
                     for (let index = 0; index < arr.length; index += 2) {
                         points.push([
@@ -300,7 +335,11 @@ class DrawGroup {
                         [x, y],
                         ...points
                     ]);
+                    // return;
+                } else {
+                    m = arr;
                 }
+                // preLinePoints = arr;
             });
     }
 
@@ -854,13 +893,18 @@ class DrawGroup {
         if (this.drawedLine.length === 0) {
             return null;
         }
-        const d = this.drawedLine.reduce((p, c) => {
+        let d = this.drawedLine.reduce((p, c) => {
             p += c.generatePath(c.points);
             p += ' ';
             return p;
         }, '');
 
-        return [d];
+        if (this.originElem) {
+            const res = this.applyTransform(d, true).round(5).rel();
+            d = res.toString();
+        }
+
+        return d;
     }
 
     private drawComplete() {
@@ -870,21 +914,16 @@ class DrawGroup {
         this.setMode(MODE.NONE);
         const path = this.generatePath();
         this.drawedLine = [];
-        // if (this.originGraph) {
-        //     const res = this.applyTransform(path, true);
-        //     path = res.toString();
-        // }
         if (path) {
-            // this.graph.remove();
-
-            if (this.originPaths && this.onDrawTransformComplete) {
+            if (this.originElem && this.onDrawTransformComplete) {
+                this.originElem.setAttribute('d', path);
+                this.originElem.setAttribute('visibility', 'visible');
                 this.onDrawTransformComplete({
                     modelID: this.modelID,
-                    before: this.originPaths,
-                    after: path,
-                    bbox: this.bbox
+                    before: this.originPath,
+                    after: path
                 });
-            } else if (!this.originPaths && this.onDrawComplete) {
+            } else if (!this.originElem && this.onDrawComplete) {
                 const temp = createSVGElement({
                     element: 'path',
                     attr: {
@@ -892,17 +931,17 @@ class DrawGroup {
                         'stroke-width': 1 / this.scale,
                         d: path,
                         fill: 'transparent',
-                        stroke: 'red',
+                        stroke: '#000',
                         preset: 'true'
                     }
                 }) as SVGPathElement;
                 this.container.append(temp);
-                this.onDrawComplete(this.modelID, temp);
+                this.onDrawComplete(temp);
             }
-            return path;
+            return this.modelID;
         } else {
             if (this.onDrawComplete) {
-                this.onDrawComplete(this.modelID);
+                this.onDrawComplete();
             }
         }
         return null;
@@ -917,26 +956,28 @@ class DrawGroup {
         const path = this.generatePath();
         this.drawedLine = [];
         if (path) {
+            if (this.originElem) {
+                this.originElem.setAttribute('d', path);
+                this.originElem.setAttribute('visibility', 'visible');
+            }
             // 判断是否有编辑
             if (this.onDrawTransformComplete) {
                 this.onDrawTransformComplete({
                     modelID: this.modelID,
-                    before: this.originPaths,
+                    before: this.originPath,
                     after: path,
-                    bbox: this.bbox
                 });
             }
         } else {
             if (this.onDrawTransformComplete) {
                 this.onDrawTransformComplete({
                     modelID: this.modelID,
-                    before: this.originPaths,
-                    after: [],
-                    bbox: this.bbox
+                    before: this.originPath,
+                    after: '',
                 });
             }
         }
-        return path;
+        return this.modelID;
     }
 
 
@@ -975,8 +1016,8 @@ class DrawGroup {
     }
 
     private clearDrawedLine() {
-        this.drawedLine.forEach((line) => {
-            line.elem.remove();
+        Array.from(this.graph.children).forEach((item) => {
+            item.remove();
         });
     }
 
@@ -997,3 +1038,4 @@ class DrawGroup {
 }
 
 export default DrawGroup;
+

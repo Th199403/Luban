@@ -32,6 +32,8 @@ class SVGContentGroup {
 
     onExitModelEditing = noop;
 
+    preSelectionGroup = null
+
     constructor(options) {
         const { svgContent, scale, drawableGroup } = options;
 
@@ -44,8 +46,12 @@ class SVGContentGroup {
         this.group = document.createElementNS(NS.SVG, 'g');
         this.group.setAttribute('id', 'svg-data');
 
+        this.preSelectionGroup = document.createElementNS(NS.SVG, 'g');
+        this.preSelectionGroup.setAttribute('id', 'svg-pre-selection');
+
         this.svgContent.append(this.backgroundGroup);
         this.svgContent.append(this.group);
+        this.svgContent.append(this.preSelectionGroup);
         this.drawableGroup = drawableGroup;
         this.svgContent.append(drawableGroup);
 
@@ -77,8 +83,8 @@ class SVGContentGroup {
         this.drawGroup.onDrawStart = (elem) => {
             this.onDrawStart(elem);
         };
-        this.drawGroup.onDrawComplete = (modelID, paths) => {
-            this.onDrawComplete(modelID, paths);
+        this.drawGroup.onDrawComplete = (elem) => {
+            this.onDrawComplete(elem);
         };
     }
 
@@ -222,7 +228,7 @@ class SVGContentGroup {
 
     addSVGBackgroundElement(data) {
         if (data.attr && data.attr.id) {
-            const existingElement = this.backgroundGroup.querySelector(`#${data.attr.id}`);
+            const existingElement = this.backgroundGroup.querySelector(`[id="${data.attr.id}"]`);
             if (existingElement) {
                 existingElement.remove();
             }
