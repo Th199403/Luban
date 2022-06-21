@@ -27,6 +27,15 @@ export default class ScaleOperation2D extends Operation<TState> {
             machine: state.machine, // machine series info, the size may be changed
             svgActions: state.svgActions, // SVGActionsFactory instance
         };
+        this.updateSvgPaths(this.state.from);
+    }
+
+    private updateSvgPaths(preTransform: ModelTransformation) {
+        const svgModel = this.state.target;
+
+        if (svgModel.config.editable && svgModel.type === 'image') {
+            svgModel.updateSvgPaths(preTransform);
+        }
     }
 
     public redo() {
@@ -63,6 +72,7 @@ export default class ScaleOperation2D extends Operation<TState> {
         } else {
             restore();
         }
+        this.updateSvgPaths(this.state.from);
     }
 
     public undo() {
@@ -99,5 +109,6 @@ export default class ScaleOperation2D extends Operation<TState> {
         } else {
             restore();
         }
+        this.updateSvgPaths(this.state.to);
     }
 }

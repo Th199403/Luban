@@ -86,7 +86,12 @@ function setElementTransformToList(transformList: SVGTransformList, transformati
 type TVertexPoint = [number, number]
 
 type TModelConfigs = Record<TMode, {
-    config?: Record<string, string | number | boolean>
+    config?: {
+        npType: string;
+        npSize: number;
+        npAngle: number;
+        threshold: number;
+    }
     gcodeConfig?: Record<string, string | number | boolean>
 }>
 
@@ -785,25 +790,20 @@ class SvgModel extends BaseModel {
     }
 
     public updateSvgPaths(preTransformation: ModelTransformation) {
-        console.log(preTransformation);
+        const preScaleX = Math.abs(preTransformation.width / this.width);
+        const preScaleY = Math.abs(preTransformation.height / this.height);
 
-        // const preScaleX = Math.abs(preTransformation.width / this.width);
-        // const preScaleY = Math.abs(preTransformation.height / this.height);
+        const scaleX = Math.abs(this.transformation.width / this.width);
+        const scaleY = Math.abs(this.transformation.height / this.height);
 
-        // const scaleX = Math.abs(this.transformation.width / this.width);
-        // const scaleY = Math.abs(this.transformation.height / this.height);
-
-        // this.paths = [
-        //     svgPath(this.paths.join(' Z '))
-        //         .translate(-320 - preTransformation.positionX, -350 + preTransformation.positionY)
-        //         .scale(scaleX / preScaleX, scaleY / preScaleY)
-        //         .scale(this.transformation.scaleX / preTransformation.scaleX, this.transformation.scaleY / preTransformation.scaleY)
-        //         .rotate(preTransformation.rotationZ / Math.PI * 180)
-        //         .rotate(-this.transformation.rotationZ / Math.PI * 180)
-        //         .translate(320 + this.transformation.positionX, 350 - this.transformation.positionY)
-        //         .toString()
-        // ];
-        console.log('update svg paths = ', this.paths);
+        this.config.d = svgPath((this.config.d as string))
+            .translate(-320 - preTransformation.positionX, -350 + preTransformation.positionY)
+            .scale(scaleX / preScaleX, scaleY / preScaleY)
+            .scale(this.transformation.scaleX / preTransformation.scaleX, this.transformation.scaleY / preTransformation.scaleY)
+            .rotate(preTransformation.rotationZ / Math.PI * 180)
+            .rotate(-this.transformation.rotationZ / Math.PI * 180)
+            .translate(320 + this.transformation.positionX, 350 - this.transformation.positionY)
+            .toString();
     }
 
     public elemTransformList() {
@@ -1071,11 +1071,15 @@ class SvgModel extends BaseModel {
         if (this.mode !== mode) {
             this.modeConfigs[this.mode] = {
                 config: {
-                    ...this.config
+                    npType: this.config.npType as string,
+                    npSize: this.config.npSize as number,
+                    npAngle: this.config.npAngle as number,
+                    threshold: this.config.threshold as number,
                 }
             };
             if (this.modeConfigs[mode]) {
                 this.config = {
+                    ...this.config,
                     ...this.modeConfigs[mode].config
                 };
             } else {
@@ -1379,6 +1383,9 @@ class SvgModel extends BaseModel {
         SvgModel.initializeElementTransform(imageElement);
         this.elem = imageElement;
         this.config.svgNodeName = 'image';
+
+        this.computevertexPoints();
+        SvgModel.updatePathPreSelectionArea(this.elem);
     }
 }
 

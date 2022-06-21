@@ -4,6 +4,7 @@ import path from 'path';
 import xml2js from 'xml2js';
 import { cloneDeep, isNil } from 'lodash';
 import svgPath from 'svgpath';
+import { Helper } from 'dxf';
 import AttributesParser from './AttributesParser';
 import SVGTagParser from './SVGTagParser';
 // import DefsTagParser from './DefsTagParser';
@@ -48,6 +49,7 @@ class SVGParser {
     }
 
     readFile(filePath) {
+        const extname = path.extname(filePath).toLowerCase();
         return new Promise((resolve, reject) => {
             fs.readFile(filePath, 'utf8', async (err, xml) => {
                 if (err) {
@@ -55,9 +57,10 @@ class SVGParser {
                     return;
                 }
                 try {
-                    console.log('$$$$$$$$$$$$', xml);
+                    if (extname === '.dxf') {
+                        xml = new Helper(xml).toSVG();
+                    }
                     const paths = await svg2path(xml);
-                    console.log('$$$$$$$$$$$$', paths);
                     resolve(await this.readString(paths));
                 } catch (e) {
                     reject(e);
@@ -120,11 +123,10 @@ class SVGParser {
         return this.parseObject(node, element);
     }
 
-    async parseFile(filePath, needSetCenter) {
-        this.needSetCenter = needSetCenter;
+    async parseFile(filePath) {
         const node = await this.readFile(filePath);
         const result = await this.parseObject(node);
-        const newUploadName = filePath.replace(/\.svg$/i, 'parsed.svg');
+        const newUploadName = filePath.replace(/\.(svg|dxf)$/i, 'parsed.svg');
         const svgContent = this.generateString(result.parsedNode);
         await this.wirteFile(newUploadName, svgContent);
         result.uploadName = path.basename(newUploadName);
@@ -218,12 +220,9 @@ class SVGParser {
         }
         const width = boundingBox.maxX - boundingBox.minX;
         const height = boundingBox.maxY - boundingBox.minY;
-        // if (this.needSetCenter) {
         const center = { x: (boundingBox.maxX + boundingBox.minX) / 2, y: (boundingBox.maxY + boundingBox.minY) / 2 };
         const offsetX = 320 - center.x;
         const offsetY = 350 - center.y;
-        console.log('==>> set center', boundingBox);
-        console.log('==>> set center', center, offsetX, offsetY);
 
 
         gArray.forEach((item) => {
@@ -234,14 +233,6 @@ class SVGParser {
         const viewBox = [boundingBox.minX + offsetX, boundingBox.minY + offsetY, width, height];
 
         newSvg.$.viewBox = viewBox.join(' ');
-        // root.attributes.viewBox = viewBox;
-        // } else {
-        //     gArray.forEach((item) => {
-        //         paths.push(item.$.d);
-        //     });
-        // }
-
-        // viewBox
 
         return {
             shapesViewBox: root.attributes.viewBox,

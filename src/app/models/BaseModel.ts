@@ -106,7 +106,6 @@ abstract class BaseModel {
     public uploadName: string;
 
     public mode: TMode;
-    public paths?: string[];
 
     public width: number;
     public height: number;

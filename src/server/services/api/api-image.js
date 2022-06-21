@@ -5,10 +5,6 @@ import jimp from 'jimp';
 import jpegAutoRotate from 'jpeg-autorotate';
 import logger from '../../lib/logger';
 import SVGParser from '../../../shared/lib/SVGParser';
-import {
-    parseDxf,
-    generateSvgFromDxf,
-} from '../../../shared/lib/DXFParser/Parser';
 import { unzipFile } from '../../lib/archive';
 import { editorProcess } from '../../lib/editor/process';
 import stockRemap from '../../lib/stock-remap';
@@ -42,7 +38,7 @@ const moveFile = (originalPath, tempPath) => {
 
 export const set = async (req, res) => {
     const files = req.files;
-    const { isRotate, needSetCenter = true } = req.body;
+    const { isRotate } = req.body;
     let originalName, tempName, tempPath, originalPath;
     // if 'files' does not exist, the model in the case library is being loaded
     if (files) {
@@ -61,7 +57,6 @@ export const set = async (req, res) => {
         tempPath = `${DataStorage.tmpDir}/${tempName}`;
     }
     const extname = path.extname(tempName).toLowerCase();
-    console.log('extname =', needSetCenter);
 
     try {
         if (files) {
@@ -95,7 +90,7 @@ export const set = async (req, res) => {
         }
         if (extname === '.svg') {
             const svgParser = new SVGParser();
-            const svg = await svgParser.parseFile(tempPath, needSetCenter !== 'false');
+            const svg = await svgParser.parseFile(tempPath);
             res.send({
                 originalName: originalName,
                 uploadName: tempName,
@@ -104,19 +99,14 @@ export const set = async (req, res) => {
                 paths: svg.paths
             });
         } else if (extname === '.dxf') {
-            const result = await parseDxf(tempPath);
-            const svg = await generateSvgFromDxf(
-                result.svg,
-                tempPath,
-                tempName
-            );
-            const { width, height } = result;
-
+            const svgParser = new SVGParser();
+            const svg = await svgParser.parseFile(tempPath);
             res.send({
                 originalName: originalName,
                 uploadName: svg.uploadName,
-                width,
-                height,
+                width: svg.width,
+                height: svg.height,
+                paths: svg.paths
             });
         } else if (extname === '.stl' || extname === '.zip') {
             if (extname === '.zip') {

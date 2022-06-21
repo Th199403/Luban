@@ -26,19 +26,16 @@ export default class RotateOperation2D extends Operation<TState> {
             svgActions: null, // SVGActionsFactory instance
             ...state
         };
-        const svgModel = this.state.target;
-        if (svgModel.config.editable) {
-            this.state.oldPaths = svgModel.paths;
-            svgModel.updateSvgPaths(this.state.from);
-            this.state.newPaths = svgModel.paths;
-        }
+
+        this.updateSvgPaths(this.state.from);
     }
 
-    private updatePaths(paths: string[]) {
+
+    private updateSvgPaths(preTransform: ModelTransformation) {
         const svgModel = this.state.target;
 
-        if (svgModel.config.editable && paths) {
-            svgModel.paths = paths;
+        if (svgModel.config.editable && svgModel.type === 'image') {
+            svgModel.updateSvgPaths(preTransform);
         }
     }
 
@@ -53,7 +50,7 @@ export default class RotateOperation2D extends Operation<TState> {
             newY: -this.state.to.positionY + this.state.machine.size.y
         });
         svgActions.clearSelection();
-        this.updatePaths(this.state.newPaths);
+        this.updateSvgPaths(this.state.from);
     }
 
     public undo() {
@@ -67,6 +64,6 @@ export default class RotateOperation2D extends Operation<TState> {
             newY: -this.state.from.positionY + this.state.machine.size.y
         });
         svgActions.clearSelection();
-        this.updatePaths(this.state.oldPaths);
+        this.updateSvgPaths(this.state.to);
     }
 }

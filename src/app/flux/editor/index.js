@@ -1193,6 +1193,7 @@ export const actions = {
         }
 
         model.updateProcessImageName(processImageName);
+        SVGActions.clearSelection();
         SVGActions.selectElements([model.elem]);
         SVGActions.resetSelection();
 
@@ -1471,8 +1472,6 @@ export const actions = {
      * Move elements finish.
      */
     moveElementsFinish: (headType, elements, options) => (dispatch, getState) => {
-        console.log('这个地方会报错', elements);
-
         const { SVGActions } = getState()[headType];
         const { machine } = getState();
 
