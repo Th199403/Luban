@@ -134,7 +134,7 @@ abstract class BaseModel {
             this[key] = modelInfo[key];
         });
 
-        this.modelID = this.modelID || `id${uuid()}`;
+        this.modelID = this.modelID || this.elem?.getAttribute('id') || `id${uuid()}`;
         this.modelName = this.modelName ?? 'unnamed';
         this.transformation = { ...DEFAULT_TRANSFORMATION, ...this.transformation };
     }

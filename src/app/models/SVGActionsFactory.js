@@ -544,8 +544,8 @@ class SVGActionsFactory {
         const isRotate = this.modelGroup.materials && this.modelGroup.materials.isRotate;
 
         const data = genModelConfig(element, this.size, this.modelGroup.materials);
-        const { modelID, content, width: dataWidth, height: dataHeight, transformation, config: elemConfig } = data;
-        let res, textSize;
+        const { modelID, content, transformation, config: elemConfig } = data;
+        let res;
         try {
             const isText = element.nodeName === 'text';
             if (isText) {
@@ -557,21 +557,24 @@ class SVGActionsFactory {
                 if (res.body.family !== elemConfig['font-family']) {
                     elemConfig['font-family'] = res.body.family;
                 }
-                textSize = computeTransformationSizeForTextVector(newConfig.text, newConfig['font-size'], newConfig['line-height'], {
-                    width: res.body?.width,
-                    height: res.body?.height
-                });
-                // element.remove();
-                // element = this.svgContentGroup.addSVGElement({
-                //     element: 'path',
-                //     curStyles: true,
-                //     attr: {
-                //         from: 'inner-svg',
-                //         d: res.body.paths.join(' '),
-                //         stroke: '#000',
-                //         'stroke-width': 1
-                //     }
+                // textSize = computeTransformationSizeForTextVector(newConfig.text, newConfig['font-size'], newConfig['line-height'], {
+                //     width: res.body?.width,
+                //     height: res.body?.height
                 // });
+                element.remove();
+                element = this.svgContentGroup.addSVGElement({
+                    element: 'path',
+                    curStyles: true,
+                    attr: {
+                        id: modelID,
+                        from: 'inner-svg',
+                        d: res.body.paths.join(' '),
+                        'stroke-width': 1,
+                        stroke: 'none',
+                        fill: '#000000',
+                        'fill-opacity': 1
+                    }
+                });
             } else {
                 const blob = new Blob([content], { type: 'image/svg+xml' });
                 const file = new File([blob], `${modelID}.svg`);
@@ -588,8 +591,10 @@ class SVGActionsFactory {
             config = {
                 ...config,
                 ...elemConfig,
+                isText,
                 editable: true,
-                svgNodeName: isText ? 'image' : 'path'
+                svgNodeName: isText ? 'text' : 'path',
+                drawn: true
             };
             gcodeConfig = { ...gcodeConfig };
 
@@ -603,8 +608,8 @@ class SVGActionsFactory {
                 uploadName,
                 sourceWidth: width,
                 sourceHeight: height,
-                width: isText ? textSize.width : dataWidth,
-                height: isText ? textSize.height : dataHeight,
+                width,
+                height,
                 transformation,
                 config,
                 gcodeConfig,
@@ -1315,53 +1320,6 @@ class SVGActionsFactory {
         // update t
         const t = SVGActionsFactory.calculateElementsTransformation(elements);
         this._setSelectedElementsTransformation(t);
-        /*
-        for (const svgModel of selectedModels) {
-            const elem = svgModel.elem;
-
-            const rotateBox = svg.createSVGTransform();
-            rotateBox.setRotate(deviation.deltaAngle, deviation.cx, deviation.cy);
-
-            const startBbox = getBBox(elem);
-            const startCenter = svg.createSVGPoint();
-            startCenter.x = startBbox.x + startBbox.width / 2;
-            startCenter.y = startBbox.y + startBbox.height / 2;
-
-            const endCenter = startCenter.matrixTransform(rotateBox.matrix);
-            // why model new center?
-            const modelNewCenter = svgModel.pointSvgToModel(endCenter);
-
-            const model = svgModel.relatedModel;
-            const rotationZ = ((model.transformation.rotationZ * 180 / Math.PI - deviation.deltaAngle + 540) % 360 - 180) * Math.PI / 180;
-            const positionX = modelNewCenter.x;
-            const positionY = modelNewCenter.y;
-
-            // <path> cannot use this
-            // because it has no xy
-            if (svgModel.type !== 'path') {
-                model.updateAndRefresh({
-                    transformation: {
-                        positionX: positionX,
-                        positionY: positionY,
-                        rotationZ: rotationZ
-                    }
-                });
-            } else {
-                // TODO: sometimes cannot move right position
-                model.updateAndRefresh({
-                    transformation: {
-                        rotationZ: rotationZ
-                    }
-                });
-
-                const transform = svg.createSVGTransform();
-                transform.setTranslate(modelNewCenter.x - model.transformation.positionX, -(modelNewCenter.y - model.transformation.positionY));
-                const transformList = elem.transform.baseVal;
-                transformList.insertItemBefore(transform, 0);
-                svgModel.onUpdate();
-            }
-        }
-        */
     }
 
     /**
@@ -1471,7 +1429,7 @@ class SVGActionsFactory {
 
         api.convertTextToSvg(newConfig)
             .then(async (res) => {
-                const { originalName, uploadName, width, height } = res.body;
+                const { originalName, uploadName, width, height, paths } = res.body;
                 const textSize = computeTransformationSizeForTextVector(newConfig.text, newConfig['font-size'], newConfig['line-height'], {
                     width,
                     height
@@ -1492,13 +1450,16 @@ class SVGActionsFactory {
                         scaleX,
                         scaleY,
                         rotationZ: -angle * Math.PI / 180
-                    }
+                    },
+                    paths
                 };
                 this.updateElementImage(uploadName);
                 model.updateAndRefresh({
                     ...baseUpdateData,
                     config: newConfig
                 });
+                model.elem.setAttribute('d', paths.join(' '));
+                SvgModel.updatePathPreSelectionArea(model.elem);
                 // TODO: change width and height of elements but not apply the scale
                 // const elements = this.svgContentGroup.selectedElements;
                 // const t = SVGActionsFactory.calculateElementsTransformation(elements);

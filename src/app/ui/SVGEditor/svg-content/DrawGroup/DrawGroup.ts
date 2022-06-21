@@ -280,9 +280,6 @@ class DrawGroup {
     }
 
     private applyTransform(d: string, restore?: boolean) {
-        // return svgPath(d);
-        console.log('------------------', this.transformation);
-
         if (!this.transformation) {
             return svgPath(d);
         }
@@ -309,7 +306,6 @@ class DrawGroup {
         // const path = paths.join(' ');
         // let preLinePoints = [];
         const svgpath = this.applyTransform(path);
-        console.log(svgpath.toString());
 
         let m;
         svgpath.abs().unarc().unshort().round(5)

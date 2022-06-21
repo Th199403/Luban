@@ -219,30 +219,36 @@ class SVGParser {
         const width = boundingBox.maxX - boundingBox.minX;
         const height = boundingBox.maxY - boundingBox.minY;
         // if (this.needSetCenter) {
-        console.log('==>> set center');
         const center = { x: (boundingBox.maxX + boundingBox.minX) / 2, y: (boundingBox.maxY + boundingBox.minY) / 2 };
         const offsetX = 320 - center.x;
         const offsetY = 350 - center.y;
+        console.log('==>> set center', boundingBox);
+        console.log('==>> set center', center, offsetX, offsetY);
+
 
         gArray.forEach((item) => {
             const d = svgPath(item.$.d).translate(offsetX, offsetY).toString();
             item.$.d = d;
             paths.push(d);
         });
+        const viewBox = [boundingBox.minX + offsetX, boundingBox.minY + offsetY, width, height];
 
-        newSvg.$.viewBox = `${boundingBox.minX + offsetX} ${boundingBox.minY + offsetY} ${width} ${height}`;
-        root.attributes.viewBox = [boundingBox.minX + offsetX, boundingBox.minY + offsetY, width, height];
+        newSvg.$.viewBox = viewBox.join(' ');
+        // root.attributes.viewBox = viewBox;
         // } else {
         //     gArray.forEach((item) => {
         //         paths.push(item.$.d);
         //     });
         // }
 
+        // viewBox
+
         return {
+            shapesViewBox: root.attributes.viewBox,
             shapes: root.shapes,
             boundingBox: boundingBox,
             parsedNode: parsedNode,
-            viewBox: root.attributes.viewBox,
+            viewBox: viewBox,
             width: width,
             height: height,
             paths
@@ -326,7 +332,6 @@ class SVGParser {
             this.parseUseStructure(tag, node, parent, attributes);
 
             let shouldParseChildren = true;
-            console.log('@@@@@@@@@@@@', tag);
             switch (tag) {
                 // graphics elements
                 case 'circle': {
@@ -342,8 +347,6 @@ class SVGParser {
                     break;
                 }
                 case 'path': {
-                    console.log('parserNode path => ', node.$.d);
-                    console.log('parserNode path => ', attributes.xform);
                     node.$._d = svgPath(node.$.d).matrix(attributes.xform).toString();
                     shapes.push(this.tagParses.path.parse(node, attributes));
                     break;

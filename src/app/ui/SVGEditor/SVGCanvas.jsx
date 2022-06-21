@@ -1433,6 +1433,16 @@ class SVGCanvas extends PureComponent {
             this.setMode('select', {
                 elem: svgModel.elem
             });
+        } else if (tagName === 'image' && mouseTarget.getAttribute('isText')) {
+            console.log(mouseTarget);
+            const svgModel = this.props.SVGActions.getSVGModelByElement(mouseTarget);
+            svgModel.elemToPath();
+            svgModel.elem.setAttribute('visibility', 'hidden');
+
+            this.addToSelection([mouseTarget]);
+            this.setMode('select', {
+                elem: svgModel.elem
+            });
         }
     };
 
@@ -1572,8 +1582,10 @@ class SVGCanvas extends PureComponent {
                 resolve();
             } else {
                 console.warn('退出编辑状态');
+                const editingElem = this.editingElem;
+                this.setMode('select');
+                editingElem && this.addToSelection([editingElem]);
                 this.currentDrawing.started = false;
-                this.setMode('select', {});
                 resolve();
             }
         });

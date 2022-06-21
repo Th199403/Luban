@@ -1,6 +1,6 @@
 // mock function i18n to force variables to be counted as i18n words
 const i18n = {
-    _: () => {}
+    _: () => { }
 };
 
 // machine size name
@@ -328,3 +328,7 @@ i18n._('key-settings_message-error'); // An error occurred while checking for up
 i18n._('key-Printing/Modal-Backup Tip');
 
 i18n._('key-Printing/LeftBar-No Rotation');
+
+// 2d default model name
+i18n._('key-2D_model_basename-Text');
+i18n._('key-2D_model_basename-Shape');

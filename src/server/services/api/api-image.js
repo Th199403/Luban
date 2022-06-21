@@ -98,7 +98,7 @@ export const set = async (req, res) => {
             const svg = await svgParser.parseFile(tempPath, needSetCenter !== 'false');
             res.send({
                 originalName: originalName,
-                uploadName: svg.uploadName,
+                uploadName: tempName,
                 width: svg.width,
                 height: svg.height,
                 paths: svg.paths

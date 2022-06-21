@@ -10,7 +10,7 @@ import { NS } from '../ui/SVGEditor/lib/namespaces';
 import api from '../api';
 import { checkIsImageSuffix } from '../../shared/lib/utils';
 import Resource from './Resource';
-import { SOURCE_TYPE, SVG_MOVE_MINI_DISTANCE } from '../constants';
+import { DATA_PREFIX, SOURCE_TYPE, SVG_MOVE_MINI_DISTANCE } from '../constants';
 import BaseModel, { ModelTransformation, ModelInfo, TSize, SvgModelElement, TMode } from './BaseModel';
 import ModelGroup from './ModelGroup';
 
@@ -894,24 +894,16 @@ class SvgModel extends BaseModel {
                 break;
             }
             case 'text': {
-                const imageElement = document.createElementNS(NS.SVG, 'image') as SVGImageElement;
-                const attributes = {
-                    from: 'inner-svg',
-                    'href': href || elem.getAttribute('href'),
-                    'id': elem.getAttribute('id'),
-                    'x': Number(elem.getAttribute('x')) - width / 2,
-                    'y': Number(elem.getAttribute('y')) - height / 2,
+                this.elemToImage({
+                    href: href || this.elem.getAttribute('href'),
+                    id: this.elem.getAttribute('id'),
+                    x: this.elem.getAttribute('x') ? Number(this.elem.getAttribute('x')) - width / 2 : this.x,
+                    y: this.elem.getAttribute('y') ? Number(this.elem.getAttribute('y')) - height / 2 : this.y,
                     width,
                     height
-                };
-                // // set attribute
-                for (const [key, value] of Object.entries(attributes)) {
-                    imageElement.setAttribute(key, `${value}`);
-                }
-                this.elem.parentNode.append(imageElement);
-                this.elem.remove();
-                this.elem = imageElement;
 
+                });
+                this.config.svgNodeName = 'text';
                 break;
             }
             default:
@@ -1280,11 +1272,19 @@ class SvgModel extends BaseModel {
         this.processMode(this.mode, this.config);
     }
 
-    public updateProcessImageName(processImageName: string) {
-        // this.processMode(this.mode, this.config, processImageName);
+    public updateProcessImageName(processImageName?: string) {
+        if (this.mode === 'vector' && this.config.editable) {
+            this.elemToPath();
+            return;
+        } else {
+            this.elemToImage();
+        }
         this.resource.processedFile.update(processImageName);
 
         this.generateProcessObject3D();
+
+        const imagePath = `${DATA_PREFIX}/${processImageName}`;
+        this.elem.setAttribute('href', imagePath);
     }
     // --Model functions--
 
@@ -1323,6 +1323,62 @@ class SvgModel extends BaseModel {
             return res;
         }
         return false;
+    }
+
+    public elemToPath(attrs?: { [attr: string]: string | boolean | number }) {
+        if (this.elem instanceof SVGPathElement) {
+            return;
+        }
+        const pathElement = document.createElementNS(NS.SVG, 'path') as SVGPathElement;
+        const attributes = {
+            'id': this.modelID,
+            d: this.config.d,
+            preset: true,
+            'stroke-width': 1 / this.scale,
+            fill: 'transparent',
+            stroke: '#000',
+            editable: true,
+            isText: this.config.isText,
+            ...attrs
+        };
+        // // set attribute
+        for (const [key, value] of Object.entries(attributes)) {
+            pathElement.setAttribute(key, `${value}`);
+        }
+        this.elem.parentNode.append(pathElement);
+        this.elem.remove();
+        SvgModel.initializeElementTransform(pathElement);
+        this.elem = pathElement;
+        this.config.svgNodeName = 'path';
+
+        this.computevertexPoints();
+        SvgModel.updatePathPreSelectionArea(this.elem);
+    }
+
+    public elemToImage(attrs?: { [attr: string]: string | boolean | number }) {
+        if (this.elem instanceof SVGImageElement) {
+            return;
+        }
+        const imageElement = document.createElementNS(NS.SVG, 'image') as SVGImageElement;
+        const bbox = this.elem.getBBox();
+        const attributes = {
+            from: 'inner-svg',
+            'id': this.modelID,
+            x: bbox.x,
+            y: bbox.y,
+            width: bbox.width,
+            height: bbox.height,
+            ...attrs
+        };
+        // // set attribute
+        for (const [key, value] of Object.entries(attributes)) {
+            imageElement.setAttribute(key, `${value}`);
+        }
+        this.elem.parentNode.append(imageElement);
+        this.elem.remove();
+        SvgModel.initializeElementTransform(imageElement);
+        this.elem = imageElement;
+        this.config.svgNodeName = 'image';
     }
 }
 

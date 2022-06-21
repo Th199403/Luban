@@ -1193,8 +1193,10 @@ export const actions = {
         }
 
         model.updateProcessImageName(processImageName);
+        SVGActions.selectElements([model.elem]);
+        SVGActions.resetSelection();
 
-        SVGActions.updateSvgModelImage(model, processImageName);
+        // SVGActions.updateSvgModelImage(model, processImageName);
 
         dispatch(baseActions.resetCalculatedState(headType));
         dispatch(baseActions.render(headType));
@@ -2278,6 +2280,7 @@ export const actions = {
         const { modelGroup, contentGroup, history, SVGActions } = getState()[headType];
         history.clearDrawOperations();
         const model = modelGroup.getModel(modelID);
+        console.log(before !== after, modelID, model);
         if (!model) {
             return;
         }
@@ -2289,16 +2292,19 @@ export const actions = {
                 dispatch(actions.removeSelectedModelsByCallback(headType, 'select'));
                 return;
             }
+            const isText = model.config.isText;
             const operations = new Operations();
             const operation = new DrawTransformComplete({
                 svgModel: model,
                 before,
                 after,
-                drawGroup: contentGroup.drawGroup
+                isText,
+                drawGroup: contentGroup.drawGroup,
+                SVGActions
             });
             operations.push(operation);
             history.push(operations);
-
+            model.config.isText = false;
             SvgModel.completeElementTransform(model.elem);
             model.onTransform();
             model.updateSource();
@@ -2394,7 +2400,7 @@ export const actions = {
         if (!ext) {
             ext = {};
         }
-        if (mode === 'draw' || ext?.paths) {
+        if (mode === 'draw' || ext?.elem) {
             SVGActions.svgContentGroup.operatorPoints.showOperator(false);
         } else {
             SVGActions.svgContentGroup.operatorPoints.showOperator(true);

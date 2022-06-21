@@ -15,8 +15,6 @@ type TState = {
         size: { x: number, y: number }
     },
     svgActions: SVGActionsFactory, // SVGActionsFactory instance
-    oldPaths?: string[];
-    newPaths?: string[];
 }
 
 export default class ScaleOperation2D extends Operation<TState> {
@@ -29,27 +27,18 @@ export default class ScaleOperation2D extends Operation<TState> {
             machine: state.machine, // machine series info, the size may be changed
             svgActions: state.svgActions, // SVGActionsFactory instance
         };
-        const svgModel = this.state.target;
-        if (svgModel.config.editable) {
-            this.state.oldPaths = svgModel.paths;
-            svgModel.updateSvgPaths(this.state.from);
-            this.state.newPaths = svgModel.paths;
-        }
-    }
-
-    private updatePaths(paths: string[]) {
-        const svgModel = this.state.target;
-
-        if (svgModel.config.editable && paths) {
-            svgModel.paths = paths;
-        }
     }
 
     public redo() {
         const model = this.state.target;
         const svgActions = this.state.svgActions;
+        let isImageElement = model.elem.tagName.toLowerCase() === 'image';
+        if (isImageElement && model.config.editable) {
+            model.elemToPath();
+            model.mode = 'vector';
+            isImageElement = false;
+        }
         const elements = [model.elem];
-        const isImageElement = model.elem.tagName.toLowerCase() === 'image';
         const restore = () => {
             svgActions.resizeElementsImmediately(elements, {
                 newWidth: this.state.to.width,
@@ -74,14 +63,18 @@ export default class ScaleOperation2D extends Operation<TState> {
         } else {
             restore();
         }
-        this.updatePaths(this.state.newPaths);
     }
 
     public undo() {
         const model = this.state.target;
         const svgActions = this.state.svgActions;
+        let isImageElement = model.elem.tagName.toLowerCase() === 'image';
+        if (isImageElement && model.config.editable) {
+            model.elemToPath();
+            model.mode = 'vector';
+            isImageElement = false;
+        }
         const elements = [model.elem];
-        const isImageElement = model.elem.tagName.toLowerCase() === 'image';
         const restore = () => {
             svgActions.resizeElementsImmediately(elements, {
                 newWidth: this.state.from.width,
@@ -106,6 +99,5 @@ export default class ScaleOperation2D extends Operation<TState> {
         } else {
             restore();
         }
-        this.updatePaths(this.state.oldPaths);
     }
 }
