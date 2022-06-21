@@ -51,6 +51,7 @@ export default class DrawTransformComplete extends Operation<DrawTransformComple
             svgModel.elem.setAttribute('d', this.state.after);
         }
         svgModel.updateSource();
+        svgModel.onTransform();
         SvgModel.completeElementTransform(this.state.svgModel.elem);
         this.state.SVGActions.selectElements([this.state.svgModel.elem]);
     }
@@ -69,6 +70,7 @@ export default class DrawTransformComplete extends Operation<DrawTransformComple
             svgModel.elem.setAttribute('d', this.state.before);
         }
         svgModel.updateSource();
+        svgModel.onTransform();
         SvgModel.completeElementTransform(this.state.svgModel.elem);
         this.state.SVGActions.selectElements([this.state.svgModel.elem]);
     }

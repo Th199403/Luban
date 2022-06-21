@@ -136,6 +136,8 @@ class Visualizer extends Component {
 
     fileInput = React.createRef();
 
+    fileInfo = React.createRef();
+
     actions = {
         undo: () => {
             this.props.undo();
@@ -158,7 +160,7 @@ class Visualizer extends Component {
         cut: () => {
             this.props.cut();
         },
-        onChangeFile: (event) => {
+        onChangeFile: async (event) => {
             const file = event.target.files[0];
             const extname = path.extname(file.name).toLowerCase();
             let uploadMode;
@@ -180,13 +182,14 @@ class Visualizer extends Component {
             this.props.switchToPage(PAGE_EDITOR);
 
             if (extname === '.dxf' || extname === '.svg') {
-                this.props.checkIsOversizeImage(file, () => {
+                const fileInfo = await this.props.checkIsOversizeImage(file, () => {
                     modal({
                         cancelTitle: i18n._('key-Laser/Edit/ContextMenu-Close'),
                         title: i18n._('key-Laser/Edit/ContextMenu-Import Error'),
                         body: i18n._('Failed to import this object. \nPlease select a supported file format.')
                     });
                 });
+                this.fileInfo.current = fileInfo;
             } else {
                 this.props.uploadImage(file, uploadMode, () => {
                     modal({
@@ -204,7 +207,7 @@ class Visualizer extends Component {
                     title: i18n._('key-Laser/Edit/ContextMenu-Import Error'),
                     body: i18n._('Failed to import this object. \nPlease select a supported file format.')
                 });
-            }, isLimit);
+            }, isLimit, this.fileInfo.current);
         },
         onClickToUpload: () => {
             this.fileInput.current.value = null;
@@ -755,7 +758,7 @@ const mapDispatchToProps = (dispatch) => {
         createText: (text) => dispatch(editorActions.createText('cnc', text)),
         updateTextTransformationAfterEdit: (element, transformation) => dispatch(editorActions.updateModelTransformationByElement('cnc', element, transformation)),
 
-        uploadImage: (file, mode, onFailure, isLimit) => dispatch(editorActions.uploadImage('cnc', file, mode, onFailure, isLimit)),
+        uploadImage: (file, mode, onFailure, isLimit, fileInfo) => dispatch(editorActions.uploadImage('cnc', file, mode, onFailure, isLimit, fileInfo)),
         switchToPage: (page) => dispatch(editorActions.switchToPage('cnc', page)),
         checkIsOversizeImage: (file, onFailure) => dispatch(editorActions.checkIsOversizeImage('cnc', file, onFailure)),
 

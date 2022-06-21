@@ -60,7 +60,7 @@ const LaserParameters = ({ widgetActions }) => {
                     disabled={!hasSelectedModels}
                 />
             )}
-            {isEditor && showImageProcessMode && (selectedModelArray.length === 1) && (
+            {isEditor && showImageProcessMode && !isDrawing && (selectedModelArray.length === 1) && (
                 <ImageProcessMode
                     disabled={!selectedModelVisible}
                 />

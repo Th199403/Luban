@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import Canvg from 'canvg';
 import svgPath from 'svgpath';
 import { cloneDeep } from 'lodash';
-import { coordGmSvgToModel, createSVGElement } from '../ui/SVGEditor/element-utils';
+import { coordGmSvgToModel, createSVGElement, setAttributes } from '../ui/SVGEditor/element-utils';
 
 import { NS } from '../ui/SVGEditor/lib/namespaces';
 
@@ -916,6 +916,7 @@ class SvgModel extends BaseModel {
     public refresh() {
         this.elemTransformList().clear();
         this.refreshElemAttrs();
+        this.setTextStyle(this.config.isText as boolean);
     }
 
     public elemTransform() {
@@ -1386,6 +1387,14 @@ class SvgModel extends BaseModel {
 
         this.computevertexPoints();
         SvgModel.updatePathPreSelectionArea(this.elem);
+    }
+
+    private setTextStyle(fill: boolean) {
+        setAttributes(this.elem, {
+            stroke: fill ? 'none' : '#000',
+            fill: fill ? '#000' : '',
+            'fill-opacity': fill ? 1 : 0
+        });
     }
 }
 

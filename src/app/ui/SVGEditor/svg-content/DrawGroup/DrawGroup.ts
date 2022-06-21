@@ -185,9 +185,11 @@ class DrawGroup {
     private drawgraph(points: Array<[number, number]>) {
         const closedLoop = this.cursorGroup.isAttached();
         const line = this.appendLine(points, closedLoop);
-        this.unSelectAllPoint();
-        this.endPointsGroup.lastElementChild.setAttribute('fill', THEME_COLOR);
-        this.onDrawLine && this.onDrawLine(line.elem, closedLoop);
+        if (line) {
+            this.unSelectAllPoint();
+            this.endPointsGroup.lastElementChild.setAttribute('fill', THEME_COLOR);
+            this.onDrawLine && this.onDrawLine(line.elem, closedLoop);
+        }
     }
 
     public deleteLine(line: SVGPathElement) {
@@ -307,7 +309,7 @@ class DrawGroup {
         // let preLinePoints = [];
         const svgpath = this.applyTransform(path);
 
-        let m;
+        let startPoint;
         svgpath.abs().unarc().unshort().round(5)
             .iterate((segment, _, x, y) => {
                 let arr = cloneDeep(segment) as unknown as number[];
@@ -318,7 +320,7 @@ class DrawGroup {
                     } else if (mark === 'V') {
                         arr.unshift(x);
                     } else if (mark.toUpperCase() === 'Z') {
-                        arr = m;
+                        arr = startPoint;
                     }
                     const points: TCoordinate[] = [];
                     for (let index = 0; index < arr.length; index += 2) {
@@ -333,13 +335,19 @@ class DrawGroup {
                     ]);
                     // return;
                 } else {
-                    m = arr;
+                    startPoint = arr;
                 }
                 // preLinePoints = arr;
             });
     }
 
     public appendLine(data: TCoordinate[] | SVGPathElement, closedLoop: boolean = false, fragmentID?: number) {
+        if (Array.isArray(data)) {
+            const last = data[data.length - 1];
+            if (data[0][0] === last[0] && data[0][1] === last[1]) {
+                return null;
+            }
+        }
         const line = new Line(data, this.scale, closedLoop, fragmentID || this.drawedLine.length);
         this.drawedLine.splice(line.fragmentID, 0, line);
 
