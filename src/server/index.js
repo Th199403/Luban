@@ -141,7 +141,7 @@ const createServer = (options, callback) => {
         })
         .on('error', (err) => {
             callback && callback(err);
-            log.error(err);
+            log.error(`webappengine${err}`);
         });
 };
 
