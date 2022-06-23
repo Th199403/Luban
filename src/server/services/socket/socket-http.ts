@@ -291,7 +291,7 @@ class SocketHttp {
         });
     };
 
-    public startExecuteGcode = async (eventName:string) => {
+    public startExecuteGcode = async (eventName: string) => {
         if (this.isGcodeExecuting) {
             return;
         }
@@ -301,6 +301,7 @@ class SocketHttp {
             const result = [];
             for (const gcode of splice.gcodes) {
                 const { text } = await this._executeGcode(gcode) as GcodeResult;
+                log.debug(`execute gcode "${gcode}" finish ===>>> ${text}`);
                 result.push(gcode);
                 if (text) {
                     result.push(text);
@@ -314,6 +315,7 @@ class SocketHttp {
 
     public _executeGcode = (gcode: string) => {
         const api = `${this.host}/api/v1/execute_code`;
+        log.debug(`execute gcode "${gcode}" start`);
         return new Promise((resolve) => {
             const req = request.post(api);
             req.timeout(300000)
