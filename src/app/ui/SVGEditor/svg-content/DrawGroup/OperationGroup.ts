@@ -1,5 +1,5 @@
 import { createSVGElement, setAttributes } from '../../element-utils';
-import { MODE, POINT_RADIUS, MINIMUM_SPACING, POINT_SIZE, POINT_WEIGHT, THEME_COLOR } from './constants';
+import { MODE, MINIMUM_SPACING, POINT_SIZE, POINT_WEIGHT, THEME_COLOR } from './constants';
 import { ControlPoint, EndPoint } from './Point';
 import { TCoordinate } from './types';
 
@@ -19,9 +19,11 @@ class OperationGroup {
     public onDrawgraph: (points: TCoordinate[]) => void;
 
     private scale: number;
+    private pointRadiusWithScale: number;
 
-    public constructor(container: SVGGElement, scale: number) {
+    public constructor(container: SVGGElement, scale: number, pointRadiusWithScale: number) {
         this.scale = scale;
+        this.pointRadiusWithScale = pointRadiusWithScale;
 
         this.connectLines = createSVGElement({
             element: 'g',
@@ -70,8 +72,8 @@ class OperationGroup {
             'fill-opacity': 1,
             width: POINT_SIZE / this.scale,
             height: POINT_SIZE / this.scale,
-            x: point.x - (POINT_RADIUS / this.scale),
-            y: point.y - (POINT_RADIUS / this.scale),
+            x: point.x - (this.pointRadiusWithScale),
+            y: point.y - (this.pointRadiusWithScale),
             stroke: THEME_COLOR,
             'stroke-width': POINT_WEIGHT / this.scale,
             rx: '0',
@@ -80,8 +82,8 @@ class OperationGroup {
             'is-controls': true
         };
         if (point instanceof EndPoint) {
-            attr.rx = `${POINT_RADIUS / this.scale}`;
-            attr.ry = `${POINT_RADIUS / this.scale}`;
+            attr.rx = `${this.pointRadiusWithScale}`;
+            attr.ry = `${this.pointRadiusWithScale}`;
         }
         return createSVGElement({
             element: 'rect',
@@ -100,10 +102,11 @@ class OperationGroup {
             const elem = this.controlPoints.children[index];
             if (elem) {
                 setAttributes(elem, {
-                    x: `${item.x - POINT_RADIUS / this.scale}`,
-                    y: `${item.y - POINT_RADIUS / this.scale}`,
-                    rx: item instanceof ControlPoint ? '0' : `${POINT_RADIUS / this.scale}`,
-                    ry: item instanceof ControlPoint ? '0' : `${POINT_RADIUS / this.scale}`,
+                    fragmentid: `${item.fragmentID}`,
+                    x: `${item.x - this.pointRadiusWithScale}`,
+                    y: `${item.y - this.pointRadiusWithScale}`,
+                    rx: item instanceof ControlPoint ? '0' : `${this.pointRadiusWithScale}`,
+                    ry: item instanceof ControlPoint ? '0' : `${this.pointRadiusWithScale}`,
                     visibility: 'visible',
                 });
             } else {
@@ -143,7 +146,6 @@ class OperationGroup {
         if (controlsArray.length === 0) {
             return;
         }
-        const pointRadiusWithScale = POINT_RADIUS / this.scale;
 
         const pointData = [];
         const curveData = [] as unknown as [TCoordinate, TCoordinate, TCoordinate];
@@ -151,9 +153,13 @@ class OperationGroup {
             // render end points
             if (item instanceof EndPoint) {
                 const circle = Array.from(document.querySelectorAll<SVGRectElement>('rect[type="end-point"]')).find((elem) => {
-                    return elem.getAttribute('x') === `${item.x - pointRadiusWithScale}` && elem.getAttribute('y') === `${item.y - pointRadiusWithScale}`;
+                    return elem.getAttribute('x') === `${item.x - this.pointRadiusWithScale}` && elem.getAttribute('y') === `${item.y - this.pointRadiusWithScale}`;
                 });
-                !circle && pointData.push(item);
+                if (circle) {
+                    item.fragmentID && circle.setAttribute('fragmentid', `${item.fragmentID}`);
+                } else {
+                    pointData.push(item);
+                }
             } else {
                 pointData.push(item);
             }
@@ -214,6 +220,7 @@ class OperationGroup {
     }
 
     private parseLine(elem: SVGPathElement): Array<(EndPoint | ControlPoint)> {
+        const fragmentID = Number(elem.getAttribute('fragmentid'));
         const controlsArray = [];
         const d = elem.getAttribute('d');
         const res: string[] = d.match(/\d+\.*\d*/g);
@@ -228,9 +235,9 @@ class OperationGroup {
         }
         points.forEach((item, index) => {
             if (index === 0 || index === points.length - 1) {
-                controlsArray.push(new EndPoint(...item));
+                controlsArray.push(new EndPoint(...item, fragmentID));
             } else {
-                controlsArray.push(new ControlPoint(...item));
+                controlsArray.push(new ControlPoint(...item, fragmentID));
             }
         });
         return controlsArray;
@@ -245,7 +252,7 @@ class OperationGroup {
         if (Math.sqrt((lasetEndPoint.x - x) ** 2 + (lasetEndPoint.y - y) ** 2) <= MINIMUM_SPACING) {
             return;
         }
-        const point = new ControlPoint(x, y);
+        const point = new ControlPoint(x, y, null);
 
         this.setControlsArray(point);
     }
@@ -271,7 +278,7 @@ class OperationGroup {
                 }
             }
         }
-        const point = new EndPoint(x, y);
+        const point = new EndPoint(x, y, null);
 
         this.setControlsArray(point);
         return true;
@@ -285,6 +292,7 @@ class OperationGroup {
                 p.push(...c);
                 return p;
             }, []);
+            // fragmentID
             this.updateControlsLine(points);
         } else {
             this.controlsArray = this.parseLine(elem);
@@ -306,10 +314,10 @@ class OperationGroup {
             if (lastControlsArray.length === 2) {
                 const p = this.calcSymmetryPoint([cursorPoint.x, cursorPoint.y], [lastControlsArray[1].x, lastControlsArray[1].y]);
 
-                lastControlsArray.splice(1, 0, new ControlPoint(...p));
+                lastControlsArray.splice(1, 0, new ControlPoint(...p, null));
             } else {
                 const p = this.calcSymmetryPoint([cursorPoint.x, cursorPoint.y], [lastControlsArray[2].x, lastControlsArray[2].y]);
-                lastControlsArray.splice(2, 0, new ControlPoint(...p));
+                lastControlsArray.splice(2, 0, new ControlPoint(...p, null));
             }
             // const path = this.generatePath(points);
         } else {
@@ -329,8 +337,9 @@ class OperationGroup {
         this.previewLine.setAttribute('visibility', 'hidden');
     }
 
-    public updateScale(scale: number) { // just change the engineer scale
+    public updateScale(scale: number, pointRadiusWithScale: number) { // just change the engineer scale
         this.scale = scale;
+        this.pointRadiusWithScale = pointRadiusWithScale;
 
         Array.from(this.controlPoints.children).forEach((elem) => {
             elem.setAttribute('width', `${POINT_SIZE / this.scale}`);
@@ -340,8 +349,8 @@ class OperationGroup {
             const rx = elem.getAttribute('rx');
             const ry = elem.getAttribute('ry');
             if (rx !== '0' && ry !== '0') {
-                elem.setAttribute('rx', `${POINT_RADIUS / this.scale}`);
-                elem.setAttribute('ry', `${POINT_RADIUS / this.scale}`);
+                elem.setAttribute('rx', `${this.pointRadiusWithScale}`);
+                elem.setAttribute('ry', `${this.pointRadiusWithScale}`);
             }
         });
 

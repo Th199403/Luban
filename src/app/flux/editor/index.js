@@ -577,16 +577,19 @@ export const actions = {
         return new Promise((resolve) => {
             api.uploadImage(formData)
                 .then(res => {
-                    const { width, height } = res.body;
-                    const isOverSize = isOverSizeModel(coordinateSize, width, height);
-                    dispatch(
-                        actions.updateState(headType, {
-                            isOverSize: isOverSize
-                        })
-                    );
                     resolve(res.body);
+                    setTimeout(() => {
+                        const { width, height } = res.body;
+                        const isOverSize = isOverSizeModel(coordinateSize, width, height);
+                        dispatch(
+                            actions.updateState(headType, {
+                                isOverSize: isOverSize
+                            })
+                        );
+                    });
                 })
                 .catch(err => {
+                    resolve();
                     onError && onError(err);
                     dispatch(
                         actions.updateState(headType, {
@@ -595,7 +598,6 @@ export const actions = {
                         })
                     );
                     progressStatesManager.finishProgress(false);
-                    resolve();
                 });
         });
     },
@@ -2332,7 +2334,6 @@ export const actions = {
         const { modelGroup, contentGroup, history, SVGActions } = getState()[headType];
         history.clearDrawOperations();
         const model = modelGroup.getModel(modelID);
-        console.log(before !== after, modelID, model);
         if (!model) {
             return;
         }

@@ -1,5 +1,6 @@
 import { v4 as uuid } from 'uuid';
 import { noop } from 'lodash';
+import svgPath from 'svgpath';
 import { createSVGElement, getBBox, toString } from '../element-utils';
 import { NS } from '../lib/namespaces';
 // import SelectorManager from './SelectorManager';
@@ -33,6 +34,8 @@ class SVGContentGroup {
     onExitModelEditing = noop;
 
     preSelectionGroup = null
+
+    isShowEditGrips = true;
 
     constructor(options) {
         const { svgContent, scale, drawableGroup } = options;
@@ -269,15 +272,41 @@ class SVGContentGroup {
         this.selectedElements = [];
     }
 
+    isStraightLine(elem) {
+        if (elem instanceof SVGPathElement) {
+            const d = elem.getAttribute('d');
+            const flag = ['M', 'L', 'Z'];
+            let res = true;
+            svgPath(d).iterate((segment, index) => {
+                if (segment[0] !== flag[index]) {
+                    res = false;
+                }
+            });
+            return res;
+        }
+        return false;
+    }
+
+    setShowEditGrips() {
+        if (this.selectedElements.length === 1) {
+            if (!this.isStraightLine[this.selectedElements[0]]) {
+                this.isShowEditGrips = true;
+                return;
+            }
+        }
+        this.isShowEditGrips = false;
+    }
+
     addToSelection(elements) {
         for (const elem of elements) {
             if (!this.selectedElements.includes(elem)) {
                 this.selectedElements.push(elem);
             }
         }
+        this.setShowEditGrips();
         const hasHideElem = this.selectedElements.some(elem => elem.getAttribute('display') === 'none');
         this.showSelectorGrips(true);
-        const posAndsize = this.operatorPoints.resizeGrips(this.selectedElements);
+        const posAndsize = this.operatorPoints.resizeGrips(this.selectedElements, this.isShowEditGrips);
 
         if (hasHideElem) {
             this.showSelectorResizeAndRotateGrips(!hasHideElem);
@@ -287,6 +316,7 @@ class SVGContentGroup {
 
     setSelection(elements) {
         this.selectedElements = elements;
+        this.setShowEditGrips();
         this.resetSelector(elements);
         this.showSelectorGrips(true);
     }
@@ -299,7 +329,7 @@ class SVGContentGroup {
     // after element transform
     resetSelection(size, transformation) {
         // Resize grip of each selected element, and get their whole position and size
-        const posAndSize = this.operatorPoints.resizeGrips(this.selectedElements);
+        const posAndSize = this.operatorPoints.resizeGrips(this.selectedElements, this.isShowEditGrips);
 
         // Update operator points
         this.setSelectorTransformList(size, transformation);
@@ -316,7 +346,7 @@ class SVGContentGroup {
     resetSelector(elements) {
         if (elements.length === 1) {
             // keep rotation if only one element selected
-            const { positionX, positionY } = this.operatorPoints.resizeGrips(elements);
+            const { positionX, positionY } = this.operatorPoints.resizeGrips(elements, this.isShowEditGrips);
 
             const selectorElement = this.operatorPoints.operatorPointsGroup;
             const element = elements[0];
@@ -331,7 +361,7 @@ class SVGContentGroup {
             });
         } else if (elements.length > 1) {
             // re-create axis-aligned selector if multiple elements are selected
-            const { positionX, positionY } = this.operatorPoints.resizeGrips(elements);
+            const { positionX, positionY } = this.operatorPoints.resizeGrips(elements, this.isShowEditGrips);
 
             const selectorElement = this.operatorPoints.operatorPointsGroup;
             SvgModel.recalculateElementTransformList(selectorElement, {

@@ -1,13 +1,24 @@
 import { Bezier } from 'bezier-js';
 import { v4 as uuid } from 'uuid';
 import { createSVGElement } from '../../element-utils';
-import { POINT_RADIUS, POINT_SIZE, THEME_COLOR, MINIMUM_SPACING } from './constants';
+import { POINT_SIZE, THEME_COLOR, MINIMUM_SPACING } from './constants';
 import { TCoordinate } from './types';
+
+export type TLineConfig = {
+    points?: TCoordinate[],
+    elem?: SVGPathElement,
+    scale?: number;
+    pointRadiusWithScale?: number;
+    closedLoop?: boolean,
+    fragmentID?: number,
+    endPointsGroup?: SVGGElement;
+    group?: SVGGElement;
+}
 
 class Line {
     public points: TCoordinate[];
 
-    public EndPoins: TCoordinate[];
+    public endPoints: TCoordinate[];
 
     public EndPointsEle: SVGRectElement[] = [];
 
@@ -18,37 +29,68 @@ class Line {
     public fragmentID: number;
 
     private scale: number;
+    private pointRadiusWithScale: number;
 
     private model: Bezier;
 
-    public constructor(data: TCoordinate[] | SVGPathElement, scale: number, closedLoop: boolean = false, fragmentID: number) {
-        this.scale = scale;
-        this.closedLoop = closedLoop;
-        this.fragmentID = fragmentID;
+    private group: SVGGElement;
+    private endPointsGroup: SVGGElement;
 
-        if (data instanceof SVGPathElement) {
-            this.elem = data;
+    public constructor(config: TLineConfig) {
+        this.endPointsGroup = config.endPointsGroup;
+        this.group = config.group;
+
+        this.scale = config.scale;
+        this.pointRadiusWithScale = config.pointRadiusWithScale;
+        this.closedLoop = config.closedLoop || false;
+        this.fragmentID = config.fragmentID;
+
+        this.points = config.points;
+        this.elem = config.elem;
+
+        if (this.elem && !this.points) {
+            this.elem = this.elem;
             this.points = this.parsePoints();
-        } else {
-            const path = this.generatePath(data);
+            this.endPoints = [
+                this.points[0],
+                this.points[this.points.length - 1]
+            ];
+            if (!this.elem.parentElement) {
+                this.group.appendChild(this.elem);
+                this.generateEndPointEle();
+            }
+        } else if (!this.elem && this.points) {
+            const path = this.generatePath(this.points);
             const line = createSVGElement({
                 element: 'path',
                 attr: {
                     'stroke-width': 1 / this.scale,
                     d: path,
                     fill: 'transparent',
-                    stroke: 'black'
+                    stroke: 'black',
+                    fragmentid: this.fragmentID
                 }
             }) as SVGPathElement;
+            this.group.appendChild(line);
             this.elem = line;
-            this.points = data;
+            this.endPoints = [
+                this.points[0],
+                this.points[this.points.length - 1]
+            ];
+            this.generateEndPointEle(true);
+        } else if (this.elem && this.points) {
+            this.endPoints = [
+                this.points[0],
+                this.points[this.points.length - 1]
+            ];
+            setTimeout(() => {
+                this.generateEndPointEle();
+            }, 200);
         }
-        this.EndPoins = [
-            this.points[0],
-            this.points[this.points.length - 1]
-        ];
-        this.generateEndPointEle();
-        this.updateModel(this.points);
+
+        setTimeout(() => {
+            this.updateModel(this.points);
+        }, 200);
     }
 
     private updateModel(points: TCoordinate[]) {
@@ -85,16 +127,16 @@ class Line {
 
     private updateEndPointEle(points?: TCoordinate[], applyMerge?: boolean) {
         if (points && points.length > 0) {
-            const EndPoins = points ? [
+            const endPoints = points ? [
                 points[0],
                 points[points.length - 1]
-            ] : this.EndPoins;
+            ] : this.endPoints;
 
-            EndPoins.forEach((item, index) => {
+            endPoints.forEach((item, index) => {
                 const x = item[0];
                 const y = item[1];
                 if (applyMerge) {
-                    const circle = document.querySelector<SVGRectElement>(`rect[type="end-point"][cx="${x}"][cy="${y}"]:not([fill=""])`) || document.querySelector<SVGRectElement>(`rect[type="end-point"][cx="${x}"][cy="${y}"]`);
+                    const circle = this.endPointsGroup.querySelector<SVGRectElement>(`rect[type="end-point"][cx="${x}"][cy="${y}"]:not([fill=""])`) || this.endPointsGroup.querySelector<SVGRectElement>(`rect[type="end-point"][cx="${x}"][cy="${y}"]`);
                     if (circle) {
                         if (circle !== this.EndPointsEle[index]) {
                             this.EndPointsEle[index].remove();
@@ -106,15 +148,15 @@ class Line {
                         return;
                     }
                 }
-                this.EndPointsEle[index].setAttribute('x', `${x - POINT_RADIUS / this.scale}`);
-                this.EndPointsEle[index].setAttribute('y', `${y - POINT_RADIUS / this.scale}`);
+                this.EndPointsEle[index].setAttribute('x', `${x - this.pointRadiusWithScale}`);
+                this.EndPointsEle[index].setAttribute('y', `${y - this.pointRadiusWithScale}`);
                 this.EndPointsEle[index].setAttribute('cx', `${x}`);
                 this.EndPointsEle[index].setAttribute('cy', `${y}`);
             });
         } else {
             const _points = this.parsePoints();
             this.points = _points;
-            this.EndPoins = [
+            this.endPoints = [
                 this.points[0],
                 this.points[this.points.length - 1]
             ];
@@ -127,7 +169,7 @@ class Line {
         const length = points.length;
         switch (length) {
             case 2:
-                return `M ${points[0].join(' ')} L ${points[1].join(' ')} Z`;
+                return `M ${points[0].join(' ')} L ${points[1].join(' ')}`;
             case 3:
                 return `M ${points[0].join(' ')} Q ${points[1].join(' ')}, ${points[2].join(' ')}`;
             case 4:
@@ -137,36 +179,38 @@ class Line {
         }
     }
 
-    public generateEndPointEle() {
-        const pointRadiusWithScale = POINT_RADIUS / this.scale;
-        this.EndPoins.forEach((item) => {
+    public generateEndPointEle(newLine?: boolean) {
+        this.endPoints.forEach((item) => {
             if (!item || !item[0]) {
                 return;
             }
-            const circle = Array.from(document.querySelectorAll<SVGRectElement>('rect[type="end-point"]')).find((elem) => {
-                return elem.getAttribute('x') === `${item[0] - pointRadiusWithScale}` && elem.getAttribute('y') === `${item[1] - pointRadiusWithScale}`;
-            })
-                || this.createCircle(item);
+            let circle = this.endPointsGroup.querySelector<SVGRectElement>(`rect[type="end-point"][x="${item[0] - this.pointRadiusWithScale}"][y="${item[1] - this.pointRadiusWithScale}"]`);
+            if (circle) {
+                if (newLine) {
+                    const fragmentids = circle.dataset.fragmentids || '';
+                    circle.dataset.fragmentids = Array.from(new Set(fragmentids.split(',') || []).values()).toString();
+                }
+            } else {
+                circle = this.createCircle(item);
+            }
             this.EndPointsEle.push(circle);
         });
     }
 
     private createCircle([x, y]: TCoordinate) {
-        const pointRadiusWithScale = POINT_RADIUS / this.scale;
-
-        return createSVGElement({
+        const elem = createSVGElement({
             element: 'rect',
             attr: {
                 type: 'end-point',
                 fill: '',
                 'fill-opacity': 1,
-                rx: `${pointRadiusWithScale}`,
-                ry: `${pointRadiusWithScale}`,
+                rx: `${this.pointRadiusWithScale}`,
+                ry: `${this.pointRadiusWithScale}`,
                 width: POINT_SIZE / this.scale,
                 height: POINT_SIZE / this.scale,
-                x: x - pointRadiusWithScale,
+                x: x - this.pointRadiusWithScale,
                 cx: x,
-                y: y - pointRadiusWithScale,
+                y: y - this.pointRadiusWithScale,
                 cy: y,
                 stroke: THEME_COLOR,
                 'stroke-width': 1 / this.scale,
@@ -174,6 +218,9 @@ class Line {
                 id: uuid()
             }
         });
+        elem.dataset.fragmentids = this.fragmentID;
+        this.endPointsGroup.appendChild(elem);
+        return elem;
     }
 
     private calcSymmetryPoint([x, y]: TCoordinate, [x1, y1]: TCoordinate): TCoordinate {
@@ -208,26 +255,28 @@ class Line {
         this.elem.remove();
     }
 
-    public updateScale(scale: number) {
+    public updateScale(scale: number, pointRadiusWithScale: number) {
         this.scale = scale;
+        this.pointRadiusWithScale = pointRadiusWithScale;
 
         this.elem.setAttribute('stroke-width', `${1 / this.scale}`);
-
-        const pointRadiusWithScale = POINT_RADIUS / this.scale;
         this.EndPointsEle.forEach((elem, index) => {
-            const item = this.EndPoins[index];
+            const item = this.endPoints[index];
 
             elem.setAttribute('width', `${POINT_SIZE / this.scale}`);
             elem.setAttribute('height', `${POINT_SIZE / this.scale}`);
-            elem.setAttribute('rx', `${pointRadiusWithScale}`);
-            elem.setAttribute('ry', `${pointRadiusWithScale}`);
-            elem.setAttribute('x', `${item[0] - pointRadiusWithScale}`);
-            elem.setAttribute('y', `${item[1] - pointRadiusWithScale}`);
+            elem.setAttribute('rx', `${this.pointRadiusWithScale}`);
+            elem.setAttribute('ry', `${this.pointRadiusWithScale}`);
+            elem.setAttribute('x', `${item[0] - this.pointRadiusWithScale}`);
+            elem.setAttribute('y', `${item[1] - this.pointRadiusWithScale}`);
             elem.setAttribute('stroke-width', `${1 / scale}`);
         });
     }
 
     public distanceDetection(x: number, y: number) {
+        if (!this.model) {
+            return 999;
+        }
         const nearestPoint = this.model.project({ x, y });
 
         const a = nearestPoint.x - x;

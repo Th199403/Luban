@@ -11,7 +11,8 @@
         "preserveConstEnums": true,
         "useDefineForClassFields": true,
         "noEmit": false,
-        "strictFunctionTypes": true
+        "strictFunctionTypes": true,
+        "downlevelIteration": true
     },
     "include": [
         "./src/**/*"

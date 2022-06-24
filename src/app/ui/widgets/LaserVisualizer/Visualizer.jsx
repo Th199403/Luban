@@ -227,6 +227,7 @@ class Visualizer extends Component {
                     body: i18n._('Failed to import this object. \nPlease select a supported file format.')
                 });
             }, isLimit, this.fileInfo.current);
+            this.fileInfo.current = null;
         },
         onClickToUpload: () => {
             this.fileInput.current.value = null;

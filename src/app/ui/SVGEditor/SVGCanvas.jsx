@@ -2,7 +2,7 @@ import includes from 'lodash/includes';
 import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
 import jQuery from 'jquery';
-import { throttle } from 'lodash';
+import { debounce, throttle } from 'lodash';
 import toPath from 'element-to-path';
 import svgPath from 'svgpath';
 import { NS } from './lib/namespaces';
@@ -178,6 +178,10 @@ class SVGCanvas extends PureComponent {
     editingElem = null
 
     preSelectionGroup = null;
+
+    mouseWheeling = false
+
+    resetMouseWheelState = debounce(() => this._resetMouseWheelState(), 400);
 
     componentDidMount() {
         this.setupSVGContainer();
@@ -381,7 +385,6 @@ class SVGCanvas extends PureComponent {
             this.setMode(mode, ext);
         };
         this.svgContentGroup.onExitModelEditing = (exitCompletely) => {
-            // console.log('#################', exitCompletely);
             return this.stopDraw(exitCompletely);
         };
     }
@@ -435,7 +438,6 @@ class SVGCanvas extends PureComponent {
     }
 
     updateMode(mode, extShape) {
-        console.log(`updateMode =>> mode=${mode}, paths=${extShape?.paths}`);
         if (mode === 'select') {
             jQuery(this.svgContainer).css('cursor', 'auto');
         } else if (mode === 'draw') {
@@ -543,7 +545,6 @@ class SVGCanvas extends PureComponent {
         const pt = transformPoint({ x: event.pageX, y: event.pageY }, matrix);
         const x = pt.x;
         const y = pt.y;
-        console.log(`x=${x},y=${y}`);
         const mouseTarget = this.getMouseTarget(event, x, y);
         if (rightClick || event.ctrlKey || event.metaKey) {
             draw.mode = this.mode;
@@ -841,6 +842,9 @@ class SVGCanvas extends PureComponent {
     };
 
     onMouseMove = (event) => {
+        if (this.mouseWheeling) {
+            return;
+        }
         const draw = this.currentDrawing;
         const matrix = this.svgContentGroup.getScreenCTM().inverse();
         const pt = transformPoint({ x: event.pageX, y: event.pageY }, matrix);
@@ -1427,17 +1431,16 @@ class SVGCanvas extends PureComponent {
         } else if (tagName === 'path' && mouseTarget.getAttribute('editable')) {
             this.clearSelection();
             const svgModel = this.props.SVGActions.getSVGModelByElement(mouseTarget);
-            svgModel.elem.setAttribute('visibility', 'hidden');
+            // svgModel.elem.setAttribute('visibility', 'hidden');
 
             this.addToSelection([mouseTarget]);
             this.setMode('select', {
                 elem: svgModel.elem
             });
         } else if (tagName === 'image' && mouseTarget.getAttribute('isText')) {
-            console.log(mouseTarget);
             const svgModel = this.props.SVGActions.getSVGModelByElement(mouseTarget);
             svgModel.elemToPath();
-            svgModel.elem.setAttribute('visibility', 'hidden');
+            // svgModel.elem.setAttribute('visibility', 'hidden');
 
             this.addToSelection([mouseTarget]);
             this.setMode('select', {
@@ -1446,7 +1449,13 @@ class SVGCanvas extends PureComponent {
         }
     };
 
+    _resetMouseWheelState = () => {
+        this.mouseWheeling = false;
+    }
+
     onMouseWheel = (event) => {
+        this.mouseWheeling = true;
+        this.resetMouseWheelState();
         event.preventDefault();
         if (event.deltaY < 0) {
             this.scale /= SCALE_RATE;
@@ -1519,14 +1528,12 @@ class SVGCanvas extends PureComponent {
     };
 
     startDraw = () => {
-        console.log(`svgCanavas startDraw => editingElem=${this.editingElem}`);
         this.setMode('draw', this.editingElem ? {
             elem: this.editingElem
         } : {});
     };
 
     stopDraw = (exitCompletely, nextMode) => {
-        console.log(`svgCanvas stopdraw => exitCompletely=${exitCompletely},nextMode=${nextMode},currentMode=${this.mode}`);
         return new Promise((resolve) => {
             if (this.mode === 'select') {
                 if (!this.editingElem) {
@@ -1543,7 +1550,6 @@ class SVGCanvas extends PureComponent {
                 // Wait for svgmode creation to complete
                 const loop = setInterval(() => {
                     const svgModel = this.props.SVGActions.getSVGModelByID(modelID);
-                    console.log('@@@@@@@@@@', svgModel);
                     if (svgModel) {
                         clearInterval(loop);
                         if (exitCompletely) {
