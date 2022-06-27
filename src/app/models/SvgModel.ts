@@ -383,6 +383,8 @@ class SvgModel extends BaseModel {
                 break;
             }
             case 'path': {
+                console.log(absScaleX, absScaleY);
+
                 const d = element.getAttribute('d');
                 const bbox = element.getBBox();
                 const cx = bbox.x + bbox.width / 2;
@@ -790,6 +792,15 @@ class SvgModel extends BaseModel {
     }
 
     public updateSvgPaths(preTransformation: ModelTransformation) {
+        // eslint-disable-next-line no-restricted-syntax
+        for (const key in preTransformation) {
+            if (Object.prototype.hasOwnProperty.call(preTransformation, key)) {
+                if (preTransformation[key] !== this.transformation[key]) {
+                    console.log(key);
+                }
+            }
+        }
+
         const preScaleX = Math.abs(preTransformation.width / this.width);
         const preScaleY = Math.abs(preTransformation.height / this.height);
 
@@ -799,9 +810,9 @@ class SvgModel extends BaseModel {
         this.config.d = svgPath((this.config.d as string))
             .translate(-320 - preTransformation.positionX, -350 + preTransformation.positionY)
             .scale(scaleX / preScaleX, scaleY / preScaleY)
-            .scale(this.transformation.scaleX / preTransformation.scaleX, this.transformation.scaleY / preTransformation.scaleY)
-            .rotate(preTransformation.rotationZ / Math.PI * 180)
-            .rotate(-this.transformation.rotationZ / Math.PI * 180)
+            .scale(Math.abs(this.transformation.scaleX / preTransformation.scaleX), Math.abs(this.transformation.scaleY / preTransformation.scaleY))
+            // .rotate(preTransformation.rotationZ / Math.PI * 180)
+            // .rotate(-this.transformation.rotationZ / Math.PI * 180)
             .translate(320 + this.transformation.positionX, 350 - this.transformation.positionY)
             .toString();
     }
@@ -1339,7 +1350,6 @@ class SvgModel extends BaseModel {
             'id': this.modelID,
             d: this.config.d,
             preset: true,
-            'stroke-width': 1 / this.scale,
             fill: 'transparent',
             stroke: '#000',
             editable: true,
@@ -1351,8 +1361,18 @@ class SvgModel extends BaseModel {
             pathElement.setAttribute(key, `${value}`);
         }
         this.elem.parentNode.append(pathElement);
+
+        const scaleX = this.scaleX;
+        const scaleY = this.scaleY;
+        const angle = this.angle;
         this.elem.remove();
+
         SvgModel.initializeElementTransform(pathElement);
+        const x = this.x;
+        const y = this.y;
+
+        SvgModel.recalculateElementTransformList(pathElement, { x, y, scaleX, scaleY, angle });
+
         this.elem = pathElement;
         this.config.svgNodeName = 'path';
 
@@ -1380,8 +1400,17 @@ class SvgModel extends BaseModel {
             imageElement.setAttribute(key, `${value}`);
         }
         this.elem.parentNode.append(imageElement);
+        const scaleX = this.scaleX;
+        const scaleY = this.scaleY;
+        const angle = this.angle;
         this.elem.remove();
+
         SvgModel.initializeElementTransform(imageElement);
+        const x = this.x;
+        const y = this.y;
+
+        SvgModel.recalculateElementTransformList(imageElement, { x, y, scaleX, scaleY, angle });
+
         this.elem = imageElement;
         this.config.svgNodeName = 'image';
 

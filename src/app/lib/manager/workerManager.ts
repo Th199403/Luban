@@ -11,6 +11,7 @@ export enum WorkerMethods {
     gcodeToBufferGeometry = 'gcodeToBufferGeometry',
     loadModel = 'loadModel',
     scaleToFitWithRotate = 'scaleToFitWithRotate',
+    toolpathRenderer = 'toolpathRenderer',
     splitPath = 'splitPath'
     // LUBAN worker methods END
 }
@@ -44,10 +45,6 @@ class WorkerManager {
         }
         return this.pool;
     }
-
-    // public calculateSectionPoints() {
-
-    // }
 }
 
 Object.entries(WorkerMethods).forEach(([, method]) => {

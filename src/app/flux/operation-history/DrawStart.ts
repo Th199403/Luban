@@ -18,7 +18,7 @@ export default class DrawStart extends Operation<DrawStartProp> {
     public redo() {
         this.state.contentGroup.drawGroup.stopDraw(true);
         if (this.state.elemID) {
-            // TODO 留点注释
+            // Compatible with IDS starting with numbers
             const elem = document.querySelector(`[id="${this.state.elemID}"]`);
             this.state.contentGroup.onChangeMode('select', { elem });
         } else {

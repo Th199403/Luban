@@ -11,7 +11,7 @@ import CursorGroup from './CursorGroup';
 import workerManager from '../../../../lib/manager/workerManager';
 
 export type TransformRecord = {
-    fragmentID: number,
+    fragmentID: string,
     points: TCoordinate[]
 }
 
@@ -39,7 +39,7 @@ class DrawGroup {
 
     private endPointsGroup: SVGGElement;
 
-    private drawedLine = new Map<number, Line>()
+    private drawedLine = new Map<string, Line>()
 
     private graph: SVGGElement;
 
@@ -344,7 +344,7 @@ class DrawGroup {
                 this.appendLine({
                     elem: childsElem[index],
                     points,
-                    fragmentID: this.drawedLine.size,
+                    fragmentID: `${this.drawedLine.size}`,
                     scale: this.scale
                 });
             });
@@ -364,7 +364,7 @@ class DrawGroup {
             pointRadiusWithScale: this.pointRadiusWithScale,
             endPointsGroup: this.endPointsGroup,
             group: this.graph,
-            fragmentID: config.fragmentID || this.drawedLine.size,
+            fragmentID: config.fragmentID || `${this.drawedLine.size}`,
         });
         this.drawedLine.set(line.fragmentID, line);
         return line;
@@ -376,19 +376,26 @@ class DrawGroup {
         return this.drawedLine.get(LatestFragmentID);
     }
 
-    private getEndPointfragmentIDs(elem: SVGRectElement) {
-        if (!elem.dataset || !elem.dataset.fragmentids) {
+    private getEndPointfragments(elem: SVGRectElement) {
+        if (!elem || !elem.dataset || !elem.dataset) {
             return [];
         }
-        return elem.dataset.fragmentids.split(',').map(i => Number(i));
+        const fragmentIDs: { id: string, index: number }[] = [];
+        for (const id of Object.keys(elem.dataset)) {
+            fragmentIDs.push({
+                id,
+                index: Number(elem.dataset[id])
+            });
+        }
+        return fragmentIDs;
     }
 
     public delLine(line: Line) {
         line.del();
         this.drawedLine.delete(line.fragmentID);
-        line.EndPointsEle.forEach((elem) => {
-            const useful = this.getEndPointfragmentIDs(elem).some((id) => {
-                return this.drawedLine.has(id);
+        line.getEndPointEles().forEach((elem) => {
+            const useful = this.getEndPointfragments(elem).some((item) => {
+                return this.drawedLine.has(item.id);
             });
             if (!useful) {
                 elem.remove();
@@ -396,8 +403,8 @@ class DrawGroup {
         });
     }
 
-    public getLine(mark: SVGPathElement | SVGRectElement | number) {
-        if (typeof mark === 'number') {
+    public getLine(mark: SVGPathElement | SVGRectElement | string): Line {
+        if (typeof mark === 'string') {
             return this.drawedLine.get(mark);
         }
         if (!mark) {
@@ -406,16 +413,16 @@ class DrawGroup {
         if (mark instanceof SVGRectElement) {
             if (mark.parentNode === this.operationGroup.controlPoints) {
                 // control point
-                const fragmentID = Number(mark.getAttribute('fragmentid'));
+                const fragmentID = mark.getAttribute('fragmentid');
                 return this.getLine(fragmentID);
             } else {
                 // end point
-                const fragmentIDs = this.getEndPointfragmentIDs(mark);
-                const fragmentID = fragmentIDs.find(id => this.drawedLine.has(id));
-                return this.getLine(fragmentID);
+                const fragmentIDs = this.getEndPointfragments(mark);
+                const fragmentID = fragmentIDs.find(item => this.drawedLine.has(item.id));
+                return this.getLine(fragmentID.id);
             }
         } else if (mark instanceof SVGPathElement) {
-            const fragmentID = Number(mark.getAttribute('fragmentid'));
+            const fragmentID = mark.getAttribute('fragmentid');
             return this.getLine(fragmentID);
         }
         return null;
@@ -434,15 +441,15 @@ class DrawGroup {
             if (elem === this.selected.point && elem.parentNode === this.operationGroup.controlPoints) {
                 return [this.selected.line];
             }
-            const fragmentIDs = this.getEndPointfragmentIDs(elem);
+            const fragmentIDs = this.getEndPointfragments(elem);
 
-            return fragmentIDs.filter((id) => {
-                return this.drawedLine.has(id);
-            }).map((id) => {
-                return this.drawedLine.get(id);
+            return fragmentIDs.filter((item) => {
+                return this.drawedLine.has(item.id);
+            }).map((item) => {
+                return this.drawedLine.get(item.id);
             });
         } else if (relationType === 'line' && elem instanceof Line) {
-            return elem.EndPointsEle.reduce((prev, point) => {
+            return elem.getEndPointEles().reduce((prev, point) => {
                 prev.push(...this.getSelectedRelationLines('point', point));
                 return prev;
             }, []);
@@ -526,6 +533,8 @@ class DrawGroup {
                         }) + 1;
                         this.operationGroup.updateOperation(this.selected.line.elem);
                     } else {
+                        console.log(this.preSelectPoint);
+
                         this.preSelectPoint.setAttribute('fill', THEME_COLOR);
                         this.selected.pointIndex = null;
                         const elems = this.getSelectedRelationLines().reduce((p, c) => {
@@ -596,7 +605,7 @@ class DrawGroup {
                 relationLines.some((line) => {
                     const isEndpointCoincidence = line.isEndpointCoincidence();
                     if (isEndpointCoincidence) {
-                        anotherEndpoint = line.EndPointsEle.find((elem) => elem !== this.selected.point);
+                        anotherEndpoint = line.getEndPointEles().find((elem) => elem !== this.selected.point);
                         return true;
                     }
                     return false;
@@ -642,10 +651,13 @@ class DrawGroup {
         let attachPosition: TCoordinate;
         let guideX: TCoordinate;
         let guideY: TCoordinate;
-        this.drawedLine.forEach((line) => {
-            const selfIndex = line.EndPointsEle.findIndex((elem) => elem === this.selected.point);
+        const fragments = this.getEndPointfragments(this.selected.point);
+        for (const [id, line] of this.drawedLine.entries()) {
+            const lineIsSelected = fragments.find((item) => {
+                return item.id === id;
+            });
             line.endPoints.forEach((p, index) => {
-                if (selfIndex !== -1 && selfIndex === index) {
+                if (lineIsSelected && lineIsSelected.index === index) {
                     return;
                 }
                 if (Math.abs(x - p[0]) <= this.attachSpace || Math.abs(y - p[1]) <= this.attachSpace) {
@@ -663,7 +675,7 @@ class DrawGroup {
                     }
                 }
             });
-        });
+        }
 
         if (this.mode === MODE.DRAW) {
             const controlPoints = this.operationGroup.controlPoints.querySelectorAll('[visibility="visible"]');
@@ -738,46 +750,53 @@ class DrawGroup {
             this.selected.line.points[this.selected.pointIndex][1] = y;
             this.selected.line.updatePosition(this.selected.line.points);
         } else {
-            this.drawedLine.forEach((p) => {
-                const index = p.EndPointsEle.findIndex((elem) => elem === this.selected.point);
-                if (index !== -1) {
-                    p.endPoints[index][0] = x;
-                    p.endPoints[index][1] = y;
-                    p.updatePosition(p.points);
+            const lines = this.getEndPointfragments(this.selected.point);
+            for (const { id, index } of lines) {
+                const line = this.drawedLine.get(id);
+                if (line) {
+                    line.endPoints[index][0] = x;
+                    line.endPoints[index][1] = y;
+                    line.updatePosition(line.points);
                 }
-            });
+            }
         }
     }
 
-    private queryLink(line: SVGPathElement) {
-        const selectedLine = this.getLine(line);
-        const links = new Map<Line, { line: Line, indexs: number[], fragmentID: number }>();
-        this.drawedLine.forEach((item) => {
-            if (item.elem === line) {
-                links.set(item, {
-                    indexs: Array(item.points.length).fill(0).map((_, index) => index),
-                    line: item,
-                    fragmentID: item.fragmentID
-                });
-            } else {
-                const circleEles = item.EndPointsEle;
-                selectedLine.EndPointsEle.forEach((circle) => {
-                    const circleIndex = circleEles.findIndex((i) => circle === i);
-                    const index = item.points.findIndex((p) => p === item.endPoints[circleIndex]);
-                    if (index !== -1) {
-                        const has = links.get(item);
-                        if (has) {
-                            has.indexs.push(index);
-                        } else {
-                            links.set(item, {
-                                indexs: [index],
-                                line: item,
-                                fragmentID: item.fragmentID
-                            });
-                        }
-                    }
-                });
-            }
+    private queryLink(elem: SVGPathElement) {
+        const line = this.getLine(elem);
+        if (!line) {
+            return [];
+        }
+        const links = new Map<string, { line: Line, indexs: Set<number>, fragmentID: string }>();
+
+        links.set(line.fragmentID, {
+            indexs: Array(line.points.length).fill(0).reduce((p: Set<number>, _, index) => {
+                p.add(index);
+                return p;
+            }, new Set()),
+            line,
+            fragmentID: line.fragmentID
+        });
+
+        const endPointEles = line.getEndPointEles();
+        endPointEles.forEach((point) => {
+            this.getEndPointfragments(point).forEach((item) => {
+                if (!this.drawedLine.has(item.id)) {
+                    return;
+                }
+                const _line = this.drawedLine.get(item.id);
+                const index = item.index === 0 ? 0 : _line.points.length - 1;
+                const link = links.get(item.id);
+                if (link) {
+                    link.indexs.add(index);
+                } else {
+                    links.set(item.id, {
+                        indexs: new Set([index]),
+                        line: _line,
+                        fragmentID: item.id
+                    });
+                }
+            });
         });
         return Array.from(links.values());
     }
@@ -813,8 +832,8 @@ class DrawGroup {
         });
         nearest = this.attachSpace;
         (Array.from(this.endPointsGroup.children) as unknown[] as SVGRectElement[]).forEach((elem) => {
-            const pointX = Number(elem.getAttribute('x'));
-            const pointY = Number(elem.getAttribute('y'));
+            const pointX = Number(elem.getAttribute('cx'));
+            const pointY = Number(elem.getAttribute('cy'));
             const space = Math.sqrt((pointX - x) ** 2 + (pointY - y) ** 2);
             elem.setAttribute('stroke', THEME_COLOR);
             elem.setAttribute('stroke-opacity', '1');
@@ -831,8 +850,8 @@ class DrawGroup {
             }
         });
         Array.from(this.operationGroup.controlPoints.querySelectorAll<SVGRectElement>('[visibility="visible"]')).forEach((elem) => {
-            const pointX = Number(elem.getAttribute('x'));
-            const pointY = Number(elem.getAttribute('y'));
+            const pointX = Number(elem.getAttribute('cx'));
+            const pointY = Number(elem.getAttribute('cy'));
             const space = Math.sqrt((pointX - x) ** 2 + (pointY - y) ** 2);
             elem.setAttribute('stroke', THEME_COLOR);
             elem.setAttribute('stroke-opacity', '1');
@@ -1042,7 +1061,6 @@ class DrawGroup {
         return this.modelID;
     }
 
-
     private recordTransform() {
         const pointRecords: TransformRecord[] = [];
         if (this.selected.pointIndex) {
@@ -1051,15 +1069,16 @@ class DrawGroup {
                 points: cloneDeep(this.selected.line.points)
             });
         } else if (this.selected.point) {
-            this.drawedLine.forEach((p) => {
-                const index = p.EndPointsEle.findIndex((elem) => elem === this.selected.point);
-                if (index !== -1) {
+            const lines = this.getEndPointfragments(this.selected.point);
+            for (const { id } of lines) {
+                const line = this.drawedLine.get(id);
+                if (line) {
                     pointRecords.push({
-                        fragmentID: p.fragmentID,
-                        points: cloneDeep(p.points)
+                        fragmentID: id,
+                        points: cloneDeep(line.points)
                     });
                 }
-            });
+            }
         } else if (this.selected.line) {
             this.queryLink(this.selected.line.elem).forEach((item) => {
                 pointRecords.push({

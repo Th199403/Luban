@@ -403,6 +403,8 @@ class SVGCanvas extends PureComponent {
             this.svgContentGroup.drawGroup.onMouseenter();
         });
         this.svgContainer.addEventListener('mouseleave', (event) => {
+            this.onMouseUp(event);
+
             this.svgContentGroup.drawGroup.onMouseleave();
             const leftKeyPressed = event.which === 1;
             if (leftKeyPressed && this.mode !== 'draw' && !(this.mode === 'select' && this.editingElem)) {
@@ -465,13 +467,12 @@ class SVGCanvas extends PureComponent {
             this.currentDrawing.started = true;
 
             if (extShape.elem) {
-                // 编辑转绘制
-                console.warn('编辑转绘制');
+                // Edit to draw
                 this.editingElem = extShape.elem;
                 this.svgContentGroup.drawGroup.stopDraw();
                 this.svgContentGroup.drawGroup.startDraw(mode, this.editingElem);
             } else {
-                console.warn('新绘制');
+                // New draw
                 this.editingElem = null;
                 this.svgContentGroup.drawGroup.startDraw(mode);
             }
@@ -1431,7 +1432,6 @@ class SVGCanvas extends PureComponent {
         } else if (tagName === 'path' && mouseTarget.getAttribute('editable')) {
             this.clearSelection();
             const svgModel = this.props.SVGActions.getSVGModelByElement(mouseTarget);
-            // svgModel.elem.setAttribute('visibility', 'hidden');
 
             this.addToSelection([mouseTarget]);
             this.setMode('select', {
@@ -1440,7 +1440,6 @@ class SVGCanvas extends PureComponent {
         } else if (tagName === 'image' && mouseTarget.getAttribute('isText')) {
             const svgModel = this.props.SVGActions.getSVGModelByElement(mouseTarget);
             svgModel.elemToPath();
-            // svgModel.elem.setAttribute('visibility', 'hidden');
 
             this.addToSelection([mouseTarget]);
             this.setMode('select', {
@@ -1564,7 +1563,7 @@ class SVGCanvas extends PureComponent {
                                 resolve(svgModel.elem);
                             }
                         } else {
-                            console.warn('绘制转编辑');
+                            // Draw to edit
                             const elem = svgModel.elem;
                             this.setMode('select', {
                                 elem
@@ -1576,18 +1575,15 @@ class SVGCanvas extends PureComponent {
                 }, 100);
             } else if (nextMode === 'select' && mode === 'draw') {
                 if (this.editingElem && this.drawingModelID) {
-                    console.warn('编辑转绘制之前, 保存编辑状态下的更改');
-                    // const svgModel = this.props.SVGActions.getSVGModelByID(this.drawingModelID);
-                    // const elem = svgModel.elem;
+                    // Save changes in the editing state before editing to draw
                     this.setMode('select', {
                         elem: this.editingElem
                     });
                 }
-                // editingElem && this.addToSelection([editingElem]);
                 this.currentDrawing.started = false;
                 resolve();
             } else {
-                console.warn('退出编辑状态');
+                // Exit editing status
                 const editingElem = this.editingElem;
                 this.setMode('select');
                 editingElem && this.addToSelection([editingElem]);

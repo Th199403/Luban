@@ -29,6 +29,11 @@ export default class MoveOperation2D extends Operation<TState> {
         this.updateSvgPaths(this.state.from);
     }
 
+    /**
+     * When SVG is displayed as a picture, the path needs to be updated to change the location.
+     * To ensure that the position is correct when switching to vector
+     * @param preTransform Based on last location information
+     */
     private updateSvgPaths(preTransform: ModelTransformation) {
         const svgModel = this.state.target;
 

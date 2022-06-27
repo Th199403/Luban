@@ -272,11 +272,6 @@ class SVGActionsFactory {
         }
     }
 
-    updateSvgModelImage(svgModel, imageName) {
-        const imagePath = `${DATA_PREFIX}/${imageName}`;
-        svgModel.elem.setAttribute('href', imagePath);
-    }
-
     deleteSelectedElements() {
         const selectedElements = this.svgContentGroup.getSelectedElements();
         if (!selectedElements) {

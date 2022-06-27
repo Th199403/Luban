@@ -433,7 +433,6 @@ export const actions = {
                 }
             });
         }
-        // TODO clear history
     },
 
     // Note: add progress bar when saving project file

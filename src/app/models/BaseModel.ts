@@ -66,7 +66,11 @@ export type ModelInfo = {
         whiteClip: number;
         invert: boolean
         svgNodeName: string;
-        editable: boolean
+        editable: boolean;
+        /**
+         * Distinguish whether to draw manually
+         */
+        drawn: boolean;
     },
     mode: TMode,
     visible?: boolean,

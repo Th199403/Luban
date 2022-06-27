@@ -114,10 +114,10 @@ function shouldProcessModel(selectedModel) {
 }
 
 // a wrapper function for recording scaled models states
-function recordScaleActionsToHistory(scaleActionsFn, elements, SVGActions, headType, machine, dispatch, _operations) {
+function recordScaleActionsToHistory(scaleActionsFn, elements, SVGActions, headType, machine, dispatch) {
     if (typeof scaleActionsFn === 'function') {
         const tmpTransformationState = {};
-        const operations = _operations || new Operations();
+        const operations = new Operations();
         for (const element of elements) {
             const svgModel = SVGActions.getSVGModelByElement(element);
             tmpTransformationState[element.id] = {
@@ -225,16 +225,14 @@ function recordScaleActionsToHistory(scaleActionsFn, elements, SVGActions, headT
                 });
             }
         });
-        if (!_operations) {
-            // all the SVGModel changed, record operations to history
-            Promise.all(promises)
-                .then(() => {
-                    dispatch(operationHistoryActions.setOperations(headType, operations));
-                })
-                .catch(() => {
-                    dispatch(operationHistoryActions.setOperations(headType, operations));
-                });
-        }
+        // all the SVGModel changed, record operations to history
+        Promise.all(promises)
+            .then(() => {
+                dispatch(operationHistoryActions.setOperations(headType, operations));
+            })
+            .catch(() => {
+                dispatch(operationHistoryActions.setOperations(headType, operations));
+            });
     }
 }
 
@@ -557,7 +555,6 @@ export const actions = {
                 );
             })
             .catch(err => {
-                console.log('@@@@@@@', err);
                 onError && onError(err);
                 dispatch(
                     actions.updateState(headType, {
@@ -578,6 +575,7 @@ export const actions = {
             api.uploadImage(formData)
                 .then(res => {
                     resolve(res.body);
+                    // Ensure promise is completed first
                     setTimeout(() => {
                         const { width, height } = res.body;
                         const isOverSize = isOverSizeModel(coordinateSize, width, height);
@@ -1234,8 +1232,6 @@ export const actions = {
         SVGActions.selectElements([model.elem]);
         SVGActions.resetSelection();
 
-        // SVGActions.updateSvgModelImage(model, processImageName);
-
         dispatch(baseActions.resetCalculatedState(headType));
         dispatch(baseActions.render(headType));
 
@@ -1410,8 +1406,6 @@ export const actions = {
         if (isDrawing) {
             await SVGActions.svgContentGroup.exitModelEditing(true);
             dispatch(actions.selectAllElements(headType));
-            // SVGActions.selectAllElements();
-            // dispatch(baseActions.render(headType));
         } else {
             SVGActions.selectAllElements();
             dispatch(baseActions.render(headType));
@@ -1639,7 +1633,7 @@ export const actions = {
     /**
      * Resize elements finish.
      */
-    resizeElementsFinish: (headType, elements, options, _operations) => async (dispatch, getState) => {
+    resizeElementsFinish: (headType, elements, options) => async (dispatch, getState) => {
         const { SVGActions, modelGroup } = getState()[headType];
         const { machine } = getState();
 
@@ -1651,8 +1645,7 @@ export const actions = {
             SVGActions,
             headType,
             machine,
-            dispatch,
-            _operations
+            dispatch
         );
 
         dispatch(actions.resetProcessState(headType));
@@ -2357,6 +2350,7 @@ export const actions = {
             });
             operations.push(operation);
             history.push(operations);
+            // After text editing, changing styles is no longer supported
             model.config.isText = false;
             SvgModel.completeElementTransform(model.elem);
             model.onTransform();

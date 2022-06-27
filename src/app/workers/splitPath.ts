@@ -48,7 +48,7 @@ const boxSelect = (data: TData) => {
     let fragmentID = 0;
 
     const pointsMap = new Map<number, {
-        fragmentIDS: number[],
+        fragmentIDS: [id: number, index: number][],
         coordinate: TCoordinate
     }>();
     return new Observable((observer) => {
@@ -91,19 +91,27 @@ const boxSelect = (data: TData) => {
                     }
                     if (!pointsMap.has(startHash)) {
                         pointsMap.set(startHash, {
-                            fragmentIDS: [fragmentID],
+                            fragmentIDS: [
+                                [fragmentID, 0]
+                            ],
                             coordinate: start
                         });
                     } else {
-                        pointsMap.get(startHash).fragmentIDS.push(fragmentID);
+                        pointsMap.get(startHash).fragmentIDS.push([
+                            fragmentID, 0
+                        ]);
                     }
                     if (!pointsMap.has(lastHash)) {
                         pointsMap.set(lastHash, {
-                            fragmentIDS: [fragmentID],
+                            fragmentIDS: [
+                                [fragmentID, 1]
+                            ],
                             coordinate: last
                         });
                     } else {
-                        pointsMap.get(lastHash).fragmentIDS.push(fragmentID);
+                        pointsMap.get(lastHash).fragmentIDS.push([
+                            fragmentID, 1
+                        ]);
                     }
                     allPoints.push(pathPoints);
                     str += `<path fragmentID="${fragmentID}" fill="transparent" fill-opacity="0" stroke="black" stroke-width="${strokeWidth}" d="${generatePath(pathPoints)}"></path>`;
@@ -119,7 +127,12 @@ const boxSelect = (data: TData) => {
 
         for (const [, item] of pointsMap.entries()) {
             const coordinate = item.coordinate;
-            pointsElemStr += `<rect data-fragmentIDS=${item.fragmentIDS.join(',')} fill="" fill-opacity="1" stroke="#1890ff" type="end-point" rx="${pointRadiusWithScale}" ry="${pointRadiusWithScale}" width="${radius}" height="${radius}" x="${coordinate[0] - pointRadiusWithScale}" cx="${coordinate[0]}" y="${coordinate[1] - pointRadiusWithScale}" cy="${coordinate[1]}" stroke-width="${strokeWidth}" pointer-events="all" id="${uuid()}" stroke-opacity="1"></rect>`;
+            const fragmentAttr = item.fragmentIDS.reduce((p, c) => {
+                p += ` data-${c[0]}="${c[1]}"`;
+                return p;
+            }, '');
+
+            pointsElemStr += `<rect ${fragmentAttr} fill="" fill-opacity="1" stroke="#1890ff" type="end-point" rx="${pointRadiusWithScale}" ry="${pointRadiusWithScale}" width="${radius}" height="${radius}" x="${coordinate[0] - pointRadiusWithScale}" cx="${coordinate[0]}" y="${coordinate[1] - pointRadiusWithScale}" cy="${coordinate[1]}" stroke-width="${strokeWidth}" pointer-events="all" id="${uuid()}" stroke-opacity="1"></rect>`;
         }
 
         observer.next({

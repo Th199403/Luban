@@ -29,6 +29,7 @@ export default class DrawTransformComplete extends Operation<DrawTransformComple
         }
     }
 
+    // There are two styles before and after text editing. The style before editing is consistent with the historical version
     private setTextStyle(fill: boolean) {
         setAttributes(this.state.svgModel.elem, {
             stroke: fill ? 'none' : '#000',
@@ -40,6 +41,7 @@ export default class DrawTransformComplete extends Operation<DrawTransformComple
     public redo() {
         const svgModel = this.state.svgModel;
         if (this.state.isText) {
+            // After text editing, changing styles is no longer supported
             svgModel.config.isText = false;
             this.state.SVGActions.clearSelection();
             this.setTextStyle(false);
@@ -59,6 +61,7 @@ export default class DrawTransformComplete extends Operation<DrawTransformComple
     public undo() {
         const svgModel = this.state.svgModel;
         if (this.state.isText) {
+            // Restore the original editing function of the text
             svgModel.config.isText = true;
             this.state.SVGActions.clearSelection();
             this.setTextStyle(true);

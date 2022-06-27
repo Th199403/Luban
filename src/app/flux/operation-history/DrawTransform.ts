@@ -18,7 +18,6 @@ export default class DrawTransform extends Operation<DrawTransformProp> {
         };
     }
 
-
     private updateRelationLinesPoints(records: TransformRecord[]) {
         records.forEach((record) => {
             const line = this.state.drawGroup.getLine(record.fragmentID);

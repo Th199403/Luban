@@ -10,7 +10,7 @@ export type TLineConfig = {
     scale?: number;
     pointRadiusWithScale?: number;
     closedLoop?: boolean,
-    fragmentID?: number,
+    fragmentID?: string,
     endPointsGroup?: SVGGElement;
     group?: SVGGElement;
 }
@@ -20,13 +20,11 @@ class Line {
 
     public endPoints: TCoordinate[];
 
-    public EndPointsEle: SVGRectElement[] = [];
-
     public elem: SVGPathElement;
 
     public closedLoop: boolean;
 
-    public fragmentID: number;
+    public fragmentID: string;
 
     private scale: number;
     private pointRadiusWithScale: number;
@@ -77,15 +75,12 @@ class Line {
                 this.points[0],
                 this.points[this.points.length - 1]
             ];
-            this.generateEndPointEle(true);
+            this.generateEndPointEle();
         } else if (this.elem && this.points) {
             this.endPoints = [
                 this.points[0],
                 this.points[this.points.length - 1]
             ];
-            setTimeout(() => {
-                this.generateEndPointEle();
-            }, 200);
         }
 
         setTimeout(() => {
@@ -132,26 +127,31 @@ class Line {
                 points[points.length - 1]
             ] : this.endPoints;
 
+            const endPointsEles = this.getEndPointEles();
+            if (endPointsEles.length < 2) {
+                return;
+            }
+
             endPoints.forEach((item, index) => {
                 const x = item[0];
                 const y = item[1];
                 if (applyMerge) {
                     const circle = this.endPointsGroup.querySelector<SVGRectElement>(`rect[type="end-point"][cx="${x}"][cy="${y}"]:not([fill=""])`) || this.endPointsGroup.querySelector<SVGRectElement>(`rect[type="end-point"][cx="${x}"][cy="${y}"]`);
                     if (circle) {
-                        if (circle !== this.EndPointsEle[index]) {
-                            this.EndPointsEle[index].remove();
-                            this.EndPointsEle[index] = circle;
+                        if (circle !== endPointsEles[index]) {
+                            endPointsEles[index].remove();
+                            endPointsEles[index] = circle;
                         }
                         return;
                     } else {
-                        this.EndPointsEle[index] = this.createCircle(item);
+                        endPointsEles[index] = this.createCircle(item, index);
                         return;
                     }
                 }
-                this.EndPointsEle[index].setAttribute('x', `${x - this.pointRadiusWithScale}`);
-                this.EndPointsEle[index].setAttribute('y', `${y - this.pointRadiusWithScale}`);
-                this.EndPointsEle[index].setAttribute('cx', `${x}`);
-                this.EndPointsEle[index].setAttribute('cy', `${y}`);
+                endPointsEles[index].setAttribute('x', `${x - this.pointRadiusWithScale}`);
+                endPointsEles[index].setAttribute('y', `${y - this.pointRadiusWithScale}`);
+                endPointsEles[index].setAttribute('cx', `${x}`);
+                endPointsEles[index].setAttribute('cy', `${y}`);
             });
         } else {
             const _points = this.parsePoints();
@@ -179,25 +179,28 @@ class Line {
         }
     }
 
-    public generateEndPointEle(newLine?: boolean) {
-        this.endPoints.forEach((item) => {
+    public getEndPointEles() {
+        return [
+            this.endPointsGroup.querySelector<SVGRectElement>(`[data-${this.fragmentID}="0"]`),
+            this.endPointsGroup.querySelector<SVGRectElement>(`[data-${this.fragmentID}="1"]`)
+        ];
+    }
+
+    public generateEndPointEle() {
+        this.endPoints.forEach((item, index) => {
             if (!item || !item[0]) {
                 return;
             }
             let circle = this.endPointsGroup.querySelector<SVGRectElement>(`rect[type="end-point"][x="${item[0] - this.pointRadiusWithScale}"][y="${item[1] - this.pointRadiusWithScale}"]`);
-            if (circle) {
-                if (newLine) {
-                    const fragmentids = circle.dataset.fragmentids || '';
-                    circle.dataset.fragmentids = Array.from(new Set(fragmentids.split(',') || []).values()).toString();
-                }
+            if (!circle) {
+                circle = this.createCircle(item, index);
             } else {
-                circle = this.createCircle(item);
+                circle.dataset[`${this.fragmentID}`] = `${index}`;
             }
-            this.EndPointsEle.push(circle);
         });
     }
 
-    private createCircle([x, y]: TCoordinate) {
+    private createCircle([x, y]: TCoordinate, index: number) {
         const elem = createSVGElement({
             element: 'rect',
             attr: {
@@ -218,7 +221,7 @@ class Line {
                 id: uuid()
             }
         });
-        elem.dataset.fragmentids = this.fragmentID;
+        elem.dataset[`${this.fragmentID}`] = index;
         this.endPointsGroup.appendChild(elem);
         return elem;
     }
@@ -260,7 +263,8 @@ class Line {
         this.pointRadiusWithScale = pointRadiusWithScale;
 
         this.elem.setAttribute('stroke-width', `${1 / this.scale}`);
-        this.EndPointsEle.forEach((elem, index) => {
+        this.getEndPointEles().forEach((elem) => {
+            const index = elem.dataset[this.fragmentID];
             const item = this.endPoints[index];
 
             elem.setAttribute('width', `${POINT_SIZE / this.scale}`);
@@ -285,11 +289,13 @@ class Line {
     }
 
     public isEndpointCoincidence() {
-        const firestEndPoint = this.EndPointsEle[0];
-        const latstEndPoint = this.EndPointsEle[1];
+        const endPointEles = this.getEndPointEles();
+        if (endPointEles.length < 2) {
+            return false;
+        }
         return (
-            firestEndPoint.getAttribute('x') === latstEndPoint.getAttribute('x')
-            && firestEndPoint.getAttribute('y') === latstEndPoint.getAttribute('y')
+            endPointEles[0].getAttribute('x') === endPointEles[1].getAttribute('x')
+            && endPointEles[0].getAttribute('y') === endPointEles[1].getAttribute('y')
         );
     }
 }

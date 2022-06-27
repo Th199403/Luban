@@ -103,6 +103,8 @@ class OperationGroup {
             if (elem) {
                 setAttributes(elem, {
                     fragmentid: `${item.fragmentID}`,
+                    cx: `${item.x}`,
+                    cy: `${item.y}`,
                     x: `${item.x - this.pointRadiusWithScale}`,
                     y: `${item.y - this.pointRadiusWithScale}`,
                     rx: item instanceof ControlPoint ? '0' : `${this.pointRadiusWithScale}`,

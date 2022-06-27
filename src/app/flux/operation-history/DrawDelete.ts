@@ -7,7 +7,7 @@ type DrawDeleteProp = {
     target: {
         points: TCoordinate[],
         closedLoop: boolean,
-        fragmentID: number
+        fragmentID: string
     }[]
     drawGroup: DrawGroup,
 }
