@@ -43,7 +43,7 @@ const launchServer = () => new Promise((resolve, reject) => {
 
     // Change working directory to 'server' before require('./server')
     process.chdir(path.resolve(__dirname, 'server'));
-
+    console.log('__dirname', __dirname);
     require('./server').createServer({
         port: program.port,
         host: program.host,
