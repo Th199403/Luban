@@ -1,8 +1,6 @@
 import { cloneDeep, filter, find as lodashFind, isNil } from 'lodash';
 import path from 'path';
 import * as THREE from 'three';
-// import FileSaver from 'file-saver';
-import { Transfer } from 'threads';
 import { Vector3 } from 'three';
 import {
     acceleratedRaycast,
@@ -79,6 +77,8 @@ import ScaleOperation3D from '../operation-history/ScaleOperation3D';
 import ScaleToFitWithRotateOperation3D from '../operation-history/ScaleToFitWithRotateOperation3D';
 import UngroupOperation3D from '../operation-history/UngroupOperation3D';
 import VisibleOperation3D from '../operation-history/VisibleOperation3D';
+// import FileSaver from 'file-saver';
+const { Transfer } = require('threads');
 
 // register methods for three-mesh-bvh
 THREE.Mesh.prototype.raycast = acceleratedRaycast;
