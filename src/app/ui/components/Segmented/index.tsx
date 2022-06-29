@@ -10,11 +10,14 @@ import styles from './styles.styl';
 
 const SmallSegment = ({ block = true, size = 'small', ...rest }) => {
     return (
-        <Segmented
-            className={styles[size]}
-            block={block}
-            {...rest}
-        />
+        <React.Fragment>
+            <Segmented
+                className={styles[size]}
+                block={block}
+                {...rest}
+            />
+        </React.Fragment>
+
     );
 };
 

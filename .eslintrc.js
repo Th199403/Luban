@@ -30,9 +30,13 @@ module.exports = {
         }
     },
     'plugins': [
-        'react-hooks'
+        'react-hooks',
+        'react'
     ],
     rules: {
+        'linebreak-style': 0,
+        'react/jsx-uses-react': 'error',
+        'react/jsx-uses-vars': 'error',
         'no-use-before-define': 'off',
         '@typescript-eslint/no-use-before-define': ['error'],
         'react/jsx-filename-extension': [2, {
@@ -105,6 +109,7 @@ module.exports = {
         extends: [
             'plugin:@typescript-eslint/eslint-recommended',
             'plugin:@typescript-eslint/recommended',
+            'plugin:react/recommended'
         ],
         parser: '@typescript-eslint/parser',
         // plugins: ['react', '@typescript-eslint'],
