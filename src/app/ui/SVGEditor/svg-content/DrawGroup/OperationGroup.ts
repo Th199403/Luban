@@ -66,29 +66,27 @@ class OperationGroup {
         });
     }
 
-    private createPoint(point: ControlPoint | EndPoint): SVGRectElement {
-        const attr = {
-            fill: '',
-            'fill-opacity': 1,
-            width: POINT_SIZE / this.scale,
-            height: POINT_SIZE / this.scale,
-            x: point.x - (this.pointRadiusWithScale),
-            y: point.y - (this.pointRadiusWithScale),
-            stroke: THEME_COLOR,
-            'stroke-width': POINT_WEIGHT / this.scale,
-            rx: '0',
-            ry: '0',
-            'pointer-events': 'all',
-            'is-controls': true
-        };
+    private createPoint(point: ControlPoint | EndPoint, index): SVGRectElement {
+        let strokeLinecap;
         if (point instanceof EndPoint) {
-            attr.rx = `${this.pointRadiusWithScale}`;
-            attr.ry = `${this.pointRadiusWithScale}`;
+            strokeLinecap = 'round';
+        } else {
+            strokeLinecap = 'square';
         }
-        return createSVGElement({
-            element: 'rect',
-            attr
+
+        const elem = createSVGElement({
+            element: 'g',
+            attr: {
+                fragmentid: point.fragmentID,
+                x: point.x,
+                y: point.y,
+                'pointer-events': 'all',
+            }
         });
+        elem.dataset.index = index;
+        elem.innerHTML = `<path d="M ${point.x} ${point.y} l 0.0001 0" stroke="#1890ff" stroke-linecap="${strokeLinecap}" stroke-width="12" vector-effect="non-scaling-stroke"/><path d="M ${point.x} ${point.y} l 0.0001 0" stroke="#fff" stroke-linecap="${strokeLinecap}" stroke-width="10" vector-effect="non-scaling-stroke" />`;
+
+        return elem;
     }
 
     private renderCurve(curveData: [TCoordinate, TCoordinate, TCoordinate]) {
@@ -98,22 +96,37 @@ class OperationGroup {
     }
 
     private renderPoints(pointData: Array<ControlPoint | EndPoint>) {
+        let strokeLinecap;
+        let fragmentID = null;
+        let i = 0; // Control point serial number
         pointData.forEach((item, index) => {
+            if (item.fragmentID !== fragmentID) {
+                fragmentID = item.fragmentID;
+                i = 0;
+            }
             const elem = this.controlPoints.children[index];
             if (elem) {
-                setAttributes(elem, {
-                    fragmentid: `${item.fragmentID}`,
-                    cx: `${item.x}`,
-                    cy: `${item.y}`,
-                    x: `${item.x - this.pointRadiusWithScale}`,
-                    y: `${item.y - this.pointRadiusWithScale}`,
-                    rx: item instanceof ControlPoint ? '0' : `${this.pointRadiusWithScale}`,
-                    ry: item instanceof ControlPoint ? '0' : `${this.pointRadiusWithScale}`,
-                    visibility: 'visible',
-                });
+                elem.setAttribute('x', `${item.x}`);
+                elem.setAttribute('y', `${item.y}`);
+                elem.setAttribute('fragmentid', `${item.fragmentID}`);
+                elem.setAttribute('data-index', `${i}`);
+                elem.setAttribute('visibility', 'visible');
+
+                if (item instanceof EndPoint) {
+                    strokeLinecap = 'round';
+                } else {
+                    strokeLinecap = 'square';
+                }
+                for (const path of elem.children) {
+                    path.setAttribute('d', `M ${item.x} ${item.y} l 0.0001 0`);
+                    path.setAttribute('d', `M ${item.x} ${item.y} l 0.0001 0`);
+                    path.setAttribute('stroke-linecap', strokeLinecap);
+                    path.setAttribute('stroke-linecap', strokeLinecap);
+                }
             } else {
-                this.controlPoints.append(this.createPoint(item));
+                this.controlPoints.append(this.createPoint(item, i));
             }
+            i++;
         });
         Array(this.controlPoints.childElementCount - pointData.length).fill('').forEach((_, index) => {
             setAttributes(this.controlPoints.children[this.controlPoints.childElementCount - index - 1], {
@@ -153,18 +166,7 @@ class OperationGroup {
         const curveData = [] as unknown as [TCoordinate, TCoordinate, TCoordinate];
         const lineEndPoints = controlsArray.reduce((p, item, index) => {
             // render end points
-            if (item instanceof EndPoint) {
-                const circle = Array.from(document.querySelectorAll<SVGRectElement>('rect[type="end-point"]')).find((elem) => {
-                    return elem.getAttribute('x') === `${item.x - this.pointRadiusWithScale}` && elem.getAttribute('y') === `${item.y - this.pointRadiusWithScale}`;
-                });
-                if (circle) {
-                    item.fragmentID && circle.setAttribute('fragmentid', `${item.fragmentID}`);
-                } else {
-                    pointData.push(item);
-                }
-            } else {
-                pointData.push(item);
-            }
+            pointData.push(item);
 
             if (this.mode === MODE.DRAW) {
                 if (item instanceof ControlPoint) {
@@ -221,10 +223,10 @@ class OperationGroup {
         this.updateControlsLine(this.controlsArray);
     }
 
-    private parseLine(elem: SVGPathElement): Array<(EndPoint | ControlPoint)> {
+    private parseLine(elem: SVGGElement): Array<(EndPoint | ControlPoint)> {
         const fragmentID = Number(elem.getAttribute('fragmentid'));
         const controlsArray = [];
-        const d = elem.getAttribute('d');
+        const d = elem.children[0].getAttribute('d');
         const res: string[] = d.match(/\d+\.*\d*/g);
         const points: Array<TCoordinate> = [];
         if (res) {
@@ -286,18 +288,17 @@ class OperationGroup {
         return true;
     }
 
-    public updateOperation(elem: SVGPathElement | SVGPathElement[]) {
+    public updateOperation(elem: SVGGElement | SVGGElement[]) {
         if (Array.isArray(elem)) {
             const points = elem.map((item) => {
-                return this.parseLine(item);
+                return this.parseLine(item as SVGPathElement);
             }).reduce((p, c) => {
                 p.push(...c);
                 return p;
             }, []);
-            // fragmentID
             this.updateControlsLine(points);
         } else {
-            this.controlsArray = this.parseLine(elem);
+            this.controlsArray = this.parseLine(elem as SVGPathElement);
             this.updateControlsLine(this.controlsArray);
         }
     }
@@ -321,7 +322,6 @@ class OperationGroup {
                 const p = this.calcSymmetryPoint([cursorPoint.x, cursorPoint.y], [lastControlsArray[2].x, lastControlsArray[2].y]);
                 lastControlsArray.splice(2, 0, new ControlPoint(...p, null));
             }
-            // const path = this.generatePath(points);
         } else {
             this.lastControlsArray = [];
         }

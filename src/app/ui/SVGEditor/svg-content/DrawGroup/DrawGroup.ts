@@ -8,7 +8,7 @@ import { EndPoint, ControlPoint } from './Point';
 import Line, { TLineConfig } from './Line';
 import OperationGroup from './OperationGroup';
 import CursorGroup from './CursorGroup';
-import workerManager from '../../../../lib/manager/workerManager';
+import drawManager from '../../../../lib/manager/drawManager';
 
 export type TransformRecord = {
     fragmentID: string,
@@ -47,7 +47,7 @@ class DrawGroup {
 
     private guideY: SVGLineElement
 
-    public onDrawLine: (line: SVGPathElement, closedLoop: boolean) => void = noop;
+    public onDrawLine: (line: SVGGElement, closedLoop: boolean) => void = noop;
 
     public onDrawDelete: (line: {
         points: TCoordinate[],
@@ -65,13 +65,13 @@ class DrawGroup {
 
     private selected: {
         line?: Line,
-        point?: SVGRectElement,
+        point?: SVGGElement,
         pointIndex?: Number
     } = {};
 
     private preSelectLine: Line;
 
-    private preSelectPoint: SVGRectElement;
+    private preSelectPoint: SVGGElement;
 
     private hasTransform: boolean;
 
@@ -91,9 +91,12 @@ class DrawGroup {
     private originPath: string;
     private modelID: string;
 
-    // private guideLineVisibility: boolean;
+    private drawManager = drawManager()
 
-    public updateScale = debounce(this._updateScale, 300)
+    public updateScale = debounce(this._updateScale, 50)
+
+    private preSelectLineElem: SVGGElement
+    private leftKeyPressed: boolean;
 
     public constructor(contentGroup: SVGGElement, scale: number, drawableGroup: SVGGElement) {
         this.scale = scale;
@@ -126,6 +129,14 @@ class DrawGroup {
         this.container.append(this.guideY);
 
         contentGroup.parentElement.append(this.container);
+
+        this.graph.addEventListener('mouseleave', () => {
+            this.graphLeaveListener();
+        });
+
+        this.graph.addEventListener('mouseover', (e) => {
+            this.graphOverListener(e);
+        });
     }
 
     public stopDraw(forcedStop: boolean = false) {
@@ -169,9 +180,8 @@ class DrawGroup {
 
         this.cursorGroup.updateScale(this.scale, this.pointRadiusWithScale);
         this.operationGroup.updateScale(this.scale, this.pointRadiusWithScale);
-        this.drawedLine.forEach((line) => line.updateScale(this.scale, this.pointRadiusWithScale));
-        this.guideX.setAttribute('stroke-width', `${1 / this.scale}`);
-        this.guideY.setAttribute('stroke-width', `${1 / this.scale}`);
+
+        this.drawManager?.updateScale(scale);
     }
 
     private init() {
@@ -180,7 +190,8 @@ class DrawGroup {
             attr: {
                 visibility: 'hidden',
                 id: 'guideX',
-                stroke: 'red'
+                stroke: 'red',
+                'vector-effect': 'non-scaling-stroke'
             }
         });
 
@@ -189,7 +200,8 @@ class DrawGroup {
             attr: {
                 visibility: 'hidden',
                 id: 'guideY',
-                stroke: 'red'
+                stroke: 'red',
+                'vector-effect': 'non-scaling-stroke'
             }
         });
         this.endPointsGroup = createSVGElement({
@@ -207,7 +219,6 @@ class DrawGroup {
             closedLoop
         });
         if (line) {
-            this.unSelectAllPoint();
             this.endPointsGroup.lastElementChild.setAttribute('fill', THEME_COLOR);
             this.onDrawLine && this.onDrawLine(line.elem, closedLoop);
         }
@@ -220,22 +231,43 @@ class DrawGroup {
         return null;
     }
 
-    // private getPointCoordinate(point: SVGRectElement) {
-    //     const x = point.getAttribute('x');
-    //     const y = point.getAttribute('y');
-    //     return { x: Number(x) + this.pointRadiusWithScale, y: Number(y) + this.pointRadiusWithScale };
-    // }
-
     private setMode(mode: MODE) {
         this.mode = mode;
 
         this.cursorGroup.setAttachPoint();
-        this.unSelectAllPoint();
         this.clearDrawedLine();
 
         this.operationGroup.mode = mode;
         this.cursorGroup.mode = mode;
         this.operationGroup.clearOperation();
+    }
+
+    private graphOverListener(e: Event) {
+        if (this.mode !== MODE.SELECT || this.leftKeyPressed || this.preSelectLineElem && this.selected.line?.elem === this.preSelectLineElem) {
+            return;
+        }
+        if (e.target instanceof SVGPathElement && e.target.parentElement instanceof SVGGElement) {
+            if (this.preSelectLineElem && this.preSelectLineElem !== e.target.parentElement) {
+                this.preSelectLineElem.children[0].setAttribute('stroke', 'black');
+                this.preSelectLineElem.children[0].setAttribute('stroke-opacity', '1');
+            }
+            this.preSelectLineElem = e.target.parentElement;
+            this.preSelectLineElem.children[0].setAttribute('stroke', THEME_COLOR);
+            this.preSelectLineElem.children[0].setAttribute('stroke-opacity', '0.5');
+        }
+    }
+
+    private graphLeaveListener() {
+        if (this.mode !== MODE.SELECT || !this.preSelectLineElem || this.leftKeyPressed) {
+            return;
+        }
+        if (this.selected.line?.elem === this.preSelectLineElem) {
+            this.preSelectLineElem = null;
+            return;
+        }
+        this.preSelectLineElem.children[0].setAttribute('stroke', 'black');
+        this.preSelectLineElem.children[0].setAttribute('stroke-opacity', '1');
+        this.preSelectLineElem = null;
     }
 
     private get transformation() {
@@ -257,7 +289,7 @@ class DrawGroup {
     public startDraw(mode: MODE, elem: SVGPathElement) {
         this.setMode(mode);
         this.clearDrawedLine();
-        // 用户区分是编辑还是创建
+        // Distinguish between editing and new creation
         if (elem) {
             this.originElem = elem;
             this.modelID = this.originElem?.getAttribute('id');
@@ -279,7 +311,6 @@ class DrawGroup {
         this.resetOperation(this.selected.line);
     }
 
-    // draw
     public resetOperation(line?: Line) {
         this.operationGroup.clearOperation();
         if (!line) {
@@ -322,22 +353,15 @@ class DrawGroup {
     }
 
     private generatelines(path: string) {
-        let now;
-        workerManager.splitPath<TSplitPathResult>({
+        this.drawManager.initPath<TSplitPathResult>({
             path,
             transform: this.transformation ? this.originElem.getAttribute('transform') : '',
             scale: this.scale
         }, (res) => {
             this.drawedLine = new Map();
 
-            now = new Date().getTime();
-            // str += `<path fill="transparent" fill-opacity="0" stroke="black" stroke-width="0.4594017094017094" d="${res.d}"></path>`;
-            // allEndPointStr += res.pointsElemStr;
-
             this.graph.innerHTML = res.d;
             this.endPointsGroup.innerHTML = res.pointsElemStr;
-
-            console.log(`渲染耗时 ${new Date().getTime() - now}`);
 
             const childsElem = Array.from(this.graph.children) as unknown as SVGPathElement[];
             res.points.send.forEach((points, index) => {
@@ -348,11 +372,7 @@ class DrawGroup {
                     scale: this.scale
                 });
             });
-            console.log(`构造耗时 ${new Date().getTime() - now}`);
         }, () => {
-            // console.warn(`解析耗时 ${cost}, 一共${num}条, 平均 ${cost / num}`);
-            // this.graph.innerHTML = str;
-            // this.endPointsGroup.innerHTML = allEndPointStr;
             this.originElem.setAttribute('visibility', 'hidden');
         });
     }
@@ -376,7 +396,7 @@ class DrawGroup {
         return this.drawedLine.get(LatestFragmentID);
     }
 
-    private getEndPointfragments(elem: SVGRectElement) {
+    private getEndPointfragments(elem: SVGGElement) {
         if (!elem || !elem.dataset || !elem.dataset) {
             return [];
         }
@@ -403,27 +423,25 @@ class DrawGroup {
         });
     }
 
-    public getLine(mark: SVGPathElement | SVGRectElement | string): Line {
+    public getLine(mark: SVGGElement | string): Line {
         if (typeof mark === 'string') {
             return this.drawedLine.get(mark);
         }
         if (!mark) {
             return null;
         }
-        if (mark instanceof SVGRectElement) {
-            if (mark.parentNode === this.operationGroup.controlPoints) {
-                // control point
-                const fragmentID = mark.getAttribute('fragmentid');
-                return this.getLine(fragmentID);
-            } else {
-                // end point
-                const fragmentIDs = this.getEndPointfragments(mark);
-                const fragmentID = fragmentIDs.find(item => this.drawedLine.has(item.id));
-                return this.getLine(fragmentID.id);
-            }
-        } else if (mark instanceof SVGPathElement) {
+        if (mark.parentNode === this.graph) {
             const fragmentID = mark.getAttribute('fragmentid');
             return this.getLine(fragmentID);
+        } else if (mark.parentNode === this.operationGroup.controlPoints) {
+            // control point
+            const fragmentID = mark.getAttribute('fragmentid');
+            return this.getLine(fragmentID);
+        } else if (mark.parentNode === this.endPointsGroup) {
+            // end point
+            const fragmentIDs = this.getEndPointfragments(mark);
+            const fragmentID = fragmentIDs.find(item => this.drawedLine.has(item.id));
+            return this.getLine(fragmentID.id);
         }
         return null;
     }
@@ -431,13 +449,13 @@ class DrawGroup {
     /**
      * Finds lines associated with the selected control points or selected lines
      */
-    public getSelectedRelationLines(relationType?: 'point', elem?: SVGRectElement): Line[];
+    public getSelectedRelationLines(relationType?: 'point', elem?: SVGGElement): Line[];
     public getSelectedRelationLines(relationType: 'line', line: Line): Line[];
     public getSelectedRelationLines(relationType = 'point', elem: unknown = this.selected.point): Line[] {
         if (relationType === 'point' && !elem) {
             return [];
         }
-        if (relationType === 'point' && elem instanceof SVGRectElement) {
+        if (relationType === 'point' && elem instanceof SVGGElement) {
             if (elem === this.selected.point && elem.parentNode === this.operationGroup.controlPoints) {
                 return [this.selected.line];
             }
@@ -492,7 +510,6 @@ class DrawGroup {
 
     public onMouseDown() {
         const [x, y] = this.cursorPosition;
-        this.unSelectAllPoint();
         this.clearAllConnectLine();
 
         if (this.mode === MODE.DRAW) {
@@ -510,8 +527,8 @@ class DrawGroup {
             return;
         }
         if (this.mode === MODE.SELECT) {
-            this.selected.line && this.selected.line.elem.setAttribute('stroke', 'black');
-            this.selected.point && this.selected.point.setAttribute('fill', '');
+            this.selected.line && this.selected.line.elem.children[0].setAttribute('stroke', 'black');
+            this.selected.point && this.selected.point.children[1].setAttribute('stroke', 'white');
             if (this.preSelectPoint) {
                 const parent = this.preSelectPoint.parentElement as unknown as SVGGElement;
 
@@ -519,23 +536,13 @@ class DrawGroup {
                 if (this.selected.line) {
                     this.selected.point = this.preSelectPoint;
                     if (parent === this.operationGroup.controlPoints) {
-                        const cx = this.preSelectPoint.getAttribute('x');
-                        const cy = this.preSelectPoint.getAttribute('y');
+                        // const cx = this.preSelectPoint.getAttribute('x');
+                        // const cy = this.preSelectPoint.getAttribute('y');
                         this.operationGroup.updateOperation(this.selected.line.elem);
-
-                        this.selected.pointIndex = Array.from(this.operationGroup.controlPoints.children).findIndex((elem) => {
-                            if (elem.getAttribute('x') === cx && elem.getAttribute('y') === cy) {
-                                elem.setAttribute('fill', THEME_COLOR);
-                                return true;
-                            } else {
-                                return false;
-                            }
-                        }) + 1;
-                        this.operationGroup.updateOperation(this.selected.line.elem);
+                        this.selected.pointIndex = Number(this.preSelectPoint.dataset.index);
+                        this.operationGroup.controlPoints.children[this.selected.pointIndex as number].children[1].setAttribute('stroke', THEME_COLOR);
                     } else {
-                        console.log(this.preSelectPoint);
-
-                        this.preSelectPoint.setAttribute('fill', THEME_COLOR);
+                        this.preSelectPoint.children[1].setAttribute('stroke', THEME_COLOR);
                         this.selected.pointIndex = null;
                         const elems = this.getSelectedRelationLines().reduce((p, c) => {
                             p.push(c.elem);
@@ -548,9 +555,12 @@ class DrawGroup {
                 }
                 return;
             }
-            if (this.preSelectLine) {
-                this.preSelectLine.elem.setAttribute('stroke', THEME_COLOR);
-                this.preSelectLine.elem.setAttribute('stroke-opacity', '1');
+            if (this.preSelectLineElem) {
+                this.preSelectLineElem.children[0].setAttribute('stroke', THEME_COLOR);
+                this.preSelectLineElem.children[0].setAttribute('stroke-opacity', '1');
+
+                const fragmentid = this.preSelectLineElem.getAttribute('fragmentid');
+                this.preSelectLine = this.getLine(fragmentid);
 
                 this.operationGroup.updateOperation(this.preSelectLine.elem);
                 this.selected.line = this.preSelectLine;
@@ -600,7 +610,7 @@ class DrawGroup {
         if (this.mode === MODE.SELECT) {
             if (this.hasTransform) {
                 this.hasTransform = false;
-                let anotherEndpoint: SVGRectElement = null;
+                let anotherEndpoint: SVGGElement = null;
                 const relationLines = this.getSelectedRelationLines();
                 relationLines.some((line) => {
                     const isEndpointCoincidence = line.isEndpointCoincidence();
@@ -610,9 +620,10 @@ class DrawGroup {
                     }
                     return false;
                 });
+                // Two endpoints coincide
                 if (anotherEndpoint) {
                     this.selected.pointIndex = null;
-                    this.selected.point = anotherEndpoint;
+                    // this.selected.point = anotherEndpoint;
                     const x = Number(anotherEndpoint.getAttribute('cx'));
                     const y = Number(anotherEndpoint.getAttribute('cy'));
                     this.transformOperatingPoint([x + manualEndOffset, y + manualEndOffset]);
@@ -762,7 +773,7 @@ class DrawGroup {
         }
     }
 
-    private queryLink(elem: SVGPathElement) {
+    private queryLink(elem: SVGGElement) {
         const line = this.getLine(elem);
         if (!line) {
             return [];
@@ -815,28 +826,15 @@ class DrawGroup {
         });
     }
 
-    private renderPreviewElem(x: number, y: number) {
+    public renderPreviewElem(x: number, y: number) {
         let nearest = this.attachSpace;
-        let nearestLine: Line;
-        let nearestPoint: SVGRectElement;
-        this.drawedLine.forEach((line) => {
-            const d = line.distanceDetection(x, y);
-            if (!(line === this.selected.line && !this.selected.point)) {
-                line.elem.setAttribute('stroke', 'black');
-                line.elem.setAttribute('stroke-opacity', '1');
-            }
-            if (d < nearest) {
-                nearest = d;
-                nearestLine = line;
-            }
-        });
+        let nearestPoint: SVGGElement;
+
         nearest = this.attachSpace;
         (Array.from(this.endPointsGroup.children) as unknown[] as SVGRectElement[]).forEach((elem) => {
             const pointX = Number(elem.getAttribute('cx'));
             const pointY = Number(elem.getAttribute('cy'));
             const space = Math.sqrt((pointX - x) ** 2 + (pointY - y) ** 2);
-            elem.setAttribute('stroke', THEME_COLOR);
-            elem.setAttribute('stroke-opacity', '1');
             if (space < nearest) {
                 if (Math.abs(space - nearest) <= manualEndOffset * 2) {
                     if (Number(nearestPoint.getAttribute('cx')) - Number(elem.getAttribute('cx')) > 0) {
@@ -849,32 +847,26 @@ class DrawGroup {
                 }
             }
         });
+
         Array.from(this.operationGroup.controlPoints.querySelectorAll<SVGRectElement>('[visibility="visible"]')).forEach((elem) => {
-            const pointX = Number(elem.getAttribute('cx'));
-            const pointY = Number(elem.getAttribute('cy'));
+            const pointX = Number(elem.getAttribute('x'));
+            const pointY = Number(elem.getAttribute('y'));
             const space = Math.sqrt((pointX - x) ** 2 + (pointY - y) ** 2);
-            elem.setAttribute('stroke', THEME_COLOR);
-            elem.setAttribute('stroke-opacity', '1');
             if (space < nearest) {
                 nearest = space;
                 nearestPoint = elem;
             }
         });
+        if (this.preSelectPoint) {
+            this.preSelectPoint.children[0].setAttribute('stroke-opacity', '1');
+            this.preSelectPoint.children[0].setAttribute('stroke', THEME_COLOR);
+        }
         if (nearestPoint) {
-            nearestPoint.setAttribute('stroke-opacity', '0.5');
-            nearestPoint.setAttribute('stroke', THEME_COLOR);
+            nearestPoint.children[0].setAttribute('stroke-opacity', '0.5');
+            nearestPoint.children[0].setAttribute('stroke', THEME_COLOR);
             this.preSelectPoint = nearestPoint;
         } else {
             this.preSelectPoint = null;
-            if (nearestLine) {
-                this.preSelectLine = nearestLine;
-                if (this.selected.point || nearestLine !== this.selected.line) {
-                    nearestLine.elem.setAttribute('stroke-opacity', '0.5');
-                    nearestLine.elem.setAttribute('stroke', THEME_COLOR);
-                }
-            } else {
-                this.preSelectLine = null;
-            }
         }
     }
 
@@ -882,8 +874,8 @@ class DrawGroup {
         if (this.mode === MODE.NONE) {
             return;
         }
-        let leftKeyPressed = event.which === 1;
-
+        this.leftKeyPressed = event.which === 1;
+        let leftKeyPressed = this.leftKeyPressed;
         const { x, y, attached } = this.attachCursor(cx, cy);
         if (attached) {
             if (this.mode === MODE.SELECT) {
@@ -896,8 +888,6 @@ class DrawGroup {
         } else {
             this.cursorGroup.setAttachPoint();
         }
-        // const x = cx;
-        // const y = cy;
         this.cursorPosition = [x, y];
 
         if (this.mode === MODE.DRAW) {
@@ -933,24 +923,22 @@ class DrawGroup {
             }
         } else {
             if (leftKeyPressed && this.selected.line) {
-                // const n = new Date().getTime();
                 if (this.selected.line && this.selected.point) {
                     this.setGuideLineVisibility(true);
                     this.transformOperatingPoint([x, y]);
                     if (this.selected.pointIndex) {
-                        // console.warn('move controls points');
+                        // move controls points
                         this.operationGroup.updateOperation(this.selected.line.elem);
                     } else {
-                        // const n2 = new Date().getTime();
-                        // console.warn('move end points', n2 - n);
+                        // move end points
                         const elems = this.getSelectedRelationLines().map((line) => {
                             return line.elem;
                         });
-                        // console.warn('find relation lines', new Date().getTime() - n2);
+                        // find relation lines
                         this.operationGroup.updateOperation(elems);
                     }
                 } else if (this.selected.line) {
-                    // console.warn('move line');
+                    // move line
                     this.setGuideLineVisibility(true);
                     this.transformLine(dx, dy);
                     this.operationGroup.updateOperation(this.selected.line.elem);
@@ -1102,18 +1090,14 @@ class DrawGroup {
         });
     }
 
-    private unSelectAllPoint() {
-        Array.from(this.endPointsGroup.children).forEach((p) => {
-            p.setAttribute('fill', '');
-        });
-        Array.from(this.operationGroup.controlPoints.children).forEach((p) => {
-            p.setAttribute('fill', '');
-        });
-    }
-
     private clearAllConnectLine() {
         Array.from(this.operationGroup.connectLines.children).forEach((p) => {
             p.setAttribute('visibility', 'hidden');
+        });
+
+        Array.from(this.operationGroup.controlPoints.children).forEach((p) => {
+            p.children[1].setAttribute('stroke', 'white');
+            p.setAttribute('fill', '');
         });
     }
 }

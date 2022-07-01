@@ -103,6 +103,7 @@ class SvgModel extends BaseModel {
     public isToolPathSelect: boolean;
     public vertexPoints: TVertexPoint[] = [];
     public geometry: THREE.PlaneGeometry;
+    public isStraightLine: boolean = false;
 
     public constructor(modelInfo: ModelInfo, modelGroup: ModelGroup) {
         super(modelInfo, modelGroup);
@@ -383,8 +384,6 @@ class SvgModel extends BaseModel {
                 break;
             }
             case 'path': {
-                console.log(absScaleX, absScaleY);
-
                 const d = element.getAttribute('d');
                 const bbox = element.getBBox();
                 const cx = bbox.x + bbox.width / 2;
@@ -1104,24 +1103,6 @@ class SvgModel extends BaseModel {
             this.resource.processedFile.update(null);
         }
         this.generateProcessObject3D();
-
-        // const res = await api.processImage({
-        //     headType: this.headType,
-        //     uploadName: this.uploadName,
-        //     config: {
-        //         ...this.config,
-        //         density: 4
-        //     },
-        //     sourceType: this.sourceType,
-        //     mode: mode,
-        //     transformation: {
-        //         width: this.width,
-        //         height: this.height,
-        //         rotationZ: 0
-        //     }
-        // });
-        //
-        // this.processImageName = res.body.filename;
     }
 
     public computeBoundingBox() {
@@ -1226,6 +1207,12 @@ class SvgModel extends BaseModel {
         // this.updateSource();
         if (this.type === 'path') {
             this.config.d = this.elem.getAttribute('d');
+            const flag = this.config.d.replace(/[^a-zA-Z]/g, '').toLocaleUpperCase();
+            if (flag === 'ML' || flag === 'MLZ') {
+                this.isStraightLine = true;
+            } else {
+                this.isStraightLine = false;
+            }
         }
         this.computevertexPoints();
     }
@@ -1324,21 +1311,6 @@ class SvgModel extends BaseModel {
             transformation,
             processImageName: this.resource.processedFile.name
         };
-    }
-
-    public isStraightLine() {
-        if (this.type === 'path') {
-            const d = this.elem.getAttribute('d');
-            const flag = ['M', 'L', 'Z'];
-            let res = true;
-            svgPath(d).iterate((segment, index) => {
-                if (segment[0] !== flag[index]) {
-                    res = false;
-                }
-            });
-            return res;
-        }
-        return false;
     }
 
     public elemToPath(attrs?: { [attr: string]: string | boolean | number }) {

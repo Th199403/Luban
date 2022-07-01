@@ -1,4 +1,3 @@
-import svgPath from 'svgpath';
 import { createSVGElement, getBBox } from '../element-utils';
 import { transformBox, transformListToTransform, getTransformList, getRotationAngle, transformPoint } from '../element-transform';
 import SvgModel from '../../../models/SvgModel';
@@ -234,21 +233,6 @@ class OperatorPoints {
         return {
             nx, ny, nw, nh, angle, cx, cy
         };
-    }
-
-    isStraightLine(elem) {
-        if (elem instanceof SVGPathElement) {
-            const d = elem.getAttribute('d');
-            const flag = ['M', 'L', 'Z'];
-            let res = true;
-            svgPath(d).iterate((segment, index) => {
-                if (segment[0] !== flag[index]) {
-                    res = false;
-                }
-            });
-            return res;
-        }
-        return false;
     }
 
     /**

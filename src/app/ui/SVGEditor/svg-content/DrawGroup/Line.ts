@@ -1,12 +1,11 @@
 import { Bezier } from 'bezier-js';
-import { v4 as uuid } from 'uuid';
 import { createSVGElement } from '../../element-utils';
 import { POINT_SIZE, THEME_COLOR, MINIMUM_SPACING } from './constants';
 import { TCoordinate } from './types';
 
 export type TLineConfig = {
     points?: TCoordinate[],
-    elem?: SVGPathElement,
+    elem?: SVGGElement,
     scale?: number;
     pointRadiusWithScale?: number;
     closedLoop?: boolean,
@@ -20,7 +19,7 @@ class Line {
 
     public endPoints: TCoordinate[];
 
-    public elem: SVGPathElement;
+    public elem: SVGGElement;
 
     public closedLoop: boolean;
 
@@ -33,6 +32,8 @@ class Line {
 
     private group: SVGGElement;
     private endPointsGroup: SVGGElement;
+
+    private endPointEles: [SVGGElement, SVGGElement];
 
     public constructor(config: TLineConfig) {
         this.endPointsGroup = config.endPointsGroup;
@@ -59,18 +60,17 @@ class Line {
             }
         } else if (!this.elem && this.points) {
             const path = this.generatePath(this.points);
-            const line = createSVGElement({
-                element: 'path',
+            const g = createSVGElement({
+                element: 'g',
                 attr: {
-                    'stroke-width': 1 / this.scale,
-                    d: path,
-                    fill: 'transparent',
-                    stroke: 'black',
                     fragmentid: this.fragmentID
                 }
             }) as SVGPathElement;
-            this.group.appendChild(line);
-            this.elem = line;
+            g.innerHTML = `<path vector-effect="non-scaling-stroke" stroke="black" stroke-width="1" d="${path}"></path>
+            <path vector-effect="non-scaling-stroke" stroke="transparent" stroke-width="5" d="${path}" data-preselect="1"></path>
+            `;
+            this.group.appendChild(g);
+            this.elem = g;
             this.endPoints = [
                 this.points[0],
                 this.points[this.points.length - 1]
@@ -100,13 +100,15 @@ class Line {
 
     public updatePosition(points?: TCoordinate[], applyMerge?: boolean) {
         if (points && points.length > 0) {
-            this.elem.setAttribute('d', this.generatePath(points));
+            for (const child of this.elem.children) {
+                child.setAttribute('d', this.generatePath(points));
+            }
         }
-        this.updateEndPointEle(points, applyMerge);
+        return this.updateEndPointEle(points, applyMerge);
     }
 
     private parsePoints() {
-        const d = this.elem.getAttribute('d');
+        const d = this.elem.children[0].getAttribute('d');
         const res: string[] = d.match(/\d+\.*\d*/g);
         const points: Array<[number, number]> = [];
         if (res) {
@@ -129,30 +131,46 @@ class Line {
 
             const endPointsEles = this.getEndPointEles();
             if (endPointsEles.length < 2) {
-                return;
+                return [];
             }
 
             endPoints.forEach((item, index) => {
                 const x = item[0];
                 const y = item[1];
                 if (applyMerge) {
-                    const circle = this.endPointsGroup.querySelector<SVGRectElement>(`rect[type="end-point"][cx="${x}"][cy="${y}"]:not([fill=""])`) || this.endPointsGroup.querySelector<SVGRectElement>(`rect[type="end-point"][cx="${x}"][cy="${y}"]`);
-                    if (circle) {
-                        if (circle !== endPointsEles[index]) {
+                    const circleElems = this.endPointsGroup.querySelectorAll<SVGGElement>(`g[cx="${x}"][cy="${y}"]`);
+                    if (circleElems.length > 0) {
+                        if (circleElems.length === 1) {
+                            endPointsEles[index] = circleElems[0];
+                            if (!circleElems[0].dataset[this.fragmentID]) {
+                                // unMerge
+                                const mergedPoint = this.endPointsGroup.querySelector<SVGGElement>(`g[data-${this.fragmentID}="${index}"]`);
+                                if (mergedPoint) {
+                                    // Ensure that the identification of points is not repeated
+                                    delete mergedPoint.dataset[this.fragmentID];
+                                }
+                                circleElems[0].dataset[this.fragmentID] = `${index}`;
+                            }
+                        } else if (circleElems.length === 2) {
+                            const retainPoint = Array.from(circleElems).find(elem => elem !== endPointsEles[index]);
+                            retainPoint.dataset[this.fragmentID] = `${index}`;
+
                             endPointsEles[index].remove();
-                            endPointsEles[index] = circle;
+                            endPointsEles[index] = retainPoint;
                         }
-                        return;
                     } else {
+                        // unMerge
+                        const mergedPoint = this.endPointsGroup.querySelector<SVGGElement>(`g[data-${this.fragmentID}="${index}"]`);
+                        if (mergedPoint) {
+                            delete mergedPoint.dataset[this.fragmentID];
+                        }
+
                         endPointsEles[index] = this.createCircle(item, index);
-                        return;
                     }
                 }
-                endPointsEles[index].setAttribute('x', `${x - this.pointRadiusWithScale}`);
-                endPointsEles[index].setAttribute('y', `${y - this.pointRadiusWithScale}`);
-                endPointsEles[index].setAttribute('cx', `${x}`);
-                endPointsEles[index].setAttribute('cy', `${y}`);
+                this.updateEndPointElemAttr(endPointsEles[index], x, y);
             });
+            return points;
         } else {
             const _points = this.parsePoints();
             this.points = _points;
@@ -161,7 +179,16 @@ class Line {
                 this.points[this.points.length - 1]
             ];
             this.updateModel(_points);
-            this.updateEndPointEle(_points, applyMerge);
+            return this.updateEndPointEle(_points, applyMerge);
+        }
+    }
+
+    private updateEndPointElemAttr(elem: SVGGElement, x: number, y: number) {
+        elem.setAttribute('cx', `${x}`);
+        elem.setAttribute('cy', `${y}`);
+
+        for (const path of elem.children) {
+            path.setAttribute('d', `M ${x} ${y} l 0.0001 0`);
         }
     }
 
@@ -180,10 +207,14 @@ class Line {
     }
 
     public getEndPointEles() {
-        return [
-            this.endPointsGroup.querySelector<SVGRectElement>(`[data-${this.fragmentID}="0"]`),
-            this.endPointsGroup.querySelector<SVGRectElement>(`[data-${this.fragmentID}="1"]`)
+        if (this.endPointEles) {
+            return this.endPointEles;
+        }
+        this.endPointEles = [
+            this.endPointsGroup.querySelector<SVGGElement>(`[data-${this.fragmentID}="0"]`),
+            this.endPointsGroup.querySelector<SVGGElement>(`[data-${this.fragmentID}="1"]`)
         ];
+        return this.endPointEles;
     }
 
     public generateEndPointEle() {
@@ -202,26 +233,17 @@ class Line {
 
     private createCircle([x, y]: TCoordinate, index: number) {
         const elem = createSVGElement({
-            element: 'rect',
+            element: 'g',
             attr: {
                 type: 'end-point',
-                fill: '',
-                'fill-opacity': 1,
-                rx: `${this.pointRadiusWithScale}`,
-                ry: `${this.pointRadiusWithScale}`,
-                width: POINT_SIZE / this.scale,
-                height: POINT_SIZE / this.scale,
-                x: x - this.pointRadiusWithScale,
                 cx: x,
-                y: y - this.pointRadiusWithScale,
                 cy: y,
                 stroke: THEME_COLOR,
-                'stroke-width': 1 / this.scale,
                 'pointer-events': 'all',
-                id: uuid()
             }
         });
         elem.dataset[`${this.fragmentID}`] = index;
+        elem.innerHTML = `<path d="M ${x} ${y} l 0.0001 0" stroke="#1890ff" stroke-linecap="round" stroke-width="12" vector-effect="non-scaling-stroke"/><path d="M ${x} ${y} l 0.0001 0" stroke="#fff" stroke-linecap="round" stroke-width="10" vector-effect="non-scaling-stroke" />`;
         this.endPointsGroup.appendChild(elem);
         return elem;
     }
@@ -251,7 +273,9 @@ class Line {
             }
         }
         const path = this.generatePath(points);
-        this.elem.setAttribute('d', path);
+        for (const child of this.elem.children) {
+            child.setAttribute('d', path);
+        }
     }
 
     public del() {
@@ -294,8 +318,8 @@ class Line {
             return false;
         }
         return (
-            endPointEles[0].getAttribute('x') === endPointEles[1].getAttribute('x')
-            && endPointEles[0].getAttribute('y') === endPointEles[1].getAttribute('y')
+            endPointEles[0].getAttribute('cx') === endPointEles[1].getAttribute('cx')
+            && endPointEles[0].getAttribute('cy') === endPointEles[1].getAttribute('cy')
         );
     }
 }

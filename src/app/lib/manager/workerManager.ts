@@ -12,7 +12,6 @@ export enum WorkerMethods {
     loadModel = 'loadModel',
     scaleToFitWithRotate = 'scaleToFitWithRotate',
     toolpathRenderer = 'toolpathRenderer',
-    splitPath = 'splitPath'
     // LUBAN worker methods END
 }
 

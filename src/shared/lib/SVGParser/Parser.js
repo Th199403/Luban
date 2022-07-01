@@ -60,8 +60,16 @@ class SVGParser {
                     if (extname === '.dxf') {
                         xml = new Helper(xml).toSVG();
                     }
-                    const paths = await svg2path(xml);
-                    resolve(await this.readString(paths));
+                    const pathsString = await svg2path(xml);
+                    let isRenderWithImage = false;
+                    if (xml.length > 512000) {
+                        isRenderWithImage = true;
+                    }
+                    const node = await this.readString(pathsString);
+                    resolve({
+                        node,
+                        isRenderWithImage
+                    });
                 } catch (e) {
                     reject(e);
                 }
@@ -124,8 +132,14 @@ class SVGParser {
     }
 
     async parseFile(filePath) {
-        const node = await this.readFile(filePath);
+        const {
+            node,
+            isRenderWithImage
+        } = await this.readFile(filePath);
         const result = await this.parseObject(node);
+        if (isRenderWithImage) {
+            result.paths = null;
+        }
         const newUploadName = filePath.replace(/\.(svg|dxf)$/i, 'parsed.svg');
         const svgContent = this.generateString(result.parsedNode);
         await this.wirteFile(newUploadName, svgContent);
@@ -233,7 +247,6 @@ class SVGParser {
         const viewBox = [boundingBox.minX + offsetX, boundingBox.minY + offsetY, width, height];
 
         newSvg.$.viewBox = viewBox.join(' ');
-
         return {
             shapesViewBox: root.attributes.viewBox,
             shapes: root.shapes,

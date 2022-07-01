@@ -28,6 +28,8 @@ import { library } from './lib/ext-shapes';
 import TextAction from './TextActions';
 import { DEFAULT_FILL_COLOR, DEFAULT_SCALE, SCALE_RATE, SVG_EVENT_CONTEXTMENU, SVG_EVENT_MODE } from './constants';
 import SVGSelector from './SVGSelector';
+import { toast } from '../components/Toast';
+import { ToastWapper } from '../components/Toast/toastContainer';
 
 const STEP_COUNT = 10;
 const THRESHOLD_DIST = 0.8;
@@ -149,6 +151,8 @@ class SVGCanvas extends PureComponent {
     node = React.createRef();
 
     input = React.createRef();
+
+    toastId = React.createRef();
 
     mode = 'select';
 
@@ -1419,7 +1423,6 @@ class SVGCanvas extends PureComponent {
     onDblClick = (evt) => {
         const matrix = this.svgContentGroup.getScreenCTM().inverse();
         const { x, y } = transformPoint({ x: evt.pageX, y: evt.pageY }, matrix);
-
         const mouseTarget = this.getMouseTarget(evt, x, y);
         if (!mouseTarget) {
             return;
@@ -1445,6 +1448,11 @@ class SVGCanvas extends PureComponent {
             this.setMode('select', {
                 elem: svgModel.elem
             });
+        } else if (tagName === 'image' && mouseTarget.getAttribute('editable') === 'false') {
+            const text = '大于500k的svg暂时不支持编辑';
+            if (!this.toastId.current || !toast.isActive(this.toastId.current)) {
+                this.toastId.current = toast(ToastWapper(text, 'WarningTipsWarning', '#FFA940'));
+            }
         }
     };
 
@@ -1471,7 +1479,20 @@ class SVGCanvas extends PureComponent {
         this.trigger(SVG_EVENT_CONTEXTMENU, event);
     };
 
+    _updateCanvasProp = () => {
+        const width = this.node.current.offsetWidth;
+        const height = this.node.current.offsetHeight;
+        const ratio = Math.min(width, height) / 900;
+        this.svgContainer.setAttribute('width', width);
+        this.svgContainer.setAttribute('height', height);
+
+        this.canvasWidth = width;
+        this.canvasHeight = height;
+        this.canvasRatio = ratio;
+    }
+
     onResize = () => {
+        this._updateCanvasProp();
         this.updateCanvas();
     };
 
@@ -1611,22 +1632,17 @@ class SVGCanvas extends PureComponent {
             this.updateTime = new Date().getTime();
             return;
         }
-        const $container = jQuery(this.node.current);
-        const width = $container.width();
-        const height = $container.height();
-        const ratio = Math.min(width, height) / 900;
-        this.svgContainer.setAttribute('width', width);
-        this.svgContainer.setAttribute('height', height);
+        // const $container = jQuery(this.node.current);
 
 
         const viewBoxWidth = size.x * 2;
         const viewBoxHeight = size.y * 2;
 
-        const svgWidth = size.x * 2 * this.scale * ratio;
-        const svgHeight = size.y * 2 * this.scale * ratio;
+        const svgWidth = size.x * 2 * this.scale * this.canvasRatio;
+        const svgHeight = size.y * 2 * this.scale * this.canvasRatio;
 
-        const x = (width - svgWidth) / 2 + this.offsetX * this.scale * ratio;
-        const y = (height - svgHeight) / 2 + this.offsetY * this.scale * ratio;
+        const x = (this.canvasWidth - svgWidth) / 2 + this.offsetX * this.scale * this.canvasRatio;
+        const y = (this.canvasHeight - svgHeight) / 2 + this.offsetY * this.scale * this.canvasRatio;
 
         setAttributes(this.svgContent, {
             width: svgWidth,

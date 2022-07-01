@@ -3,6 +3,10 @@
         "allowJs": true,
         "sourceMap": true,
         "target": "es5",
+        "module": "esnext",
+        "moduleResolution": "node",
+        "resolveJsonModule": true,
+        "isolatedModules": true,
         "noUnusedLocals": true,
         "esModuleInterop": true,
         "strictPropertyInitialization": false,
@@ -11,8 +15,17 @@
         "preserveConstEnums": true,
         "useDefineForClassFields": true,
         "noEmit": false,
+        "forceConsistentCasingInFileNames": true,
         "strictFunctionTypes": true,
-        "downlevelIteration": true
+        "downlevelIteration": true,
+        "jsx": "react-jsx",
+        "allowSyntheticDefaultImports": true,
+        "noFallthroughCasesInSwitch": true,
+        "lib": [
+            "dom",
+            "dom.iterable",
+            "esnext"
+        ]
     },
     "include": [
         "./src/**/*"
