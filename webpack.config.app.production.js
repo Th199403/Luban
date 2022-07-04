@@ -107,13 +107,23 @@ module.exports = {
             },
             {
                 test: /\.ts$/,
-                loader: 'ts-loader'
+                loader: 'ts-loader',
+                options: {
+                    transpileOnly: true
+                }
             },
             {
                 test: /\.jsx?$|\.ts$/,
                 loader: 'eslint-loader',
                 enforce: 'pre',
-                exclude: /node_modules/
+                exclude: /node_modules/,
+                options: {
+                    cache: true,
+                    fix: true,
+                    emitWarning: false,
+                    quiet: true,
+                    configFile: path.resolve(__dirname, '.eslintrc.js')
+                }
             },
             {
                 test: /\.jsx?$/,
