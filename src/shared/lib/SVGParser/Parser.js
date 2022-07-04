@@ -29,7 +29,7 @@ const TOLERANCE = 0.3 * DEFAULT_MILLIMETER_PER_PIXEL;
 
 
 class SVGParser {
-    constructor() {
+    constructor(options) {
         this.attributeParser = new AttributesParser(this);
         this.tagParses = {
             'circle': new CircleTagParser(TOLERANCE),
@@ -46,6 +46,7 @@ class SVGParser {
         };
         this.defs = {
         };
+        this.size = options.size;
     }
 
     readFile(filePath) {
@@ -235,8 +236,8 @@ class SVGParser {
         const width = boundingBox.maxX - boundingBox.minX;
         const height = boundingBox.maxY - boundingBox.minY;
         const center = { x: (boundingBox.maxX + boundingBox.minX) / 2, y: (boundingBox.maxY + boundingBox.minY) / 2 };
-        const offsetX = 320 - center.x;
-        const offsetY = 350 - center.y;
+        const offsetX = this.size.x - center.x;
+        const offsetY = this.size.y - center.y;
 
 
         gArray.forEach((item) => {

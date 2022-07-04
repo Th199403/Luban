@@ -739,6 +739,7 @@ class SvgModel extends BaseModel {
         document.body.removeChild(canvas);
         const formData = new FormData();
         formData.append('image', file);
+        formData.append('size', JSON.stringify(this.size));
         const res = await api.uploadImage(formData);
 
         this.uploadImageName = res.body.uploadName;
@@ -785,21 +786,13 @@ class SvgModel extends BaseModel {
         const file = new File([blob], 'gen.svg');
         const formData = new FormData();
         formData.append('image', file);
+        formData.append('size', JSON.stringify(this.size));
         const res = await api.uploadImage(formData);
 
         return res.body;
     }
 
     public updateSvgPaths(preTransformation: ModelTransformation) {
-        // eslint-disable-next-line no-restricted-syntax
-        for (const key in preTransformation) {
-            if (Object.prototype.hasOwnProperty.call(preTransformation, key)) {
-                if (preTransformation[key] !== this.transformation[key]) {
-                    console.log(key);
-                }
-            }
-        }
-
         const preScaleX = Math.abs(preTransformation.width / this.width);
         const preScaleY = Math.abs(preTransformation.height / this.height);
 
@@ -807,12 +800,12 @@ class SvgModel extends BaseModel {
         const scaleY = Math.abs(this.transformation.height / this.height);
 
         this.config.d = svgPath((this.config.d as string))
-            .translate(-320 - preTransformation.positionX, -350 + preTransformation.positionY)
+            .translate(-this.size.x - preTransformation.positionX, -this.size.y + preTransformation.positionY)
             .scale(scaleX / preScaleX, scaleY / preScaleY)
             .scale(Math.abs(this.transformation.scaleX / preTransformation.scaleX), Math.abs(this.transformation.scaleY / preTransformation.scaleY))
             // .rotate(preTransformation.rotationZ / Math.PI * 180)
             // .rotate(-this.transformation.rotationZ / Math.PI * 180)
-            .translate(320 + this.transformation.positionX, 350 - this.transformation.positionY)
+            .translate(this.size.x + this.transformation.positionX, this.size.y - this.transformation.positionY)
             .toString();
     }
 

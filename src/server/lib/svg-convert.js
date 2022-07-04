@@ -121,7 +121,8 @@ export const computeTransformationSizeForTextVector = (text, fontSize, lineHeigh
 };
 
 const convertTextToSvg = async (options) => {
-    const { text, 'font-size': fontSize, 'line-height': lineHeight, 'font-family': fontFamily, style, name, alignment } = options;
+    const { text, 'font-size': fontSize, 'line-height': lineHeight, 'font-family': fontFamily, style, name, alignment, size } = options;
+
     const uploadName = pathWithRandomSuffix(name).replace(/\.svg$/i, 'parsed.svg');
 
     const fontObj = await fontManager.getFont(fontFamily, null, style);
@@ -180,7 +181,7 @@ const convertTextToSvg = async (options) => {
         width: width,
         height: height
     });
-    const svgParser = new SVGParser();
+    const svgParser = new SVGParser({ size });
     // Don't delete, for debugging
     // const targetPath1 = `${process.env.Tmpdir}/${uploadName}_new.svg`;
     // fs.writeFileSync(targetPath1, svgString);
@@ -197,9 +198,9 @@ const convertTextToSvg = async (options) => {
     const scaleY = textSize.height / height;
     const paths = result.paths.map((d) => {
         const _d = svgPath(d)
-            .translate(-320, -350)
+            .translate(-size.x, -size.y)
             .scale(scaleX, scaleY)
-            .translate(320, 350)
+            .translate(size.x, size.y)
             .toString();
         return _d;
     });

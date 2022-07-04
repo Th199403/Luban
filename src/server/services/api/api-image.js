@@ -38,7 +38,8 @@ const moveFile = (originalPath, tempPath) => {
 
 export const set = async (req, res) => {
     const files = req.files;
-    const { isRotate } = req.body;
+    const { isRotate, size } = req.body;
+    const machineSize = JSON.parse(size);
     let originalName, tempName, tempPath, originalPath;
     // if 'files' does not exist, the model in the case library is being loaded
     if (files) {
@@ -89,7 +90,7 @@ export const set = async (req, res) => {
             });
         }
         if (extname === '.svg') {
-            const svgParser = new SVGParser();
+            const svgParser = new SVGParser({ size: machineSize });
             const svg = await svgParser.parseFile(tempPath);
             res.send({
                 originalName: originalName,
@@ -99,7 +100,7 @@ export const set = async (req, res) => {
                 paths: svg.paths
             });
         } else if (extname === '.dxf') {
-            const svgParser = new SVGParser();
+            const svgParser = new SVGParser({ size: machineSize });
             const svg = await svgParser.parseFile(tempPath);
             res.send({
                 originalName: originalName,

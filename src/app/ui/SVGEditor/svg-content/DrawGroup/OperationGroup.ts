@@ -10,6 +10,8 @@ class OperationGroup {
 
     public lastControlsArray: (ControlPoint | EndPoint)[] = [];
 
+    public lastClosedLoop: boolean = false;
+
     public controlPoints: SVGGElement;
 
     public connectLines: SVGElement;
@@ -78,8 +80,8 @@ class OperationGroup {
             element: 'g',
             attr: {
                 fragmentid: point.fragmentID,
-                x: point.x,
-                y: point.y,
+                cx: point.x,
+                cy: point.y,
                 'pointer-events': 'all',
             }
         });
@@ -106,8 +108,8 @@ class OperationGroup {
             }
             const elem = this.controlPoints.children[index];
             if (elem) {
-                elem.setAttribute('x', `${item.x}`);
-                elem.setAttribute('y', `${item.y}`);
+                elem.setAttribute('cx', `${item.x}`);
+                elem.setAttribute('cy', `${item.y}`);
                 elem.setAttribute('fragmentid', `${item.fragmentID}`);
                 elem.setAttribute('data-index', `${i}`);
                 elem.setAttribute('visibility', 'visible');

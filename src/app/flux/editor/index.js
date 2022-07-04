@@ -510,6 +510,7 @@ export const actions = {
      */
     uploadImage: (headType, file, mode, onError, isLimit = true, fileInfo) => (dispatch, getState) => {
         const { materials, progressStatesManager } = getState()[headType];
+        const { size } = getState().machine;
         progressStatesManager.startProgress(PROCESS_STAGE.CNC_LASER_UPLOAD_IMAGE, [1, 1]);
         dispatch(
             actions.updateState(headType, {
@@ -520,6 +521,7 @@ export const actions = {
         const formData = new FormData();
         formData.append('image', file);
         formData.append('isRotate', materials.isRotate);
+        formData.append('size', JSON.stringify(size));
 
         if (fileInfo) {
             const { width, height, originalName, uploadName, paths } = fileInfo;
@@ -568,9 +570,12 @@ export const actions = {
 
     checkIsOversizeImage: (headType, file, onError) => (dispatch, getState) => {
         const { materials, progressStatesManager, coordinateSize } = getState()[headType];
+        const { size } = getState().machine;
+
         const formData = new FormData();
         formData.append('image', file);
         formData.append('isRotate', materials.isRotate);
+        formData.append('size', JSON.stringify(size));
         return new Promise((resolve) => {
             api.uploadImage(formData)
                 .then(res => {
@@ -819,9 +824,12 @@ export const actions = {
         );
     },
 
-    insertDefaultTextVector: headType => dispatch => {
+    insertDefaultTextVector: headType => (dispatch, getState) => {
+        const { size } = getState().machine;
+
         api.convertTextToSvg({
-            ...DEFAULT_TEXT_CONFIG
+            ...DEFAULT_TEXT_CONFIG,
+            size
         }).then(async res => {
             // const { name, filename, width, height } = res.body;
             const { originalName, uploadName, width, height } = res.body;

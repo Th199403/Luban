@@ -222,6 +222,7 @@ class DrawGroup {
             this.endPointsGroup.lastElementChild.setAttribute('fill', THEME_COLOR);
             this.onDrawLine && this.onDrawLine(line.elem, closedLoop);
         }
+        this.operationGroup.lastClosedLoop = closedLoop;
     }
 
     public deleteLine(line: SVGPathElement) {
@@ -693,13 +694,16 @@ class DrawGroup {
             const length = controlPoints.length;
             if (length > 1) {
                 Array.from(controlPoints).forEach((elem, index) => {
+                    // Avoid the participation of moving control points in the calculation
                     if (length === 2 && (index === 1 || elem.getAttribute('rx') === '0')) {
                         return;
-                    } else if (length === 3 && index !== 1) {
+                    } else if (length === 3 && index === length - 1) {
+                        return;
+                    } else if (length === 4 && index !== 0) {
                         return;
                     }
-                    const cx = Number(elem.getAttribute('x')) + this.pointRadiusWithScale;
-                    const cy = Number(elem.getAttribute('y')) + this.pointRadiusWithScale;
+                    const cx = Number(elem.getAttribute('cx'));
+                    const cy = Number(elem.getAttribute('cy'));
                     if (Math.abs(x - cx) <= this.attachSpace) {
                         guideX = [cx, cy];
                     }
@@ -849,8 +853,8 @@ class DrawGroup {
         });
 
         Array.from(this.operationGroup.controlPoints.querySelectorAll<SVGRectElement>('[visibility="visible"]')).forEach((elem) => {
-            const pointX = Number(elem.getAttribute('x'));
-            const pointY = Number(elem.getAttribute('y'));
+            const pointX = Number(elem.getAttribute('cx'));
+            const pointY = Number(elem.getAttribute('cy'));
             const space = Math.sqrt((pointX - x) ** 2 + (pointY - y) ** 2);
             if (space < nearest) {
                 nearest = space;

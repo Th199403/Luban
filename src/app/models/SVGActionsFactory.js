@@ -546,7 +546,8 @@ class SVGActionsFactory {
             if (isText) {
                 const newConfig = {
                     ...DEFAULT_TEXT_CONFIG,
-                    ...elemConfig
+                    ...elemConfig,
+                    size: this.size
                 };
                 res = await api.convertTextToSvg(newConfig);
                 if (res.body.family !== elemConfig['font-family']) {
@@ -577,6 +578,7 @@ class SVGActionsFactory {
                 const formData = new FormData();
                 formData.append('image', file);
                 formData.append('needSetCenter', false);
+                formData.append('size', JSON.stringify(this.size));
                 res = await api.uploadImage(formData);
             }
             const { originalName, uploadName, width, height, paths, } = res.body;
