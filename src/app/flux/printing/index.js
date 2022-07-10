@@ -3586,7 +3586,7 @@ export const actions = {
             extruderConfig,
             isGroup = false,
             parentModelID = '',
-            positionsArr: groupPositionArr,
+            isMfRecovery,
             modelName,
             children,
             primeTowerTag
@@ -3612,53 +3612,32 @@ export const actions = {
                     })
                 );
                 const uploadPath = `${DATA_PREFIX}/${model.uploadName}`;
-
-                if (isGroup) {
-                    if (!(['.3mf', 'amf'].includes(path.extname(model.originalName)))) {
-                        const modelState = await modelGroup.generateModel({
-                            loadFrom,
-                            limitSize: size,
-                            headType,
-                            sourceType,
-                            originalName: model.originalName,
-                            uploadName: model.uploadName,
-                            modelName,
-                            mode: mode,
-                            sourceWidth,
-                            width: sourceWidth,
-                            sourceHeight,
-                            height: sourceHeight,
-                            geometry: null,
-                            material: null,
-                            transformation,
-                            modelID,
-                            extruderConfig,
-                            isGroup,
-                            children
-                        });
-                        dispatch(actions.updateState(modelState));
-                    } else {
-                        modelGroup.addGroup({
-                            loadFrom: LOAD_MODEL_FROM_OUTER,
-                            limitSize: size,
-                            headType,
-                            sourceType,
-                            positionsArr: groupPositionArr,
-                            originalName: model.originalName,
-                            uploadName: model.uploadName,
-                            modelName: null
-                        });
-                        const modelState = modelGroup.getState();
-                        dispatch(actions.updateState(modelState));
-                        dispatch(actions.updateAllModelColors());
-                        if (modelNames.length > 1) {
-                            _progress += 1 / modelNames.length;
-                            dispatch(actions.updateState({
-                                stage: STEP_STAGE.PRINTING_LOADING_MODEL,
-                                progress: progressStatesManager.updateProgress(STEP_STAGE.PRINTING_LOADING_MODEL, _progress)
-                            }));
-                        }
-                    }
+                console.log(
+                    'isGroup && !isMfRecovery', isGroup , !isMfRecovery
+                );
+                if (isGroup && !isMfRecovery) {
+                    const modelState = await modelGroup.generateModel({
+                        loadFrom,
+                        limitSize: size,
+                        headType,
+                        sourceType,
+                        originalName: model.originalName,
+                        uploadName: model.uploadName,
+                        modelName,
+                        mode: mode,
+                        sourceWidth,
+                        width: sourceWidth,
+                        sourceHeight,
+                        height: sourceHeight,
+                        geometry: null,
+                        material: null,
+                        transformation,
+                        modelID,
+                        extruderConfig,
+                        isGroup,
+                        children
+                    });
+                    dispatch(actions.updateState(modelState));
 
                     dispatch(actions.displayModel());
                     dispatch(actions.destroyGcodeLine());
@@ -3799,7 +3778,8 @@ export const actions = {
                                     uploadName: model.uploadName,
                                     modelName: null,
                                     originalPosition,
-                                });
+                                    transformation
+                                }, isMfRecovery);
 
 
                                 const modelState = modelGroup.getState();

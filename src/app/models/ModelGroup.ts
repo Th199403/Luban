@@ -1681,19 +1681,16 @@ class ModelGroup extends EventEmitter {
         return model;
     }
 
-    public addGroup(modelInfo: ModelInfo) {
+    public addGroup(modelInfo: ModelInfo, isMfRecovery: Boolean = false) {
         const group = new ThreeGroup(modelInfo, this);
-        const { positionsArr, loadFrom, size, headType, sourceType } = modelInfo;
+        const { positionsArr, loadFrom, size, headType, sourceType, transformation } = modelInfo;
+        console.log('isMfRecovery', isMfRecovery, transformation);
         group.modelName = this._createNewModelName(group);
         group.positionsArr = positionsArr;
 
         const subModels = [];
         for (const child of positionsArr.children) {
-            const { meshName: name, matrix } = child;
-            let { positions } = child;
-            if (Object.prototype.toString.call(positions) === '[object Object]') {
-                positions = new Float32Array(Object.values(positions));
-            }
+            const { positions, meshName: name, matrix } = child;
             const bufferGeometry = new BufferGeometry();
             const modelPositionAttribute = new BufferAttribute(positions, 3);
             const material = new MeshStandardMaterial({ color: 0xa0a0a0 });
@@ -1742,11 +1739,15 @@ class ModelGroup extends EventEmitter {
         group.add(subModels);
 
         group.stickToPlate();
-        group.meshObject.position.x = 0;
-        group.meshObject.position.y = 0;
-        const point = this._computeAvailableXY(group);
-        group.meshObject.position.x = point.x;
-        group.meshObject.position.y = point.y;
+        if (!isMfRecovery) {
+            group.meshObject.position.x = 0;
+            group.meshObject.position.y = 0;
+            const point = this._computeAvailableXY(group);
+            group.meshObject.position.x = point.x;
+            group.meshObject.position.y = point.y;
+        } else {
+            group.updateTransformation(transformation);
+        }
         group.meshObject.updateMatrix();
         group.computeBoundingBox();
         group.onTransform();

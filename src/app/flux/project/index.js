@@ -115,6 +115,7 @@ export const actions = {
         }
         for (let key = 0; key < models.length; key++) {
             const model = models[key];
+            console.log('model.getSerializableConfig()', model.getSerializableConfig());
             envObj.models.push(model.getSerializableConfig());
         }
         if (headType === HEAD_CNC || headType === HEAD_LASER) {
@@ -150,11 +151,12 @@ export const actions = {
 
     recoverModels: (promiseArray = [], modActions, models, envHeadType) => (dispatch) => {
         for (let k = 0; k < models.length; k++) {
-            const { headType, originalName, uploadName, modelName, config, sourceType, gcodeConfig, positionsArr,
+            const { headType, originalName, uploadName, modelName, config, sourceType, gcodeConfig, isMfRecovery,
                 sourceWidth, sourceHeight, mode, transformation, modelID, supportTag, extruderConfig, children, parentModelID } = models[k];
             const primeTowerTag = includes(originalName, 'prime_tower');
+            console.log('isMfRecovery', originalName, uploadName, isMfRecovery);
             // prevent project recovery recorded into operation history
-            if (supportTag) {
+            if (supportTag || originalName.indexOf('prime_tower') === 0) {
                 continue;
             }
             if (!children) {
@@ -179,7 +181,7 @@ export const actions = {
                     extruderConfig,
                     isGroup: !!children,
                     parentModelID,
-                    positionsArr,
+                    isMfRecovery,
                     children,
                     primeTowerTag
                 }))

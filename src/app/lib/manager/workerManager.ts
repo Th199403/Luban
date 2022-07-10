@@ -1,3 +1,4 @@
+/* eslint-disable */
 import './Pool.worker';
 import { spawn, Worker, Pool } from 'threads';
 // const { spawn, Worker, Pool } = require('threads');
@@ -32,6 +33,11 @@ type PayloadData = {
 
 class WorkerManager {
     public pool;
+    constructor() {
+        if (!this.pool) {
+            this.pool = Pool(async () => spawn(new Worker('./Pool.worker.js'))) as unknown as Pool<Thread>;
+        }
+    }
 }
 
 Object.entries(WorkerMethods).forEach(([, method]) => {
