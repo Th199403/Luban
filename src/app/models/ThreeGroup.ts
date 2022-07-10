@@ -263,21 +263,19 @@ export default class ThreeGroup extends BaseModel {
                 0
             );
         }
-        console.log('', center, boundingBoxTemp);
 
         // set selected group position need to remove children temporarily
-        // const children = [...this.meshObject.children];
-        // children.map((obj) => ThreeUtils.removeObjectParent(obj));
-        // // only make the diff translation
-        // const oldPosition = new THREE.Vector3();
-        // this.meshObject.getWorldPosition(oldPosition);
-        // const matrix = new THREE.Matrix4().makeTranslation(center.x - oldPosition.x, center.y - oldPosition.y, center.z - oldPosition.z);
-        // ThreeUtils.applyObjectMatrix(this.meshObject, matrix);
-        // children.map((obj) => ThreeUtils.setObjectParent(obj, this.meshObject));
-        //
-        // this.boundingBox = ThreeUtils.computeBoundingBox(this.meshObject);
+        const children = [...this.meshObject.children];
 
-        this.boundingBox = boundingBoxTemp;
+        children.map((obj) => ThreeUtils.removeObjectParent(obj));
+        // only make the diff translation
+        const oldPosition = new THREE.Vector3();
+        this.meshObject.getWorldPosition(oldPosition);
+        const matrix = new THREE.Matrix4().makeTranslation(center.x - oldPosition.x, center.y - oldPosition.y, center.z - oldPosition.z);
+        ThreeUtils.applyObjectMatrix(this.meshObject, matrix);
+        children.map((obj) => ThreeUtils.setObjectParent(obj, this.meshObject));
+
+        this.boundingBox = ThreeUtils.computeBoundingBox(this.meshObject);
     }
 
     public setConvexGeometry(convexGeometry: THREE.BufferGeometry | THREE.Geometry) {
@@ -537,7 +535,6 @@ export default class ThreeGroup extends BaseModel {
             areas: objPlanes.areas,
             supportVolumes: objPlanes.supportVolumes
         };
-        console.log('this.meshObject', this.meshObject.scale.x);
         return result;
     }
 
@@ -579,8 +576,8 @@ export default class ThreeGroup extends BaseModel {
             sourceWidth,
             originalName,
             uploadName,
-            positionsArr,
             mode,
+            positionsArr,
             visible,
             transformation,
             processImageName,

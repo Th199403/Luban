@@ -213,11 +213,11 @@ function Cnc({ location }) {
         onDropAccepted: (file) => {
             const extname = path.extname(file.name).toLowerCase();
             let uploadMode;
-            if (extname.toLowerCase() === '.svg') {
+            if (extname === '.svg') {
                 uploadMode = PROCESS_MODE_VECTOR;
-            } else if (extname.toLowerCase() === '.dxf') {
+            } else if (extname === '.dxf') {
                 uploadMode = PROCESS_MODE_VECTOR;
-            } else if (['.stl', '.3mf', '.amf'].includes(extname.toLowerCase())) {
+            } else if (['.stl', '.3mf', '.amf'].includes(extname)) {
                 uploadMode = PROCESS_MODE_MESH;
             } else {
                 uploadMode = PROCESS_MODE_GREYSCALE;

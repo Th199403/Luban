@@ -460,6 +460,7 @@ export default {
     Update,
     Event,
     Menu,
+    Dialog,
     File,
     Window,
     Connection,
