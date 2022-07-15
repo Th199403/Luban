@@ -1,5 +1,6 @@
 import 'core-js/stable';
 import 'regenerator-runtime/runtime';
+import i18next from 'i18next';
 import { app, powerSaveBlocker, BrowserWindow, protocol, screen, session, ipcMain, shell, Menu } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import Store from 'electron-store';
@@ -11,7 +12,8 @@ import { configureWindow } from './electron-app/window';
 import MenuBuilder, { addRecentFile, cleanAllRecentFiles } from './electron-app/Menu';
 import DataStorage from './DataStorage';
 import pkg from './package.json';
-// const { crashReporter } = require('electron');
+
+const { crashReporter } = require('electron');
 
 const config = new Store();
 const userDataDir = app.getPath('userData');
@@ -21,7 +23,7 @@ global.luban = {
 let serverData = null;
 let mainWindow = null;
 // https://www.electronjs.org/docs/latest/breaking-changes#planned-breaking-api-changes-100
-// console.log('getCrashesDirectory', app.getPath('crashDumps'));
+console.log('getCrashesDirectory', app.getPath('crashDumps'));
 let loadUrl = '';
 let powerId = 0;
 const loadingMenu = [{
@@ -36,12 +38,12 @@ const UPLOAD_WINDOWS = 'uploadWindows';
 
 const { CLIENT_PORT, SERVER_PORT } = pkg.config;
 
-// crashReporter.start({
-//     productName: 'Snapmaker',
-//     globalExtra: { _companyName: 'Snapmaker' },
-//     submitURL: 'https://api.snapmaker.com',
-//     uploadToServer: true
-// });
+crashReporter.start({
+    productName: 'Snapmaker',
+    globalExtra: { _companyName: 'Snapmaker' },
+    submitURL: 'https://api.snapmaker.com',
+    uploadToServer: true
+});
 
 function getBrowserWindowOptions() {
     const defaultOptions = {
@@ -125,6 +127,17 @@ function updateHandle() {
         updateAva: 'key-settings_message-updateAva',
         updateNotAva: 'key-settings_message-update_not_ava'
     };
+    const lang = (i18next.language).toUpperCase();
+    if (lang === 'ZH-CN') {
+        autoUpdater.setFeedURL({
+            provider: 'generic',
+            url: 'https://snapmaker.oss-cn-beijing.aliyuncs.com/snapmaker.com/download/luban'
+        });
+    } else {
+        autoUpdater.setFeedURL({ provider: 'github' });
+    }
+
+    console.log('i18next', i18next.language, autoUpdater.getFeedURL());
     // Official document: https://www.electron.build/auto-update.html
     autoUpdater.autoDownload = false;
     // Whether to automatically install a downloaded update on app quit. Applicable only on Windows and Linux.
