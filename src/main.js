@@ -127,17 +127,6 @@ function updateHandle() {
         updateAva: 'key-settings_message-updateAva',
         updateNotAva: 'key-settings_message-update_not_ava'
     };
-    const lang = (i18next.language).toUpperCase();
-    if (lang === 'ZH-CN') {
-        autoUpdater.setFeedURL({
-            provider: 'generic',
-            url: 'https://snapmaker.oss-cn-beijing.aliyuncs.com/snapmaker.com/download/luban'
-        });
-    } else {
-        autoUpdater.setFeedURL({ provider: 'github' });
-    }
-
-    console.log('i18next', i18next.language, autoUpdater.getFeedURL());
     // Official document: https://www.electron.build/auto-update.html
     autoUpdater.autoDownload = false;
     // Whether to automatically install a downloaded update on app quit. Applicable only on Windows and Linux.
@@ -217,6 +206,20 @@ const startToBegin = (data) => {
     serverData = data;
     const { address, port } = { ...serverData };
     configureWindow(mainWindow);
+    console.log('i18next', i18next.language);
+    const lang = (i18next.language).toUpperCase();
+    if (lang === 'ZH-CN') {
+        autoUpdater.setFeedURL({
+            provider: 'generic',
+            url: 'https://snapmaker.oss-cn-beijing.aliyuncs.com/snapmaker.com/download/luban'
+        });
+    } else {
+        autoUpdater.setFeedURL({ provider: 'github' });
+    }
+
+    console.log('i18next', i18next.language, autoUpdater.getFeedURL());
+    updateHandle();
+
     loadUrl = `http://${address}:${port}`;
     const filter = {
         urls: [
@@ -386,7 +389,7 @@ const showMainWindow = async () => {
         shell.openPath(`${userDataDir}/snapmaker-recover`);
     });
 
-    updateHandle();
+    // updateHandle();
 };
 
 // Allow max 4G memory usage
