@@ -103,7 +103,8 @@ function WifiConnection() {
     const [currentModuleStatusList, setCurrentModuleStatusList] = useState(null);
     const dispatch = useDispatch();
     const prevProps = usePrevious({
-        connectionStatus
+        connectionStatus,
+        toolHead
     });
 
     const actions = {
@@ -312,6 +313,11 @@ function WifiConnection() {
             }
         }
     }, [connectionType, connectionStatus]);
+    useEffect(() => {
+        if (prevProps?.toolHead !== toolHead && prevProps?.toolHead) {
+            console.log('prevProps?.toolHead', prevProps?.toolHead, toolHead);
+        }
+    }, [toolHead, prevProps]);
 
     const updateModuleStatusList = useMemo(() => {
         const newModuleStatusList = [];

@@ -1,6 +1,5 @@
 import 'core-js/stable';
 import 'regenerator-runtime/runtime';
-import i18next from 'i18next';
 import { app, powerSaveBlocker, BrowserWindow, protocol, screen, session, ipcMain, shell, Menu } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import Store from 'electron-store';
@@ -142,6 +141,7 @@ function updateHandle() {
     // Emitted when there is an available update. The update is downloaded automatically if autoDownload is true.
     autoUpdater.on('update-available', (downloadInfo) => {
         sendUpdateMessage(message.updateAva);
+        console.log('downloadInfo', downloadInfo, app.getVersion());
         mainWindow.webContents.send('update-available', { ...downloadInfo, prevVersion: app.getVersion() });
     });
     // Emitted when there is no available update.
@@ -206,18 +206,17 @@ const startToBegin = (data) => {
     serverData = data;
     const { address, port } = { ...serverData };
     configureWindow(mainWindow);
-    console.log('i18next', i18next.language);
-    const lang = (i18next.language).toUpperCase();
+    const lang = 'ZH-CN';
     if (lang === 'ZH-CN') {
         autoUpdater.setFeedURL({
             provider: 'generic',
-            url: 'https://snapmaker.oss-cn-beijing.aliyuncs.com/snapmaker.com/download/luban'
+            url: 'https://snapmaker.oss-cn-beijing.aliyuncs.com/snapmaker.com/download/autoUpdater'
         });
     } else {
         autoUpdater.setFeedURL({ provider: 'github' });
     }
 
-    console.log('i18next', i18next.language, autoUpdater.getFeedURL());
+    console.log('i18next', autoUpdater.getFeedURL());
     updateHandle();
 
     loadUrl = `http://${address}:${port}`;
