@@ -7,7 +7,8 @@ import _ from 'lodash';
 import i18n from '../../../lib/i18n';
 // import { NumberInput as Input } from '../../components/Input';
 import { actions as machineActions } from '../../../flux/machine';
-import { CONNECTION_TYPE_WIFI, CONNECTION_WORKSPEED_FACTOR, WORKFLOW_STATUS_PAUSED, WORKFLOW_STATUS_RUNNING } from '../../../constants';
+import { CONNECTION_TYPE_WIFI, CONNECTION_GET_WORKSPEED_FACTOR,
+    CONNECTION_WORKSPEED_FACTOR, WORKFLOW_STATUS_PAUSED, WORKFLOW_STATUS_RUNNING } from '../../../constants';
 import ParamsWrapper from './ParamsWrapper';
 import { controller } from '../../../lib/controller';
 
@@ -44,7 +45,6 @@ class WorkSpeed extends PureComponent {
             controller.emitEvent(CONNECTION_WORKSPEED_FACTOR, {
                 workSpeedValue: value,
                 toolHead: this.props.toolHead, // DUAL_EXTRUDER_TOOLHEAD_FOR_SM2
-                // extruderIndex: ,
             });
             // DUAL_EXTRUDER_TOOLHEAD_FOR_SM2
             // if (this.actions.isWifiPrinting()) {
@@ -54,6 +54,20 @@ class WorkSpeed extends PureComponent {
             // }
         }
     };
+
+    componentDidMount() {
+        controller.emitEvent(CONNECTION_GET_WORKSPEED_FACTOR).on(CONNECTION_GET_WORKSPEED_FACTOR, (res) => {
+            const { data } = res;
+            console.log('data', data);
+        });
+    }
+
+    componentWillUnmount() {
+        // controller.emitEvent(CONNECTION_WORKSPEED_FACTOR, {
+        //     workSpeedValue: value,
+        //     toolHead: this.props.toolHead, // DUAL_EXTRUDER_TOOLHEAD_FOR_SM2
+        // });
+    }
 
     render() {
         const { workSpeedValue } = this.state;

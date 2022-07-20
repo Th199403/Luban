@@ -7,6 +7,7 @@ import { DUAL_EXTRUDER_TOOLHEAD_FOR_SM2, LEVEL_TWO_POWER_LASER_FOR_SM2, CNC_MODU
     COORDINATE_AXIS, WORKFLOW_STATUS_MAP, HEAD_PRINTING, EMERGENCY_STOP_BUTTON, ENCLOSURE_MODULES, AIR_PURIFIER_MODULES, ROTARY_MODULES, MODULEID_TOOLHEAD_MAP, A400_HEADT_BED_FOR_SM2, HEADT_BED_FOR_SM2, LEVEL_ONE_POWER_LASER_FOR_SM2, LEVEL_TWO_CNC_TOOLHEAD_FOR_SM2, STANDARD_CNC_TOOLHEAD_FOR_SM2, RIGHT_EXTRUDER, LEFT_EXTRUDER, MODULEID_MAP } from '../../../../app/constants';
 import { readString, readUint8 } from '../../../lib/SACP-SDK/SACP/helper';
 import GetHotBed from '../../../lib/SACP-SDK/SACP/business/models/GetHotBed';
+import GetWorkSpeed from '../../../lib/SACP-SDK/SACP/business/models/GetWorkSpeed';
 import CoordinateSystemInfo from '../../../lib/SACP-SDK/SACP/business/models/CoordinateSystemInfo';
 import { EventOptions, MarlinStateData } from '../types';
 import ExtruderInfo from '../../../lib/SACP-SDK/SACP/business/models/ExtruderInfo';
@@ -337,7 +338,7 @@ class SocketBASE {
         });
     }
 
-    public async loadFilament(extruderIndex) {
+    public async loadFilament(extruderIndex, eventName) {
         const toolHead = this.moduleInfos && (this.moduleInfos[DUAL_EXTRUDER_TOOLHEAD_FOR_SM2] || this.moduleInfos[SINGLE_EXTRUDER_TOOLHEAD_FOR_SM2]);// || this.moduleInfos[HEADT_BED_FOR_SM2]); //
         if (!toolHead) {
             log.error(`non-eixst toolHead, moduleInfos:${this.moduleInfos}`,);
@@ -348,10 +349,11 @@ class SocketBASE {
         const _ = await this.sacpClient.SwitchExtruder(toolHead.key, extruderIndex);
         log.info(`loadFilament SwitchExtruder:[${extruderIndex}], ${JSON.stringify(_)}`);
         const response = await this.sacpClient.ExtruderMovement(toolHead.key, 0, 60, 200, 0, 0);
+        this.socket && this.socket.emit(eventName);
         log.info(`loadFilament, ${JSON.stringify(response)}`);
     }
 
-    public async unloadFilament(extruderIndex) {
+    public async unloadFilament(extruderIndex, eventName) {
         const toolHead = this.moduleInfos && (this.moduleInfos[DUAL_EXTRUDER_TOOLHEAD_FOR_SM2] || this.moduleInfos[SINGLE_EXTRUDER_TOOLHEAD_FOR_SM2]);
         if (!toolHead) {
             log.error(`non-eixst toolHead, moduleInfos:${this.moduleInfos}`,);
@@ -362,6 +364,7 @@ class SocketBASE {
         const _ = await this.sacpClient.SwitchExtruder(toolHead.key, extruderIndex);
         log.info(`unloadFilament SwitchExtruder:[${extruderIndex}], ${JSON.stringify(_)}`);
         const response = await this.sacpClient.ExtruderMovement(toolHead.key, 0, 6, 200, 60, 150);
+        this.socket && this.socket.emit(eventName);
         log.info(`unloadFilament, ${JSON.stringify(response)}`);
     }
 
@@ -391,6 +394,19 @@ class SocketBASE {
     }
 
     // workspeed
+    public async getWorkSpeed(options) {
+        const { eventName } = options;
+        this.subscribeWorkSpeedCallback = () => {
+            const workSpeedInfo = new GetWorkSpeed().fromBuffer(data.response.data);
+            log.info(`workSpeedInfo, ${workSpeedInfo}`);
+            this.socket && this.socket.emit(eventName, { data: workSpeedInfo.feedRate });
+        };
+
+        this.sacpClient.subscribeWorkSpeed({ interval: 1000 }, this.subscribeWorkSpeedCallback).then((res) => {
+            log.info(`subscribe workspeed success: ${res.code}`);
+        });
+    }
+
     public async updateWorkSpeed(toolhead, workSpeed, extruderIndex = 0) {
         const headModule = this.moduleInfos && (this.moduleInfos[toolhead]); //
         if (!headModule) {

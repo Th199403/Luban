@@ -491,6 +491,19 @@ export default class Business extends Dispatcher {
         });
     }
 
+    public async subscribeWorkSpeed({ interval = 1000 }, callback: ResponseCallback) {
+        this.log.info('subscribeWorkSpeed');
+        return this.subscribe(0xac, 0xa4, interval, callback).then(({ response, packet }) => {
+            return { response, packet, data: {} };
+        });
+    }
+
+    public async unSubscribeWorkSpeed(callback: ResponseCallback) {
+        return this.unsubscribe(0xac, 0xa4, callback).then(({ response, packet }) => {
+            return { code: response.result, packet, data: {} };
+        });
+    }
+
     public async SetExtruderTemperature(key: number, extruderIndex: number, temperature: number) {
         const tobuffer = Buffer.alloc(1 + 1 + 2, 0);
         writeUint8(tobuffer, 0, key);

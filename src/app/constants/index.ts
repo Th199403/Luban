@@ -26,6 +26,7 @@ export const CONNECTION_BED_TEMPERATURE = 'connection:updateBedTemperature';
 export const CONNECTION_LOAD_FILAMENT = 'connection:loadFilament';
 export const CONNECTION_UNLOAD_FILAMENT = 'connection:unloadFilament';
 export const CONNECTION_WORKSPEED_FACTOR = 'connection:updateWorkSpeedFactor';
+export const CONNECTION_GET_WORKSPEED_FACTOR = 'connection:getWorkSpeedFactor';
 export const CONNECTION_LASER_POWER = 'connection:updateLaserPower';
 export const CONNECTION_SWITCH_LASER_POWER = 'connection:switchLaserPower';
 export const CONNECTION_ENCLOSURE_LIGHT = 'connection:setEnclosureLight';

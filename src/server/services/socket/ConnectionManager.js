@@ -441,8 +441,9 @@ class ConnectionManager {
 
     loadFilament = (socket, options) => {
         if (this.protocol === SACP_PROTOCOL) {
-            const { extruderIndex } = options;
-            this.socket.loadFilament(extruderIndex);
+            const { extruderIndex, eventName } = options;
+            console.log('eventName', eventName);
+            this.socket.loadFilament(extruderIndex, eventName);
         } else {
             if (this.connectionType === CONNECTION_TYPE_WIFI) {
                 this.socket.loadFilament(options);
@@ -456,8 +457,8 @@ class ConnectionManager {
 
     unloadFilament = (socket, options) => {
         if (this.protocol === SACP_PROTOCOL) {
-            const { extruderIndex } = options;
-            this.socket.unloadFilament(extruderIndex);
+            const { extruderIndex, eventName } = options;
+            this.socket.unloadFilament(extruderIndex, eventName);
         } else {
             if (this.connectionType === CONNECTION_TYPE_WIFI) {
                 this.socket.unloadFilament(options);
@@ -484,6 +485,13 @@ class ConnectionManager {
             }
         }
     }
+
+    getWorkSpeedFactor = (socket, options) => {
+        if (this.protocol === SACP_PROTOCOL) {
+            this.socket.getWorkSpeed(options);
+        }
+    }
+
 
     updateLaserPower = (socket, options) => {
         if (this.protocol === SACP_PROTOCOL) {
