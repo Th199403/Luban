@@ -121,21 +121,24 @@ module.exports = {
                 test: /\.ts$/,
                 loader: 'ts-loader',
                 exclude: /node_modules/,
+                options: {
+                    transpileOnly: true,
+                },
                 include: [
                     path.resolve(__dirname, 'src/app'),
                     path.resolve(__dirname, 'src/shared'),
                 ]
             },
-            {
-                test: /\.jsx?$|\.ts$/,
-                loader: 'eslint-loader',
-                enforce: 'pre',
-                exclude: /node_modules/,
-                options: {
-                    cache: true,
-                    fix: true
-                }
-            },
+            // {
+            //     test: /\.jsx?$|\.ts$/,
+            //     loader: 'eslint-loader',
+            //     enforce: 'pre',
+            //     exclude: /node_modules/,
+            //     options: {
+            //         cache: true,
+            //         fix: true
+            //     }
+            // },
             {
                 test: /\.js(x)?$/,
                 loader: 'babel-loader',

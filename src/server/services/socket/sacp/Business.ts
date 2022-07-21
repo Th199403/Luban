@@ -543,9 +543,9 @@ export default class Business extends Dispatcher {
         });
     }
 
-    public async SetExtruderOffset(key: number, index: number, direction: number, distance: number) {
-        const info = new ExtruderOffset(key, index, direction, distance);
-        return this.send(0x10, 0x07, PeerId.CONTROLLER, info.toBuffer()).then(({ response, packet }) => {
+    public async SetExtruderOffset(key: number, index: number, distance: number) {
+        const info = new ExtruderOffset(key, index, distance);
+        return this.send(0xa0, 0x15, PeerId.CONTROLLER, info.toBuffer()).then(({ response, packet }) => {
             return { response, packet, data: {} };
         });
     }

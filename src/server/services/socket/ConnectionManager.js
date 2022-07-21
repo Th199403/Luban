@@ -192,9 +192,11 @@ class ConnectionManager {
             const promises = [];
             if (this.protocol === SACP_PROTOCOL && headType === HEAD_LASER) {
                 if (laserFocalLength && toolHead === LEVEL_TWO_POWER_LASER_FOR_SM2 && !isRotate && (isLaserPrintAutoMode && materialThickness === 0)) {
+                    console.log('1');
                     await this.socket.laseAutoSetMaterialHeight({ toolHead });
                 }
                 if (((toolHead === LEVEL_TWO_POWER_LASER_FOR_SM2 && !isLaserPrintAutoMode) || (toolHead === LEVEL_ONE_POWER_LASER_FOR_SM2 && isLaserPrintAutoMode)) && (materialThickness !== 0 || isRotate)) {
+                    console.log('2');
                     await this.socket.laserSetWorkHeight({ toolHead, materialThickness, isRotate });
                 }
                 const { gcode, jogSpeed = 1500 } = options;
@@ -203,6 +205,7 @@ class ConnectionManager {
                     { axis: 'Y', distance: 0 },
                     { axis: 'Z', distance: 0 }
                 ];
+                console.log('moveOrders, gcode, jogSpeed, headType', isLaserPrintAutoMode, materialThickness, moveOrders, gcode, jogSpeed, headType);
                 await this.socket.coordinateMove({ moveOrders, gcode, jogSpeed, headType });
             } else if (series !== MACHINE_SERIES.ORIGINAL.value && series !== MACHINE_SERIES.CUSTOM.value && headType === HEAD_LASER && !isRotate) {
                 if (laserFocalLength) {

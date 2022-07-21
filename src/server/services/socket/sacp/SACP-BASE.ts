@@ -389,7 +389,7 @@ class SocketBASE {
         }
 
         log.info(`SetExtruderOffset key:${toolHead.key} extruderIndex: ${extruderIndex}, direction: ${direction}, distance:${distance}`);
-        const response = await this.sacpClient.SetExtruderOffset(toolHead.key, extruderIndex, direction, distance);
+        const response = await this.sacpClient.SetExtruderOffset(toolHead.key, extruderIndex, distance);
         log.info(`SetExtruderOffset, ${JSON.stringify(response)}`);
     }
 

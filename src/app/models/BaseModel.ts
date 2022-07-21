@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { Box2, Mesh, Object3D } from 'three';
 import { v4 as uuid } from 'uuid';
 import { PROCESS_MODE_BW, PROCESS_MODE_GREYSCALE, PROCESS_MODE_HALFTONE, PROCESS_MODE_MESH, PROCESS_MODE_VECTOR } from '../../server/constants';
-import { HEAD_CNC, HEAD_LASER, SOURCE_TYPE } from '../constants';
+import { HEAD_CNC, HEAD_LASER, SOURCE_TYPE } from '../constants/index.ts';
 import type ModelGroup from './ModelGroup';
 
 export interface ModelTransformation {

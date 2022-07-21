@@ -77,16 +77,15 @@ class Printing extends PureComponent {
                 heatedBedTemperatureValue: this.state.heatedBedTemperatureValue
             });
         },
-        onChangeZOffset: (direction, value) => {
-            if (direction === LEFT_EXTRUDER) {
-                this.setState({
-                    leftZOffsetValue: value
-                });
-            } else {
-                this.setState({
-                    rightZOffsetValue: value
-                });
-            }
+        onChangeLeftZOffset: (value) => {
+            this.setState({
+                leftZOffsetValue: value
+            });
+        },
+        onChangeRightZOffset: (value) => {
+            this.setState({
+                rightZOffsetValue: value
+            });
         },
         onClickPlusZOffset: (extruderIndex) => {
             const zOffset = extruderIndex === RIGHT_EXTRUDER_MAP_NUMBER ? this.state.rightZOffsetValue : this.state.leftZOffsetValue;
@@ -330,7 +329,7 @@ class Printing extends PureComponent {
                         >
                             <JogDistance
                                 marks={zOffsetMarks}
-                                onChange={actions.onChangeZOffset}
+                                onChange={actions.onChangeLeftZOffset}
                                 defaultValue={leftZOffsetValue}
                             />
                         </Anchor>
@@ -358,7 +357,7 @@ class Printing extends PureComponent {
                         >
                             <JogDistance
                                 marks={zOffsetMarks}
-                                onChange={actions.onChangeZOffset}
+                                onChange={actions.onChangeRightZOffset}
                                 defaultValue={rightZOffsetValue}
                             />
                         </Anchor>
