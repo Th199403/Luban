@@ -11,7 +11,8 @@ import { configureWindow } from './electron-app/window';
 import MenuBuilder, { addRecentFile, cleanAllRecentFiles } from './electron-app/Menu';
 import DataStorage from './DataStorage';
 import pkg from './package.json';
-// const { crashReporter } = require('electron');
+
+const { crashReporter } = require('electron');
 
 const config = new Store();
 const userDataDir = app.getPath('userData');
@@ -21,7 +22,7 @@ global.luban = {
 let serverData = null;
 let mainWindow = null;
 // https://www.electronjs.org/docs/latest/breaking-changes#planned-breaking-api-changes-100
-// console.log('getCrashesDirectory', app.getPath('crashDumps'));
+console.log('getCrashesDirectory', app.getPath('crashDumps'));
 let loadUrl = '';
 let powerId = 0;
 const loadingMenu = [{
@@ -36,12 +37,12 @@ const UPLOAD_WINDOWS = 'uploadWindows';
 
 const { CLIENT_PORT, SERVER_PORT } = pkg.config;
 
-// crashReporter.start({
-//     productName: 'Snapmaker',
-//     globalExtra: { _companyName: 'Snapmaker' },
-//     submitURL: 'https://api.snapmaker.com',
-//     uploadToServer: true
-// });
+crashReporter.start({
+    productName: 'Snapmaker',
+    globalExtra: { _companyName: 'Snapmaker' },
+    submitURL: 'https://api.snapmaker.com',
+    uploadToServer: true
+});
 
 function getBrowserWindowOptions() {
     const defaultOptions = {
@@ -140,6 +141,7 @@ function updateHandle() {
     // Emitted when there is an available update. The update is downloaded automatically if autoDownload is true.
     autoUpdater.on('update-available', (downloadInfo) => {
         sendUpdateMessage(message.updateAva);
+        console.log('downloadInfo', downloadInfo, app.getVersion());
         mainWindow.webContents.send('update-available', { ...downloadInfo, prevVersion: app.getVersion() });
     });
     // Emitted when there is no available update.
@@ -204,6 +206,19 @@ const startToBegin = (data) => {
     serverData = data;
     const { address, port } = { ...serverData };
     configureWindow(mainWindow);
+    const lang = 'ZH-CN';
+    if (lang === 'ZH-CN') {
+        autoUpdater.setFeedURL({
+            provider: 'generic',
+            url: 'https://snapmaker.oss-cn-beijing.aliyuncs.com/snapmaker.com/download/autoUpdater'
+        });
+    } else {
+        autoUpdater.setFeedURL({ provider: 'github' });
+    }
+
+    console.log('i18next', autoUpdater.getFeedURL());
+    updateHandle();
+
     loadUrl = `http://${address}:${port}`;
     const filter = {
         urls: [
@@ -373,7 +388,7 @@ const showMainWindow = async () => {
         shell.openPath(`${userDataDir}/snapmaker-recover`);
     });
 
-    updateHandle();
+    // updateHandle();
 };
 
 // Allow max 4G memory usage
