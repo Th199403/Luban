@@ -4015,7 +4015,9 @@ export const actions = {
         const newModels = modelGroup.models.filter(model => {
             return !models.includes(model) && model;
         });
+        modelGroup.unselectAllModels()
         newModels.forEach((model) => {
+            modelGroup.selectModelById(model.modelID, true);
             if (model instanceof ThreeModel) {
                 model.initClipper(modelGroup.localPlane);
 
@@ -4990,7 +4992,7 @@ export const actions = {
                 promptTasks
             })
         );
-
+        modelGroup.updatePrimeTowerHeight()
         dispatch(actions.applyProfileToAllModels());
         dispatch(actions.displayModel());
         dispatch(actions.destroyGcodeLine());

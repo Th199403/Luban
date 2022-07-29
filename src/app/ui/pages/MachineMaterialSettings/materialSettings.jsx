@@ -4,7 +4,7 @@ import classNames from 'classnames';
 import { CaretRightOutlined } from '@ant-design/icons';
 import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { message, Tooltip } from 'antd';
+import { message, Tooltip, Spin } from 'antd';
 import Popover from '../../components/Popover';
 import { actions as printingActions } from '../../../flux/printing';
 import { useGetDefinitions } from '../../views/ProfileManager';
@@ -21,10 +21,11 @@ import modal from '../../../lib/modal';
 import styles from './styles.styl';
 
 const MaterialSettings = ({
-    toolHead
+    toolHead, loading
 }) => {
     const materialActiveCategory = machineStore.get('settings.materialActiveCategory');
     const { defaultMaterialId, defaultMaterialIdRight, materialDefinitions, materialManagerDirection } = useSelector(state => state.printing);
+
     const [leftMaterialDefinitionId, setLeftMaterialDefinitionId] = useState(defaultMaterialId);
     const [leftMaterialDefinition, setLeftMaterialDefinition] = useState(find(materialDefinitions, { definitionId: leftMaterialDefinitionId }));
     const [rightMaterialDefinitionId, setRightMaterialDefinitionId] = useState(defaultMaterialIdRight);
@@ -54,24 +55,28 @@ const MaterialSettings = ({
         const definition = materialDefinitions.find(
             (d) => d.definitionId === leftMaterialDefinitionId
         );
-        dispatch(
-            printingActions.updateDefaultMaterialId(
-                definition.definitionId,
-                LEFT_EXTRUDER
-            )
-        );
-    }, [leftMaterialDefinitionId]);
+        if (definition) {
+            dispatch(
+                printingActions.updateDefaultMaterialId(
+                    definition.definitionId,
+                    LEFT_EXTRUDER
+                )
+            );
+        }
+    }, [materialDefinitions, leftMaterialDefinitionId]);
     useEffect(() => {
         const definition = materialDefinitions.find(
             (d) => d.definitionId === rightMaterialDefinitionId
         );
-        dispatch(
-            printingActions.updateDefaultMaterialId(
-                definition.definitionId,
-                RIGHT_EXTRUDER
-            )
-        );
-    }, [rightMaterialDefinitionId]);
+        if (definition) {
+            dispatch(
+                printingActions.updateDefaultMaterialId(
+                    definition.definitionId,
+                    RIGHT_EXTRUDER
+                )
+            );
+        }
+    }, [materialDefinitions, rightMaterialDefinitionId]);
     useEffect(() => {
         const definitionByCategoryTemp = {};
         materialDefinitions.forEach((definition) => {
@@ -237,116 +242,125 @@ const MaterialSettings = ({
         );
     };
     return (
-        <div className="padding-vertical-40 padding-horizontal-40 height-all-minus-60 overflow-y-auto">
-            <div className="sm-flex justify-space-between">
-                <input
-                    ref={fileInput}
-                    type="file"
-                    accept=".json"
-                    style={{ display: 'none' }}
-                    multiple={false}
-                    onChange={async (e) => {
-                        await onChangeFileForManager(e);
-                    }}
-                />
-                <div className={`padding-horizontal-4 padding-vertical-4 border-radius-16 sm-flex background-grey-2 ${toolHead.printingToolhead === DUAL_EXTRUDER_TOOLHEAD_FOR_SM2 ? 'width-532' : 'width-272'}`}>
-                    <Anchor onClick={() => setActiveNozzle(LEFT)} className={`padding-horizontal-16 padding-vertical-8 border-radius-16 width-264 height-68 ${activeNozzle === LEFT ? 'background-color-white' : ''}`}>
-                        <div className="heading-3">{i18n._('key-setting/Left-Nozzle')}</div>
-                        <div className="sm-flex align-center margin-top-8">
-                            <div className="height-16 width-16 border-default-grey-1 " style={{ background: `${leftMaterialDefinition?.settings?.color?.default_value}` }} />
-                            <span className="margin-left-8">{i18n._(leftMaterialDefinition?.i18nName || leftMaterialDefinition?.name)}</span>
+        loading
+            ? (
+                <div className="position-ab position-ab-center">
+                    <Spin />
+                </div>
+            )
+            : (
+                <div className="padding-vertical-40 padding-horizontal-40 height-all-minus-60 overflow-y-auto">
+                    <div className="sm-flex justify-space-between">
+                        <input
+                            ref={fileInput}
+                            type="file"
+                            accept=".json"
+                            style={{ display: 'none' }}
+                            multiple={false}
+                            onChange={async (e) => {
+                                await onChangeFileForManager(e);
+                            }}
+                        />
+                        <div className={`padding-horizontal-4 padding-vertical-4 border-radius-16 sm-flex background-grey-2 ${toolHead.printingToolhead === DUAL_EXTRUDER_TOOLHEAD_FOR_SM2 ? 'width-532' : 'width-272'}`}>
+                            <Anchor onClick={() => setActiveNozzle(LEFT)} className={`padding-horizontal-16 padding-vertical-8 border-radius-16 width-264 height-68 ${activeNozzle === LEFT ? 'background-color-white' : ''}`}>
+                                <div className="heading-3">{i18n._('key-setting/Left-Nozzle')}</div>
+                                <div className="sm-flex align-center margin-top-8">
+                                    <div className="height-16 width-16 border-default-grey-1 " style={{ background: `${leftMaterialDefinition?.settings?.color?.default_value}` }} />
+                                    <span className="margin-left-8">{i18n._(leftMaterialDefinition?.i18nName || leftMaterialDefinition?.name)}</span>
+                                </div>
+                            </Anchor>
+                            {toolHead.printingToolhead === DUAL_EXTRUDER_TOOLHEAD_FOR_SM2 && (
+                                <Anchor onClick={() => setActiveNozzle(RIGHT)} className={`padding-horizontal-16 padding-vertical-8 border-radius-16 width-264 height-68 ${activeNozzle === RIGHT ? 'background-color-white' : ''}`}>
+                                    <div className="heading-3">{i18n._('key-setting/Right-Nozzle')}</div>
+                                    <div className="sm-flex align-center margin-top-8">
+                                        <div className="height-16 width-16 border-default-grey-1" style={{ background: `${rightMaterialDefinition?.settings?.color?.default_value}` }} />
+                                        <span className="margin-left-8">{i18n._(rightMaterialDefinition?.i18nName || rightMaterialDefinition?.name)}</span>
+                                    </div>
+                                </Anchor>
+                            )}
                         </div>
-                    </Anchor>
-                    {toolHead.printingToolhead === DUAL_EXTRUDER_TOOLHEAD_FOR_SM2 && (
-                        <Anchor onClick={() => setActiveNozzle(RIGHT)} className={`padding-horizontal-16 padding-vertical-8 border-radius-16 width-264 height-68 ${activeNozzle === RIGHT ? 'background-color-white' : ''}`}>
-                            <div className="heading-3">{i18n._('key-setting/Right-Nozzle')}</div>
-                            <div className="sm-flex align-center margin-top-8">
-                                <div className="height-16 width-16 border-default-grey-1" style={{ background: `${rightMaterialDefinition?.settings?.color?.default_value}` }} />
-                                <span className="margin-left-8">{i18n._(rightMaterialDefinition?.i18nName || rightMaterialDefinition?.name)}</span>
-                            </div>
-                        </Anchor>
-                    )}
-                </div>
-                <div className="sm-flex">
-                    <Button
-                        priority="level-two"
-                        width="160px"
-                        type="default"
-                        onClick={onShowPrintingManager}
-                    >
-                        <span className="display-inline width-142 text-overflow-ellipsis">{i18n._('key-settings/Profile Manager')}</span>
-                    </Button>
-                    <Popover
-                        trigger="click"
-                        content={renderAddMaterial}
-                    >
-                        <Button
-                            priority="level-two"
-                            width="160px"
-                            className="margin-left-16"
-                        >
-                            <span className="display-inline width-142 text-overflow-ellipsis">{i18n._('key-settings/Add Material')}</span>
-                        </Button>
-                    </Popover>
+                        <div className="sm-flex">
+                            <Button
+                                priority="level-two"
+                                width="160px"
+                                type="default"
+                                onClick={onShowPrintingManager}
+                            >
+                                <span className="display-inline width-142 text-overflow-ellipsis">{i18n._('key-settings/Profile Manager')}</span>
+                            </Button>
+                            <Popover
+                                trigger="click"
+                                content={renderAddMaterial}
+                            >
+                                <Button
+                                    priority="level-two"
+                                    width="160px"
+                                    className="margin-left-16"
+                                >
+                                    <span className="display-inline width-142 text-overflow-ellipsis">{i18n._('key-settings/Add Material')}</span>
+                                </Button>
+                            </Popover>
 
-                </div>
-            </div>
-            <div>
-                {Object.keys(definitionByCategory).map(key => {
-                    return (
-                        <Anchor onClick={() => onUpdateCategory(key)} className="margin-top-36 display-block" key={key}>
-                            <div className="sm-flex align-center">
-                                <CaretRightOutlined rotate={includes(activeCategory, key) ? 90 : 0} />
-                                <div className="margin-left-12 heading-3">{definitionByCategory[key][0].category}</div>
-                            </div>
-                            <div className={`${includes(activeCategory, key) ? 'sm-grid grid-template-columns-for-material-settings grid-row-gap-16 grid-column-gap-32' : 'display-none'}`}>
-                                {
-                                    definitionByCategory[key].map(definition => {
-                                        const selectedDefinitionId = activeNozzle === LEFT ? leftMaterialDefinitionId : rightMaterialDefinitionId;
-                                        return (
-                                            <Anchor
-                                                className={classNames(`height-40 border-radius-100 padding-horizontal-16 sm-flex align-center border-default-grey-1 ${selectedDefinitionId === definition.definitionId ? 'border-blod-blue-2' : ''}`, styles['material-item'])}
-                                                onClick={(e) => handleUpdateDefinition(e, definition.definitionId)}
-                                                onDoubleClick={onShowPrintingManager}
-                                            >
-                                                <div className="sm-flex align-center">
-                                                    <div className="width-16 height-16 border-default-grey-1 margin-right-8 " style={{ background: `${definition?.settings?.color?.default_value}` }} />
-                                                    <span>{i18n._(definition.i18nName || definition.name)}</span>
-                                                </div>
-                                                <div className={classNames(styles['material-more-action'])}>
-                                                    <Popover
-                                                        content={() => renderMaterialMore(definition)}
-                                                        placement="bottomRight"
+                        </div>
+                    </div>
+                    <div>
+                        {Object.keys(definitionByCategory).map(key => {
+                            return (
+                                <Anchor onClick={() => onUpdateCategory(key)} className="margin-top-36 display-block" key={key}>
+                                    <div className="sm-flex align-center">
+                                        <CaretRightOutlined rotate={includes(activeCategory, key) ? 90 : 0} />
+                                        <div className="margin-left-12 heading-3">{definitionByCategory[key][0].category}</div>
+                                    </div>
+                                    <div className={`${includes(activeCategory, key) ? 'sm-grid grid-template-columns-for-material-settings grid-row-gap-16 grid-column-gap-32' : 'display-none'}`}>
+                                        {
+                                            definitionByCategory[key].map(definition => {
+                                                const selectedDefinitionId = activeNozzle === LEFT ? leftMaterialDefinitionId : rightMaterialDefinitionId;
+                                                return (
+                                                    <Anchor
+                                                        className={classNames(`height-40 border-radius-100 padding-horizontal-16 sm-flex align-center border-default-grey-1 ${selectedDefinitionId === definition.definitionId ? 'border-blod-blue-2' : ''}`, styles['material-item'])}
+                                                        onClick={(e) => handleUpdateDefinition(e, definition.definitionId)}
+                                                        onDoubleClick={onShowPrintingManager}
                                                     >
-                                                        <SvgIcon
-                                                            name="More"
-                                                            size={24}
-                                                            type={['static']}
-                                                        />
-                                                    </Popover>
-                                                </div>
-                                            </Anchor>
-                                        );
-                                    })
-                                }
-                            </div>
-                        </Anchor>
-                    );
-                })}
-            </div>
-            {showCreateMaterialModal && (
-                <AddMaterialModel
-                    setShowCreateMaterialModal={setShowCreateMaterialModal}
-                    onSubmit={handleAddMaterial}
-                />
-            )}
-            <PrintingManager />
-        </div>
+                                                        <div className="sm-flex align-center">
+                                                            <div className="width-16 height-16 border-default-grey-1 margin-right-8 " style={{ background: `${definition?.settings?.color?.default_value}` }} />
+                                                            <span>{i18n._(definition.i18nName || definition.name)}</span>
+                                                        </div>
+                                                        <div className={classNames(styles['material-more-action'])}>
+                                                            <Popover
+                                                                content={() => renderMaterialMore(definition)}
+                                                                placement="bottomRight"
+                                                            >
+                                                                <SvgIcon
+                                                                    name="More"
+                                                                    size={24}
+                                                                    type={['static']}
+                                                                />
+                                                            </Popover>
+                                                        </div>
+                                                    </Anchor>
+                                                );
+                                            })
+                                        }
+                                    </div>
+                                </Anchor>
+                            );
+                        })}
+                    </div>
+                    {showCreateMaterialModal && materialDefinitions.length > 0 && (
+                        <AddMaterialModel
+                            setShowCreateMaterialModal={setShowCreateMaterialModal}
+                            onSubmit={handleAddMaterial}
+                        />
+                    )}
+                    <PrintingManager />
+                </div>
+            )
     );
 };
 
 MaterialSettings.propTypes = {
-    toolHead: PropTypes.string
+    toolHead: PropTypes.string,
+    loading: PropTypes.bool
 };
 
 export default MaterialSettings;
