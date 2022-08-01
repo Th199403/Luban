@@ -4020,7 +4020,6 @@ export const actions = {
         modelGroup.groupsChildrenMap.forEach((subModels, group) => {
             if (subModels.every(id => id instanceof ThreeModel)) {
                 modelGroup.unselectAllModels();
-
                 group.meshObject.updateMatrixWorld();
                 const groupMatrix = group.meshObject.matrixWorld.clone();
                 const allSubmodelsId = subModels.map(d => d.modelID);
@@ -4039,8 +4038,6 @@ export const actions = {
                 group.stickToPlate();
                 group.computeBoundingBox();
                 const overstepped = modelGroup._checkOverstepped(group);
-
-
 
                 group.setOversteppedAndSelected(overstepped, group.isSelected);
                 modelGroup.addModelToSelectedGroup(group);
