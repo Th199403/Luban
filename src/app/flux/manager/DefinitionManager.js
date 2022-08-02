@@ -24,6 +24,23 @@ const primeTowerDefinitionKeys = [
     'prime_tower_wipe_enabled',
 ];
 
+
+const MESH_KEYS = [
+    'infill_line_distance',
+    'wall_line_count',
+    'infill_line_width',
+    'wall_line_width',
+    'wall_line_width_0',
+    'wall_line_width_x',
+    'skin_line_width',
+    'wall_0_material_flow',
+    'wall_x_material_flow',
+    'skin_material_flow',
+    'roofing_material_flow',
+    'infill_material_flow',
+    'material_flow_layer_0',
+];
+
 class DefinitionManager {
     headType = HEAD_CNC;
 
@@ -257,71 +274,32 @@ class DefinitionManager {
         extruderRDefinitionSettings,
         helpersExtruderConfig
     ) {
-        if (settings.infill_sparse_density) {
-            const infillSparseDensity = settings.infill_sparse_density.default_value;
-            // L: infill_line_distance
-            const infillLineWidthL = extruderLDefinitionSettings.machine_nozzle_size.default_value; // infill_line_width
-
-            const infillLineDistanceL = infillSparseDensity < 1
-                ? 0
-                : ((infillLineWidthL * 100) / infillSparseDensity) * 2;
+        if ((settings.infill_line_distance)) {
             extruderLDefinitionSettings.infill_line_distance = {
-                default_value: infillLineDistanceL
+                default_value: settings.infill_line_distance.default_value
             };
-
-            // R: infill_line_distance
-            const infillLineWidthR = extruderRDefinitionSettings.machine_nozzle_size.default_value; // infill_line_width
-
-            const infillLineDistanceR = infillSparseDensity < 1
-                ? 0
-                : ((infillLineWidthR * 100) / infillSparseDensity) * 2;
             extruderRDefinitionSettings.infill_line_distance = {
-                default_value: infillLineDistanceR
+                default_value: settings.infill_line_distance.default_value
             };
-
-            // top_layers & bottom_layers
-            if (settings.infill_sparse_density.default_value === 100) {
-                settings.top_layers = { default_value: 0 };
-                settings.bottom_layers = { default_value: 999999 };
-            }
         }
 
-        if (settings.wall_thickness) {
-            // "1 if magic_spiralize else max(1, round((wall_thickness - wall_line_width_0) / wall_line_width_x) + 1) if wall_thickness != 0 else 0"
-            const wallThickness = settings.wall_thickness.default_value;
-
-            // L: wall_line_count
-            const wallOutLineWidthL = extruderLDefinitionSettings.machine_nozzle_size.default_value; // wall_line_width_0
-            const wallInnerLineWidthL = extruderLDefinitionSettings.machine_nozzle_size.default_value; // wall_line_width_x
-            const wallLineCountL = wallThickness !== 0
-                ? Math.max(
-                    1,
-                    Math.round(
-                        (wallThickness - wallOutLineWidthL)
-                        / wallInnerLineWidthL
-                    ) + 1
-                )
-                : 0;
+        if ((settings.wall_line_count)) {
             extruderLDefinitionSettings.wall_line_count = {
-                default_value: wallLineCountL
+                default_value: settings.wall_line_count.default_value
             };
-
-            // R: wall_line_count
-            const wallOutLineWidthR = extruderRDefinitionSettings.machine_nozzle_size.default_value; // wall_line_width_0
-            const wallInnerLineWidthR = extruderRDefinitionSettings.machine_nozzle_size.default_value; // wall_line_width_x
-            const wallLineCountR = wallThickness !== 0
-                ? Math.max(
-                    1,
-                    Math.round(
-                        (wallThickness - wallOutLineWidthR)
-                        / wallInnerLineWidthR
-                    ) + 1
-                )
-                : 0;
             extruderRDefinitionSettings.wall_line_count = {
-                default_value: wallLineCountR
+                default_value: settings.wall_line_count.default_value
             };
         }
+        MESH_KEYS.forEach((key) => {
+            if (settings[key]) {
+                extruderLDefinitionSettings[key] = {
+                    default_value: settings[key].default_value
+                };
+                console.log('key', key, settings[key].default_value, extruderLDefinitionSettings[key].default_value);
+            }
+        });
+
 
         if (settings.layer_height) {
             const layerHeight = settings.layer_height.default_value;
@@ -512,8 +490,8 @@ class DefinitionManager {
         });
         const meshKeys = [
             'infill_line_distance',
-            'infill_line_width',
             'wall_line_count',
+            'infill_line_width',
             'wall_line_width',
             'wall_line_width_0',
             'wall_line_width_x',
@@ -612,8 +590,9 @@ class DefinitionManager {
             }
         }
         // TODO: move 'machine_nozzle_size' to materialDefinition
-        const nozzleSize = settings.machine_nozzle_size.default_value;
-        if (nozzleSize) {
+        const nozzleSize = settings?.machine_nozzle_size?.default_value;
+        if (nozzleSize && definition.definitionId === 'snapmaker_extruder_1') {
+            console.log('nozzleSize', nozzleSize);
             const nozzleSizeRelationSettingsKeys = [
                 'wall_line_width_0',
                 'wall_line_width_x',
