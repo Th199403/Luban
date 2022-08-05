@@ -13,7 +13,9 @@ import {
     COORDINATE_MODE_CENTER, COORDINATE_MODE_BOTTOM_CENTER, PAGE_EDITOR, DISPLAYED_TYPE_MODEL,
     MAX_RECENT_FILES_LENGTH,
     LOAD_MODEL_FROM_OUTER,
-    SINGLE_EXTRUDER_TOOLHEAD_FOR_SM2
+    SINGLE_EXTRUDER_TOOLHEAD_FOR_SM2,
+    PRINTING_MANAGER_TYPE_MATERIAL,
+    PRINTING_MANAGER_TYPE_QUALITY
 } from '../../constants';
 import api from '../../api';
 import { actions as printingActions } from '../printing';
@@ -208,6 +210,9 @@ export const actions = {
         if (envHeadType === HEAD_PRINTING) {
             modActions = printingActions;
             await dispatch(printingActions.initSize());
+            const { defaultMaterialId, defaultQualityId } = envObj;
+            dispatch(modActions.updateActiveDefinitionById(PRINTING_MANAGER_TYPE_MATERIAL, defaultMaterialId, false));
+            dispatch(modActions.updateActiveDefinitionById(PRINTING_MANAGER_TYPE_QUALITY, defaultQualityId, false));
         }
         const { modelGroup } = modState;
         // await dispatch(modActions.init(envHeadType));
