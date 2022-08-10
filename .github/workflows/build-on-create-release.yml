@@ -35,4 +35,4 @@ jobs:
           echo "FILE_NAME=${FILE_NAME}"
 
       - run: |
-          ossutil cp -f '${{env.FILE_NAME}}.md' oss://snapmaker/snapmaker.com/download/autoUpdater/6.md
+          ossutil cp -f ${{env.FILE_NAME}}.md oss://snapmaker/snapmaker.com/download/autoUpdater/6.md
