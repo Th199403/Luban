@@ -7,6 +7,7 @@ import url from 'url';
 import fs from 'fs';
 import { isUndefined, isNull } from 'lodash';
 import path from 'path';
+import isReachable from 'is-reachable';
 import { configureWindow } from './electron-app/window';
 import MenuBuilder, { addRecentFile, cleanAllRecentFiles } from './electron-app/Menu';
 import DataStorage from './DataStorage';
@@ -202,22 +203,38 @@ if (process.platform === 'win32') {
     }
 }
 
+const checkUpdateServer = () => {
+    const hosts = [
+        ['snapmaker.oss-cn-beijing.aliyuncs.com', 'aliyuncs'],
+        ['github.com', 'github']
+    ];
+    const promises = hosts.map(([host, flag]) => {
+        return new Promise((resolve) => {
+            isReachable(host).then(() => {
+                resolve(flag);
+            });
+        });
+    });
+    return Promise.race(promises);
+};
+
 const startToBegin = (data) => {
     serverData = data;
     const { address, port } = { ...serverData };
     configureWindow(mainWindow);
-    const lang = 'ZH-CN';
-    if (lang === 'ZH-CN') {
-        autoUpdater.setFeedURL({
-            provider: 'generic',
-            url: 'https://snapmaker.oss-cn-beijing.aliyuncs.com/snapmaker.com/download/autoUpdater'
-        });
-    } else {
-        autoUpdater.setFeedURL({ provider: 'github' });
-    }
 
-    console.log('i18next', autoUpdater.getFeedURL());
-    updateHandle();
+    checkUpdateServer().then((host) => {
+        console.log('=========>>>>>>>> app update server =', host);
+        if (host === 'aliyuncs') {
+            autoUpdater.setFeedURL({
+                provider: 'generic',
+                url: 'https://snapmaker.oss-cn-beijing.aliyuncs.com/snapmaker.com/download/autoUpdater'
+            });
+        } else {
+            autoUpdater.setFeedURL({ provider: 'github' });
+        }
+        updateHandle();
+    });
 
     loadUrl = `http://${address}:${port}`;
     const filter = {
