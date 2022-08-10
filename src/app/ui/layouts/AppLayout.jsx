@@ -206,7 +206,7 @@ class AppLayout extends PureComponent {
             });
         },
         renderDownloadUpdateModal: () => {
-            const { releaseNotes, prevVersion, version } = this.state;
+            const { releaseNotes, releaseChangeLog, prevVersion, version } = this.state;
             const { shouldCheckForUpdate } = this.props;
             const { ipcRenderer } = window.require('electron');
             const onClose = () => {
@@ -220,6 +220,7 @@ class AppLayout extends PureComponent {
                     return (
                         <DownloadUpdate
                             releaseNotes={releaseNotes}
+                            releaseChangeLog={releaseChangeLog}
                             prevVersion={prevVersion}
                             version={version}
                         />
@@ -274,6 +275,7 @@ class AppLayout extends PureComponent {
             if (downloadInfo) {
                 this.setState({
                     releaseNotes: downloadInfo.releaseNotes,
+                    releaseChangeLog: downloadInfo.releaseChangeLog,
                     prevVersion: downloadInfo.prevVersion,
                     version: downloadInfo.version,
                     showDownloadUpdateModal: true
