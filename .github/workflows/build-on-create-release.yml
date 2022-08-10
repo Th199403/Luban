@@ -31,7 +31,7 @@ jobs:
       
       - name: Setting Environment Variables
         run: |
-          FILE_NAME="空 格"
+          $FILE_NAME="空 格"
           echo "FILE_NAME=${FILE_NAME}" >> ${Env:GITHUB_ENV}
 
 
