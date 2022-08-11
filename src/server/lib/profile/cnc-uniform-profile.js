@@ -146,6 +146,7 @@ export const cncUniformProfile = (filename, configDir) => {
         const data = fs.readFileSync(filePath, 'utf8');
         const json = JSON.parse(data);
         json.inherits = 'snapmaker2';
+        // json.i18nCategory = 'key-default_category-Default Material';
         fs.writeFileSync(filePath, JSON.stringify(json));
     }
 };
