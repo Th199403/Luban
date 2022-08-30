@@ -2,6 +2,7 @@ import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
 import { HashRouter, Route, Switch } from 'react-router-dom';
 import { connect } from 'react-redux';
+import * as Sentry from '@sentry/react';
 import { shortcutActions, priorities, ShortcutManager } from '../lib/shortcut';
 import { ToastContainer } from './components/Toast';
 import { actions as machineActions } from '../flux/machine';
@@ -126,6 +127,7 @@ class App extends PureComponent {
 
     componentDidCatch(error, errorInfo) {
         console.error('error', error, errorInfo);
+        Sentry.captureException(error, null, errorInfo);
         logErrorToGA(errorInfo);
     }
 
