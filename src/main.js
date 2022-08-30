@@ -9,6 +9,7 @@ import { isUndefined, isNull, debounce } from 'lodash';
 import path from 'path';
 import isReachable from 'is-reachable';
 import fetch from 'node-fetch';
+import * as Sentry from '@sentry/electron';
 import { configureWindow } from './electron-app/window';
 import MenuBuilder, { addRecentFile, cleanAllRecentFiles } from './electron-app/Menu';
 import DataStorage from './DataStorage';
@@ -20,6 +21,17 @@ const userDataDir = app.getPath('userData');
 global.luban = {
     userDataDir
 };
+
+Sentry.init({
+    enabled: true,
+    dsn: 'https://88ea58fb276d4229a1b72333e88dba34@o1378322.ingest.sentry.io/6690121',
+    debug: true,
+    environment: 'development',
+    release: `${pkg.name}@${pkg.version}`,
+    sampleRate: 1,
+    enableOutOfMemoryTracking: true
+});
+
 let serverData = null;
 let mainWindow = null;
 // https://www.electronjs.org/docs/latest/breaking-changes#planned-breaking-api-changes-100
