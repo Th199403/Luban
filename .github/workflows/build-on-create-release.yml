@@ -264,6 +264,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Dump env
+        run: env | sort
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
       - name: Checkout Code
         uses: actions/checkout@v2
         with:
@@ -277,6 +283,9 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: '12.x'
+
+      - name: Set sentry config
+        run: node build/set-config.js --SentryToken=${{ secrets.SENTRY_TOKEN}} --SentryDsn=${{ secrets.SENTRY_DSN}} --RELEASE=${{ github.event.release }}
 
       - run: npm install -g npm@7.24.0
       - run: npm install
