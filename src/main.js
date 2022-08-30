@@ -9,6 +9,7 @@ import { isUndefined, isNull, debounce } from 'lodash';
 import path from 'path';
 import isReachable from 'is-reachable';
 import fetch from 'node-fetch';
+import * as Sentry from '@sentry/electron';
 import { configureWindow } from './electron-app/window';
 import MenuBuilder, { addRecentFile, cleanAllRecentFiles } from './electron-app/Menu';
 import DataStorage from './DataStorage';
@@ -20,6 +21,22 @@ const userDataDir = app.getPath('userData');
 global.luban = {
     userDataDir
 };
+
+if (pkg.tagName && pkg?.sentry?.auth?.dns) {
+    Sentry.init({
+        enabled: process.env.NODE_ENV === 'production',
+        dsn: pkg.sentry.auth.dns, // 'https://88ea58fb276d4229a1b72333e88dba34@o1378322.ingest.sentry.io/6690121',
+        debug: true,
+        environment: process.env.NODE_ENV,
+        release: pkg.tagName,
+        sampleRate: 1,
+        enableOutOfMemoryTracking: true
+    });
+    Sentry.setUser({
+        id: config.get('gaUserId')
+    });
+}
+
 let serverData = null;
 let mainWindow = null;
 // https://www.electronjs.org/docs/latest/breaking-changes#planned-breaking-api-changes-100
@@ -300,6 +317,13 @@ const startToBegin = (data) => {
         .then(() => mainWindow.loadURL(loadUrl).catch(err => {
             console.log('err', err.message);
         }));
+
+    mainWindow.webContents.on('render-process-gone', (_event, details) => {
+        Sentry.setTag('webContents-event', 'render-process-gone');
+        Sentry.captureMessage(`render-process-gone: exitCode=${details.exitCode}, reason=${details?.reason}`);
+
+        console.error(`render-process-gone, ${JSON.stringify(details)}`);
+    });
 
     try {
         // TODO: move to server

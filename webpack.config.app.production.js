@@ -13,10 +13,11 @@ const TerserPlugin = require('terser-webpack-plugin');
 // const HtmlWebpackPluginAddons = require('html-webpack-plugin-addons');
 const nib = require('nib');
 const stylusLoader = require('stylus-loader');
+const SentryWebpackPlugin = require('@sentry/webpack-plugin');
+const fs = require('fs');
 
 const babelConfig = require('./babel.config');
 const languages = require('./webpack.config.app-i18n').languages;
-// const pkg = require('./package.json');
 
 // Use publicPath for production
 // const publicPath = (function calculatePublicPath(payload) {
@@ -28,11 +29,10 @@ const languages = require('./webpack.config.app-i18n').languages;
 const publicPath = './';
 const timestamp = new Date().getTime();
 
-module.exports = {
+const webpackConfig = {
     mode: 'production',
     target: 'web',
     cache: true,
-    // devtool: 'source-map', // used in pre-production, comment this on production
     context: path.resolve(__dirname, 'src/app'),
     resolve: {
         modules: [
@@ -56,7 +56,8 @@ module.exports = {
         path: path.resolve(__dirname, 'dist/Luban/app'),
         chunkFilename: `[name].[chunkhash].bundle.js?_=${timestamp}`,
         filename: `[name].[chunkhash].bundle.js?_=${timestamp}`,
-        publicPath: publicPath
+        publicPath: publicPath,
+        sourceMapFilename: '[name].[chunkhash].js.map'
     },
     optimization: {
         // see notes on webpack.config.server.production.js
@@ -211,3 +212,29 @@ module.exports = {
         tls: 'empty'
     }
 };
+
+const isExists = fs.existsSync(
+    path.resolve(__dirname, '.sentry.config.json')
+);
+if (isExists) {
+    const sentryConfig = require('./.sentry.config.json');
+
+    if (sentryConfig && sentryConfig.auth && sentryConfig.auth.token) {
+        webpackConfig.devtool = 'source-map';
+
+        webpackConfig.plugins.push(
+            new SentryWebpackPlugin({
+                // see https://docs.sentry.io/product/cli/configuration/ for details
+                authToken: sentryConfig.auth.token,
+                org: sentryConfig.defaults.org,
+                project: sentryConfig.defaults.project,
+                release: `${sentryConfig.tagName}-app`,
+
+                include: './dist/Luban/app/*.js',
+                ignore: ['node_modules', 'webpack.config.js'],
+            })
+        );
+    }
+}
+
+module.exports = webpackConfig;

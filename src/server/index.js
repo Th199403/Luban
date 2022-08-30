@@ -9,6 +9,7 @@ import chalk from 'chalk';
 import webappengine from 'webappengine';
 import Jimp from 'jimp';
 
+import * as Sentry from '@sentry/electron';
 import createApplication from './app';
 import monitor from './services/monitor';
 import config from './services/configstore';
@@ -16,7 +17,6 @@ import logger from './lib/logger';
 import settings from './config/settings';
 import { startServices } from './services';
 import DataStorage from './DataStorage';
-
 
 const log = logger('init');
 
@@ -93,6 +93,10 @@ const createServer = (options, callback) => {
 
     // Data storage initialize
     DataStorage.init();
+
+    Sentry.setUser({
+        id: config.get('gaUserId')
+    });
 
     process.env.Tmpdir = DataStorage.tmpDir;
 
