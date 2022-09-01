@@ -450,6 +450,7 @@ export const actions = {
                     !== Number(originOffset.y)
                     || Number(machineState.originOffset.z)
                     !== Number(originOffset.z)
+                    || Number(machineState.originOffset.b) !== Number(originOffset.b)
                 ) {
                     dispatch(
                         baseActions.updateState({
@@ -457,6 +458,7 @@ export const actions = {
                                 x: `${Number(originOffset.x).toFixed(3)}`,
                                 y: `${Number(originOffset.y).toFixed(3)}`,
                                 z: `${Number(originOffset.z).toFixed(3)}`,
+                                b: `${Number(originOffset.b).toFixed(3)}`,
                                 a: '0.000'
                             }
                         })
@@ -483,11 +485,13 @@ export const actions = {
                     nozzleRightTargetTemperature,
                     nozzleRightTemperature,
                     gcodePrintingInfo,
-                    fileName
+                    fileName,
+                    currentWorkNozzle
                 } = state;
                 dispatch(baseActions.updateState({
                     laser10WErrorState,
                     isEmergencyStopped,
+                    currentWorkNozzle: !currentWorkNozzle ? LEFT_EXTRUDER : RIGHT_EXTRUDER
                 }));
                 if (!isNil(fileName)) {
                     dispatch(baseActions.updateState({
