@@ -228,6 +228,10 @@ function WifiConnection() {
             server.closeServer();
             setSavedServerAddressState('');
         },
+        closeServerImproper: () => {
+            server.closeServerImproper();
+            setSavedServerAddressState('');
+        },
         hideWifiConnectionMessage: () => {
             setShowConnectionMessage(false);
         },
@@ -308,8 +312,7 @@ function WifiConnection() {
         },
         onCloseWifiConnectionMessage: () => {
             actions.hideWifiConnectionMessage();
-            server.closeServer();
-            setSavedServerAddressState('');
+            if (connectionStatus === CONNECTION_STATUS_CONNECTING) actions.closeServerImproper();
         },
 
         /**
