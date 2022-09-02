@@ -1,5 +1,8 @@
 import log4js, { configure } from 'log4js';
 import { join } from 'path';
+import mkdirp from 'mkdirp';
+
+mkdirp.sync(global.luban.userDataDir, './Logs');
 
 const fileConfigs = (fileName) => {
     return {
