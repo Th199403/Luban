@@ -1,62 +1,65 @@
-import util from 'util';
-import chalk from 'chalk';
-import winston from 'winston';
-import settings from '../config/settings';
+import log4js, { configure } from 'log4js';
+import { join } from 'path';
 
-// https://code.google.com/p/v8/wiki/JavaScriptStackTraceApi
-const getStackTrace = () => {
-    const obj: { stack?: string } = {};
-    Error.captureStackTrace(obj, getStackTrace);
-    return (obj.stack || '').split('\n');
+const fileConfigs = (fileName) => {
+    return {
+        type: 'dateFile',
+        filename: process.env.NODE_ENV === 'development' ? join(process.cwd(), `../../logs/${fileName}.log`) : join(global.luban.userDataDir, `./Logs/${fileName}.log`),
+        pattern: '.yyyy-MM-dd',
+        alwaysIncludePattern: false,
+        numBackups: 7,
+        keepFileExt: true
+    };
 };
 
-const VERBOSITY_MAX = 3; // -vvv
+// log4js.levels.addLevels({
+//     get: {
+//         value: 25000, colour: 'LightBlue'
+//     }
+// });
 
-const { combine, colorize, timestamp, printf } = winston.format;
+configure({
+    appenders: {
+        // log: {
+        //     type: 'console'
+        // },
+        console: {
+            type: 'console',
 
-// https://github.com/winstonjs/winston/blob/master/README.md#creating-your-own-logger
-const logger = winston.createLogger({
-    exitOnError: false,
-    level: settings.winston.level,
-    silent: false,
-    transports: [
-        new winston.transports.Console({
-            format: combine(
-                colorize(),
-                timestamp(),
-                printf(log => `${log.timestamp} - ${log.level} ${log.message}`)
-            ),
-            handleExceptions: true
-        })
-    ]
+            // type: 'logLevelFilter',
+            // appender: 'log',
+            // isLessThanOrEqualTo: 'ERROR',
+            // maxLevel: 'ERROR'
+
+        },
+        DAILYFILE: fileConfigs('luban'),
+        heartBeat: {
+            category: 'heartBeat',
+            ...fileConfigs('heartBeat')
+        },
+        errorFile: fileConfigs('errors'),
+        errors: {
+            type: 'logLevelFilter',
+            level: 'ERROR',
+            appender: 'errorFile'
+        }
+    },
+    categories: {
+        default: {
+            appenders: [
+                'DAILYFILE',
+                'console',
+                'errors'
+            ],
+            level: 'DEBUG'
+        },
+        heartBeat: { appenders: ['heartBeat'], level: 'DEBUG' },
+        http: { appenders: ['DAILYFILE'], level: 'debug' },
+    }
 });
 
-// https://github.com/winstonjs/winston/blob/master/README.md#logging-levels
-// npm logging levels are prioritized from 0 to 5 (highest to lowest):
-const levels = [
-    'error', // 0
-    'warn', // 1
-    'info', // 2
-    'verbose', // 3
-    'debug', // 4
-    'silly' // 5
-];
-
-
-type Level = 'error' | 'warn' | 'info' | 'verbose' | 'debug' | 'silly';
-
-export default (namespace = '') => {
-    namespace = String(namespace);
-
-    return levels.reduce((acc, level) => {
-        acc[level] = (...args) => {
-            if ((settings.verbosity >= VERBOSITY_MAX) && (level !== 'silly')) {
-                args = args.concat(getStackTrace()[2]);
-            }
-            return (namespace.length > 0)
-                ? logger[level](`${chalk.cyan(namespace)} ${util.format(...args)}`)
-                : logger[level](util.format(...args));
-        };
-        return acc;
-    }, {}) as { [key in Level]: (log: string) => void };
+const logger = (namespace) => {
+    return log4js.getLogger(namespace);
 };
+
+export default logger;

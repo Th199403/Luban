@@ -12,6 +12,8 @@ const handleSlice = (socket, params) => {
             const { gcodeFilename, gcodeFileLength, printTime, filamentLength, filamentWeight, gcodeFilePath, renderGcodeFileName } = { ...sliceResult };
 
             const gcodeHeader = parseLubanGcodeHeader(gcodeFilePath);
+            // Is it necessary?
+            // delete gcodeHeader[';thumbnail'];
             socket.emit('slice:completed', {
                 gcodeFilename,
                 gcodeFileLength,
