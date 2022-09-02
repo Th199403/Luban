@@ -17,6 +17,7 @@ import { valueOf } from '../../lib/contants-utils';
 import wifiServerManager from './WifiServerManager';
 import { EventOptions } from './types';
 
+const heartBeatLog = logger('heartBeat');
 
 let waitConfirm: boolean;
 const log = logger('lib:SocketHttp');
@@ -394,13 +395,21 @@ class SocketHttp {
                     type: CONNECTION_TYPE_WIFI
                 });
             } else {
-                this.socket && this.socket.emit('sender:status', {
-                    data: this.getGcodePrintingInfo(state)
-                });
-                this.socket && this.socket.emit('Marlin:state', {
-                    state,
-                    type: CONNECTION_TYPE_WIFI
-                });
+                if (this.socket) {
+                    const senderStatus = this.getGcodePrintingInfo(state);
+                    this.socket.emit('sender:status', {
+                        data: senderStatus
+                    });
+                    this.socket.emit('Marlin:state', {
+                        state,
+                        type: CONNECTION_TYPE_WIFI
+                    });
+                    heartBeatLog.log(`sender:status: ${JSON.stringify(senderStatus)}`);
+                    heartBeatLog.log(`Marlin:state: ${JSON.stringify({
+                        state,
+                        type: CONNECTION_TYPE_WIFI
+                    })}`);
+                }
             }
         });
     }

@@ -377,6 +377,7 @@ export const processActions = {
             return;
         }
 
+        // TODO Why?
         toolPaths[0].thumbnail = toolPathGroup.thumbnail;
 
         dispatch(baseActions.updateState(headType, { isGcodeGenerating: true }));
