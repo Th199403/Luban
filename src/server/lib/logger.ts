@@ -2,12 +2,16 @@ import log4js, { configure } from 'log4js';
 import { join } from 'path';
 import mkdirp from 'mkdirp';
 
-mkdirp.sync(global.luban.userDataDir, './Logs');
+const getUserDataDir = () => {
+    const dir = process?.env?.userDataDir || global?.luban?.userDataDir;
+    mkdirp.sync(dir, './Logs');
+    return dir;
+};
 
 const fileConfigs = (fileName) => {
     return {
         type: 'dateFile',
-        filename: process.env.NODE_ENV === 'development' ? join(process.cwd(), `../../logs/${fileName}.log`) : join(global.luban.userDataDir, `./Logs/${fileName}.log`),
+        filename: process.env.NODE_ENV === 'development' ? join(process.cwd(), `./logs/${fileName}.log`) : join(getUserDataDir(), `./Logs/${fileName}.log`),
         pattern: '.yyyy-MM-dd',
         alwaysIncludePattern: false,
         numBackups: 7,
