@@ -22,6 +22,11 @@ global.luban = {
     userDataDir
 };
 
+// eslint-disable-next-line import/first
+import logger from './server/lib/logger';
+
+const log = logger('main-process');
+
 Sentry.init({
     enabled: true,
     dsn: 'https://88ea58fb276d4229a1b72333e88dba34@o1378322.ingest.sentry.io/6690121',
@@ -315,6 +320,13 @@ const startToBegin = (data) => {
         .then(() => mainWindow.loadURL(loadUrl).catch(err => {
             console.log('err', err.message);
         }));
+
+    mainWindow.webContents.on('render-process-gone', (_event, datails) => {
+        // if (datails?.reason === 'killed') {
+        //     mainWindow.webContents.reload();
+        // }
+        log.error(`render-process-gone, ${JSON.stringify(datails)}`);
+    });
 
     try {
         // TODO: move to server
