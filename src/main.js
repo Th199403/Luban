@@ -14,6 +14,10 @@ import { configureWindow } from './electron-app/window';
 import MenuBuilder, { addRecentFile, cleanAllRecentFiles } from './electron-app/Menu';
 import DataStorage from './DataStorage';
 import pkg from './package.json';
+import logger from './electron-app/log';
+
+const log = logger();
+
 // const { crashReporter } = require('electron');
 
 const config = new Store();
@@ -21,11 +25,6 @@ const userDataDir = app.getPath('userData');
 global.luban = {
     userDataDir
 };
-
-// eslint-disable-next-line import/first
-import logger from './server/lib/logger';
-
-const log = logger('main-process');
 
 Sentry.init({
     enabled: true,
@@ -204,7 +203,7 @@ function updateHandle() {
         try {
             await autoUpdater.checkForUpdates();
         } catch (e) {
-            console.log('Check for update failed', e);
+            log.error('Check for update failed', e);
         }
     });
     ipcMain.on('updateShouldCheckForUpdate', (event, shouldCheckForUpdate) => {
@@ -291,7 +290,7 @@ const startToBegin = (data) => {
         },
         (error) => {
             if (error) {
-                console.error('error', error);
+                log.error(error);
             }
         }
     );
@@ -318,7 +317,7 @@ const startToBegin = (data) => {
     const webContentsSession = mainWindow.webContents.session;
     webContentsSession.setProxy({ proxyRules: 'direct://' })
         .then(() => mainWindow.loadURL(loadUrl).catch(err => {
-            console.log('err', err.message);
+            log.err(err.message);
         }));
 
     mainWindow.webContents.on('render-process-gone', (_event, datails) => {
@@ -332,7 +331,7 @@ const startToBegin = (data) => {
         // TODO: move to server
         DataStorage.init();
     } catch (err) {
-        console.error('Error: ', err);
+        log.error(err);
     }
 };
 
@@ -375,7 +374,7 @@ const showMainWindow = async () => {
                     startToBegin(data);
                 } else if (data.type === UPLOAD_WINDOWS) {
                     window.loadURL(loadUrl).catch(err => {
-                        console.log('err', err.message);
+                        log.err(err.message);
                     });
                 }
             });
@@ -384,7 +383,7 @@ const showMainWindow = async () => {
         window.loadURL(path.resolve(__dirname, 'app', 'loading.html'))
             .then(() => window.setTitle(`Snapmaker Luban ${pkg.version}`))
             .catch(err => {
-                console.log('err', err.message);
+                log.err(err.message);
             });
         window.setBackgroundColor('#f5f5f7');
         if (process.platform === 'win32') {
