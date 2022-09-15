@@ -632,7 +632,7 @@ M3`;
     };
 
     setEnclosureLight = (socket, options) => {
-        if (this.connectionType === CONNECTION_TYPE_WIFI) {
+        if (this.connectionType === CONNECTION_TYPE_WIFI || this.protocol === SACP_PROTOCOL) {
             this.socket.setEnclosureLight(options);
         } else {
             const { value, eventName } = options;
@@ -645,7 +645,7 @@ M3`;
     };
 
     setEnclosureFan = (socket, options) => {
-        if (this.connectionType === CONNECTION_TYPE_WIFI) {
+        if (this.connectionType === CONNECTION_TYPE_WIFI || this.protocol === SACP_PROTOCOL) {
             this.socket.setEnclosureFan(options);
         } else {
             const { value, eventName } = options;
@@ -658,7 +658,7 @@ M3`;
     };
 
     setFilterSwitch = (socket, options) => {
-        if (this.connectionType === CONNECTION_TYPE_WIFI) {
+        if (this.connectionType === CONNECTION_TYPE_WIFI || this.protocol === SACP_PROTOCOL) {
             this.socket.setFilterSwitch(options);
         } else {
             const { value, enable } = options;
@@ -670,7 +670,7 @@ M3`;
     };
 
     setFilterWorkSpeed = (socket, options) => {
-        if (this.connectionType === CONNECTION_TYPE_WIFI) {
+        if (this.connectionType === CONNECTION_TYPE_WIFI || this.protocol === SACP_PROTOCOL) {
             this.socket.setFilterWorkSpeed(options);
         } else {
             const { value } = options;
