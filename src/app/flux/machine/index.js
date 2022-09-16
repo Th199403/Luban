@@ -492,7 +492,8 @@ export const actions = {
                     cncCurrentSpindleSpeed,
                     fileName,
                     ledValue,
-                    fanLevel
+                    fanLevel,
+                    isDoorEnable
                 } = state;
                 dispatch(baseActions.updateState({
                     laser10WErrorState,
@@ -503,6 +504,11 @@ export const actions = {
                     enclosureLight: ledValue,
                     enclosureFan: fanLevel
                 }));
+                if (!isNil(isDoorEnable)) {
+                    dispatch(baseActions.updateState({
+                        isDoorEnabled: isDoorEnable
+                    }));
+                }
                 if (!isNil(fileName)) {
                     dispatch(baseActions.updateState({
                         gcodeFileName: fileName
