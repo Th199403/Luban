@@ -680,7 +680,7 @@ M3`;
 
     // only for Wifi
     setDoorDetection = (socket, options) => {
-        if (this.connectionType === CONNECTION_TYPE_WIFI) {
+        if (this.connectionType === CONNECTION_TYPE_WIFI || this.protocol === SACP_PROTOCOL) {
             this.socket.setDoorDetection(options);
         }
     };
