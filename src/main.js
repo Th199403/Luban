@@ -139,12 +139,14 @@ function sendUpdateMessage(text) {
     mainWindow.webContents.send('message', text);
 }
 
-function updateDownloadConfigByAttr(uuid, attr, value) {
+function updateDownloadConfigByObj(uuid, obj) {
     const downloadFileArr = config.get(DOWNLOAD_FILES);
     const item = find(downloadFileArr, ['uuid', uuid]);
-    if (attr) {
-        item[attr] = value;
-    }
+    Object.entries(obj).forEach(([attr, value]) => {
+        if (attr) {
+            item[attr] = value;
+        }
+    });
     config.set(DOWNLOAD_FILES, downloadFileArr);
 }
 function deleteDownloadConfigByKey(attr, value) {
@@ -239,7 +241,6 @@ function getMapItemByAttribute(map, attr, attrValue) {
         if (value[attr] && value[attr] === attrValue) {
             res.key = key;
             res.currentParam = value;
-            return false;
         }
     });
     return res;
@@ -286,7 +287,10 @@ class DownloadManager {
             paramArr.forEach((param) => {
                 const { currentParam } = getMapItemByAttribute(this.paramList, 'uuid', param.uuid);
                 currentParam.item && currentParam.item.pause();
-                updateDownloadConfigByAttr(param.uuid, 'state', 'paused');
+                updateDownloadConfigByObj(param.uuid, {
+                    ...param,
+                    state: 'paused'
+                });
             });
         });
         ipcMain.handle('resumeDownload', async (e, paramArr) => {
@@ -294,6 +298,10 @@ class DownloadManager {
                 const { currentParam } = getMapItemByAttribute(this.paramList, 'uuid', param.uuid);
                 currentParam.item && currentParam.item.resume();
             });
+        });
+
+        ipcMain.handle('updateDownloadPath', (e, downloadPath) => {
+            config.set('downloadPath', downloadPath);
         });
 
         ipcMain.handle('startDownload', async (e, param) => {
@@ -365,17 +373,20 @@ class DownloadManager {
             mainWindow.webContents.send('download-file-completed', {
                 savedPath
             });
-            // updateDownloadConfigByAttr(param.uuid, 'state', 'completed');
+            // updateDownloadConfigByObj(param.uuid, {
+            //     ...paramArr,
+            //     state: 'completed'
+            // });
             console.log('one done:', state, this.paramList);
         });
     }
 }
+
 function registerDownloadItemEvent() {
     ipcMain.handle('getStoreValue', (event, key) => {
-    	return config.get(key);
+        return config.get(key);
     });
     const downloadManager = new DownloadManager();
-
     mainWindow.webContents.session.on('will-download', async (e, item) => {
         const actualPath = config.get('downloadPathWithName');
         if (actualPath) {

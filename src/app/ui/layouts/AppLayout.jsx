@@ -555,6 +555,7 @@ class AppLayout extends PureComponent {
             });
             UniApi.Event.on('appbar-menu:cancel-download-case', (paramArr) => {
                 const { ipcRenderer } = window.require('electron');
+                console.log('', paramArr);
                 ipcRenderer.invoke('cancelDownload', paramArr);
             });
             // UniApi.Event.on('appbar-menu:pause-download-case', (paramArr) => {
@@ -805,10 +806,6 @@ class AppLayout extends PureComponent {
             UniApi.Event.on('appbar-menu:clear-recent-files', () => {
                 this.actions.updateRecentFile([], 'reset');
                 UniApi.Menu.cleanAllRecentFiles();
-            });
-            UniApi.Event.on('appbar-menu:select-directory', async () => {
-                const files = await UniApi.Dialog.showOpenDirectoryDialog();
-                console.log('files', files);
             });
             UniApi.Event.on('appbar-menu:import', async () => {
                 let fileObj;

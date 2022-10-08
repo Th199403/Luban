@@ -21,6 +21,7 @@ function openFolder(savedModalFilePath) {
 
 function pauseDownload(arr) {
     const { ipcRenderer } = window.require('electron');
+    console.log('dddd', arr);
     ipcRenderer.invoke('pauseDownload', arr);
 }
 function resumeDownload(arr) {

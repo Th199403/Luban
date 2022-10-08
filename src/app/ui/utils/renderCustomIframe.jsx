@@ -50,7 +50,7 @@ function renderCustomIframe(options) {
                     allow="fullscreen"
                     width="100%"
                     height="100%"
-                    src="http://localhost:3000/test.html"
+                    src="http://127.0.0.1:8085/resource-list/1"
                     title="A custom made iframe"
                 />
             </WorkspaceLayout>
