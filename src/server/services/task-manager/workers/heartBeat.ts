@@ -10,8 +10,8 @@ let intervalHandle = null;
 
 const stopBeat = (msg?: string, flag?: number) => {
     console.log(`offline flag=${flag}`);
-    clearInterval(intervalHandle);
-    intervalHandle = null;
+    timeoutHandle = clearTimeout(timeoutHandle);
+    intervalHandle = clearInterval(intervalHandle);
     sendMessage({ status: 'offline', msg });
 };
 
@@ -24,18 +24,21 @@ const heartBeat = async (param: IParam) => {
         }
 
         function beat() {
-            const now = new Date().getTime();
+            const now = new Date();
+            console.log(`>> [send beat]: time=${now.toLocaleTimeString()}`);
             const api = `${host}/api/v1/status?token=${token}&${now}`;
             request
                 .get(api)
                 .timeout(3000)
                 .end((err: Error, res) => {
                     if (err) {
-                        console.log(`beat err=${err?.message}`);
+                        console.log(`<< [receive beat] ERROR: err=${err?.message}, cost=${new Date().getTime() - now.getTime()} ms.`);
                         if (err.message.includes('Timeout')) {
-                            timeoutHandle = setTimeout(() => {
-                                resolve(stopBeat(err.message, 2));
-                            }, screenTimeout);
+                            if (!timeoutHandle) {
+                                timeoutHandle = setTimeout(() => {
+                                    resolve(stopBeat(err.message, 2));
+                                }, screenTimeout);
+                            }
                         } else {
                             errorCount++;
                             if (errorCount >= 3) {
@@ -43,7 +46,7 @@ const heartBeat = async (param: IParam) => {
                             }
                         }
                     } else {
-                        console.log(`beat status=${res?.status}`);
+                        console.log(`<< [receive beat] SUCCESS: status=${res?.status}, cost=${new Date().getTime() - now.getTime()} ms.`);
                         timeoutHandle = clearTimeout(timeoutHandle);
                         errorCount = 0;
                         sendMessage({
