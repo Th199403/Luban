@@ -226,12 +226,16 @@ export class Server extends events.EventEmitter {
             .end((err, res) => {
                 const { data, msg, code } = this._getResult(err, res);
                 if (msg) {
+                    console.log(`beat err=${msg}`);
                     this.errorCount++;
                     if (this.errorCount >= 3) {
                         this._closeServer();
+                        log.info(`[wifi connection offline]: msg=${result.msg}`);
                         this.emit('http:close', { err: msg });
                     }
                     return;
+                } else {
+                    console.log(`[v4.1.4]: beat status=${res?.status}`);
                 }
                 this.errorCount = 0;
 
