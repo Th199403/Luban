@@ -891,7 +891,7 @@
     "key-App/Settings/MachineSettings-Laser Toolhead": "Лазерний модуль",
     "key-App/Settings/MachineSettings-Machine": "Пристрій",
     "key-App/Settings/MachineSettings-Single Extruder Toolhead": "Одинарний екструдер",
-    "key-App/Settings/MachineSettings-Standard CNC": "Стандартний",
+    "key-App/Settings/MachineSettings-Standard CNC": "",
     "key-App/Settings/Model Examination": "Перевірка моделі",
     "key-App/Settings/Pop up a reminder when importing deficient model(s)": "Показувати сповіщення під час імпорту пошкоджених моделей",
     "key-App/Settings/Preferences-Cancel": "Скасувати",

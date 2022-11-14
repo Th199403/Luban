@@ -890,7 +890,7 @@
     "key-App/Settings/MachineSettings-Laser Toolhead": "激光模组",
     "key-App/Settings/MachineSettings-Machine": "机器",
     "key-App/Settings/MachineSettings-Single Extruder Toolhead": "单喷头",
-    "key-App/Settings/MachineSettings-Standard CNC": "标准",
+    "key-App/Settings/MachineSettings-Standard CNC": "",
     "key-App/Settings/Model Examination": "模型检测",
     "key-App/Settings/Pop up a reminder when importing deficient model(s)": "导入错误模型时，弹出修复提示",
     "key-App/Settings/Preferences-Cancel": "取消",
